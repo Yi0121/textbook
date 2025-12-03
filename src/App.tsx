@@ -1,17 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { 
-  Sparkles, PenTool, Box, MoreHorizontal, ChevronRight,
+  Sparkles, PenTool, Box, ChevronRight,
   BrainCircuit, Eraser, MousePointer2,
   Timer, Dices, StickyNote, PanelRightClose, 
   PanelRightOpen, X, Users, Share2, FileQuestion, RefreshCw,    
-  CheckCircle2, Gamepad2, BookOpen, Library,
-  Zap, Send, LayoutDashboard, Plus, Image,        
-  Hand, ZoomIn, Minus, Play, Pause, Search, XCircle
+  CheckCircle2, BookOpen,
+  Zap, LayoutDashboard, Plus, Image,        
+  Hand, ZoomIn, Minus, Play, Pause, Search, XCircle,
+  Loader2, Highlighter, Scan, Trash2, Move, ChevronLeft, Lightbulb
 } from 'lucide-react';
 
-// --- 1. 頂部導航 (Top Navigation) ---
+// --- Helper: 幾何計算 ---
+const distanceBetween = (p1: {x: number, y: number}, p2: {x: number, y: number}) => {
+  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+};
+
+// --- 1. 頂部導航 ---
 const TopNavigation = ({ isSidebarOpen, toggleSidebar }: any) => (
-  <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-50">
+  <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-50 transition-all duration-300">
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2 text-sm font-medium text-gray-500 mr-4">
         <span className="p-1.5 bg-indigo-600 text-white rounded-lg"><BrainCircuit size={18} /></span>
@@ -26,25 +32,27 @@ const TopNavigation = ({ isSidebarOpen, toggleSidebar }: any) => (
     </div>
 
     <div className="flex items-center gap-4">
-      {/* 演示模式標籤 */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse flex items-center gap-2">
          <span className="w-2 h-2 bg-green-400 rounded-full"></span>
          Live Demo Mode
       </div>
-
       <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full border-2 border-white shadow-md cursor-pointer"></div>
-      
-      <button onClick={toggleSidebar} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">
+      <button 
+        onClick={toggleSidebar} 
+        className={`p-2 rounded-lg transition-colors border border-gray-200 ${isSidebarOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-gray-500 hover:bg-gray-100'}`}
+        title="AI 側邊欄"
+      >
          {isSidebarOpen ? <PanelRightClose className="w-5 h-5" /> : <PanelRightOpen className="w-5 h-5" />}
       </button>
     </div>
   </div>
 );
 
-// --- 2. 懸浮計時器組件 ---
+// --- 2. 懸浮計時器 ---
 const FloatingTimer = ({ onClose }: any) => {
-  const [timeLeft, setTimeLeft] = useState(300); // 5分鐘
+  const [timeLeft, setTimeLeft] = useState(300);
   const [isActive, setIsActive] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     let interval: any;
@@ -60,14 +68,26 @@ const FloatingTimer = ({ onClose }: any) => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  if (isMinimized) {
+      return (
+          <div className="fixed top-24 right-24 z-[55] bg-white border border-gray-200 rounded-full shadow-xl p-2 px-4 flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform" onClick={() => setIsMinimized(false)}>
+              <Timer className="w-4 h-4 text-indigo-600" />
+              <span className="font-mono font-bold text-slate-800">{formatTime(timeLeft)}</span>
+          </div>
+      )
+  }
+
   return (
-    <div className="fixed top-24 right-8 z-[65] bg-white border border-gray-200 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-4 w-56 animate-in slide-in-from-right-4 duration-300">
+    <div className="fixed top-24 right-24 z-[55] bg-white border border-gray-200 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-4 w-56 animate-in slide-in-from-right-4 duration-300">
       <div className="flex justify-between w-full items-center">
          <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             <Timer className="w-3.5 h-3.5" />
             <span>Class Timer</span>
          </div>
-         <button onClick={onClose} className="text-gray-300 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>
+         <div className="flex gap-1">
+            <button onClick={() => setIsMinimized(true)} className="text-gray-300 hover:text-indigo-500 transition-colors"><Minus className="w-4 h-4" /></button>
+            <button onClick={onClose} className="text-gray-300 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>
+         </div>
       </div>
       <div className="text-5xl font-mono font-black text-slate-800 tracking-tighter">
         {formatTime(timeLeft)}
@@ -93,130 +113,182 @@ const FloatingTimer = ({ onClose }: any) => {
 
 // --- 3. 固定式靈動島工具列 (Fixed Toolbar) ---
 const FixedToolbar = ({ 
-  currentTool, 
-  setCurrentTool, 
-  onOpenDashboard,
-  zoomLevel,
-  setZoomLevel,
-  penColor,
-  setPenColor,
-  penSize,
-  setPenSize
+  currentTool, setCurrentTool, onOpenDashboard,
+  zoomLevel, setZoomLevel,
+  penColor, setPenColor, penSize, setPenSize,
+  isAIProcessing 
 }: any) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const [showBoxMenu, setShowBoxMenu] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
-  const [showPenSettings, setShowPenSettings] = useState(false);
-  const [showZoomControls, setShowZoomControls] = useState(false);
+  const [subPanel, setSubPanel] = useState<'pen' | 'highlighter' | 'zoom' | null>(null);
 
-  const handleZoomClick = () => {
-    setShowZoomControls(!showZoomControls);
-    setShowPenSettings(false);
-  };
-
-  const handlePenClick = () => {
-    setCurrentTool('pen');
-    if (currentTool === 'pen') {
-       setShowPenSettings(!showPenSettings);
-    } else {
-       setShowPenSettings(true);
+  useEffect(() => {
+    if (currentTool === 'pen' || currentTool === 'highlighter') {
+        if (!isExpanded) setIsExpanded(true);
     }
-    setShowZoomControls(false);
+  }, [currentTool]);
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (isExpanded) {
+        setSubPanel(null); 
+        setShowBoxMenu(false);
+    }
   };
 
   return (
     <>
     {showTimer && <FloatingTimer onClose={() => setShowTimer(false)} />}
 
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center transition-all duration-300">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
       
-      {/* 筆觸設定面板 */}
-      {showPenSettings && currentTool === 'pen' && (
-        <div className="mb-3 bg-white/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-xl shadow-indigo-500/10 p-3 px-5 flex items-center gap-5 animate-in slide-in-from-bottom-2 zoom-in-95 duration-200" onMouseDown={(e) => e.stopPropagation()}>
-           <div className="flex gap-2">
-             {['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#000000'].map(color => (
-               <button 
-                key={color} onClick={() => setPenColor(color)} 
-                className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${penColor === color ? 'border-gray-400 scale-110 ring-2 ring-offset-1 ring-gray-200' : 'border-transparent'}`} 
-                style={{ backgroundColor: color }} 
-               />
-             ))}
-           </div>
-           <div className="w-px h-6 bg-gray-300/50"></div>
-           <div className="flex items-center gap-2">
-             <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-             <input type="range" min="1" max="20" value={penSize} onChange={(e) => setPenSize(parseInt(e.target.value))} className="w-24 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-800" />
-             <div className="w-3.5 h-3.5 rounded-full bg-gray-400"></div>
-           </div>
-        </div>
-      )}
-
-      {/* 縮放控制面板 */}
-      {showZoomControls && (
-         <div className="mb-3 bg-white/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-xl shadow-indigo-500/10 p-2 px-4 flex items-center gap-3 animate-in slide-in-from-bottom-2 zoom-in-95 duration-200" onMouseDown={(e) => e.stopPropagation()}>
-            <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))} className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"><Minus className="w-5 h-5" /></button>
-            <span className="text-sm font-bold text-gray-700 w-12 text-center select-none">{Math.round(zoomLevel * 100)}%</span>
-            <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.1))} className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"><Plus className="w-5 h-5" /></button>
-            <div className="w-px h-5 bg-gray-300 mx-1"></div>
-            <button onClick={() => setZoomLevel(1)} className="text-xs text-gray-500 hover:text-indigo-600 font-bold px-2 py-1 hover:bg-indigo-50 rounded-md transition-colors">Reset</button>
+      {/* AI 靈動島狀態 */}
+      <div className={`
+        overflow-hidden transition-all duration-500 ease-out bg-white/95 backdrop-blur-2xl border border-indigo-100 shadow-xl shadow-indigo-500/10
+        ${isAIProcessing ? 'h-12 w-80 opacity-100 mb-3 rounded-2xl scale-100 translate-y-0' : 'h-0 w-10 opacity-0 mb-0 scale-90 translate-y-4'}
+      `}>
+         <div className="h-full w-full flex items-center justify-center gap-3 px-4">
+             <div className="relative">
+                <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 animate-pulse"></div>
+                <Loader2 className="w-4 h-4 text-indigo-600 animate-spin relative z-10" />
+             </div>
+             <span className="text-sm font-bold text-slate-700 typing-effect">AI 正在生成內容...</span>
          </div>
-      )}
-
-      {/* 百寶箱選單 */}
-      {showBoxMenu && (
-        <div className="mb-3 bg-white/95 backdrop-blur-xl border border-white/60 rounded-3xl shadow-2xl shadow-indigo-500/15 p-4 w-72 animate-in slide-in-from-bottom-4 zoom-in-95 duration-200 origin-bottom">
-           <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Classroom Tools</div>
-           <div className="grid grid-cols-2 gap-2">
-              <GridMenuItem icon={<Dices className="w-6 h-6 text-purple-500" />} label="抽籤挑人" color="bg-purple-50 hover:bg-purple-100" />
-              <GridMenuItem icon={<Users className="w-6 h-6 text-blue-500" />} label="隨機分組" color="bg-blue-50 hover:bg-blue-100" />
-              <GridMenuItem icon={<MousePointer2 className="w-6 h-6 text-emerald-500" />} label="聚光燈" color="bg-emerald-50 hover:bg-emerald-100" />
-              <GridMenuItem icon={<StickyNote className="w-6 h-6 text-yellow-500" />} label="便利貼" color="bg-yellow-50 hover:bg-yellow-100" />
-           </div>
-           <div className="h-px bg-gray-100 my-3"></div>
-           <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors text-sm text-gray-600 font-medium group">
-              <span className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                    <Library className="w-4 h-4" />
-                </div>
-                開啟素材庫
-              </span>
-              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500" />
-           </button>
-        </div>
-      )}
-
-      {/* 主工具列本體 */}
-      <div className="bg-white/80 backdrop-blur-2xl border border-white/50 px-3 py-2 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center gap-2 relative ring-1 ring-black/5 hover:scale-[1.01] transition-transform duration-300">
-        
-        {/* Navigation Group */}
-        <ToolButton icon={<MousePointer2 className="w-5 h-5" />} label="選取物件" active={currentTool === 'select'} activeColor="bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200" onClick={() => {setCurrentTool('select'); setShowPenSettings(false); setShowZoomControls(false)}} />
-        <ToolButton icon={<Hand className="w-5 h-5" />} label="平移畫布" active={currentTool === 'pan'} activeColor="bg-blue-50 text-blue-700 ring-1 ring-blue-100" onClick={() => {setCurrentTool('pan'); setShowPenSettings(false); setShowZoomControls(false)}} />
-        <ToolButton icon={<ZoomIn className="w-5 h-5" />} label="縮放檢視" active={showZoomControls} activeColor="bg-gray-100 text-gray-900" onClick={handleZoomClick} />
-        
-        <div className="w-px h-8 bg-gray-300/50 mx-1"></div>
-
-        {/* Creation Group */}
-        <div className="relative group">
-            <ToolButton icon={<PenTool className="w-5 h-5" />} label="畫筆" active={currentTool === 'pen'} activeColor="bg-gray-800 text-white shadow-lg shadow-gray-400/50" onClick={handlePenClick} />
-            {currentTool === 'pen' && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{backgroundColor: penColor}}></div>}
-        </div>
-        <ToolButton icon={<Eraser className="w-5 h-5" />} label="橡皮擦" active={currentTool === 'eraser'} onClick={() => {setCurrentTool('eraser'); setShowPenSettings(false)}} />
-        <ToolButton icon={<Zap className="w-5 h-5" />} label="雷射筆" active={currentTool === 'laser'} activeColor="bg-red-50 text-red-600 ring-1 ring-red-100 shadow-[0_0_15px_rgba(239,68,68,0.3)]" onClick={() => {setCurrentTool('laser'); setShowPenSettings(false)}} />
-        
-        <div className="w-px h-8 bg-gray-300/50 mx-1"></div>
-        
-        {/* Classroom Group */}
-        <ToolButton icon={<Timer className="w-5 h-5" />} label="計時器" active={showTimer} activeColor="bg-orange-100 text-orange-600" onClick={() => setShowTimer(!showTimer)} />
-        <ToolButton icon={<Box className="w-5 h-5 text-indigo-500" />} label="百寶箱" customClass={`hover:bg-indigo-50 ${showBoxMenu ? 'bg-indigo-50 text-indigo-700' : ''}`} onClick={() => setShowBoxMenu(!showBoxMenu)} />
-        <ToolButton icon={<LayoutDashboard className="w-5 h-5" />} label="儀表板" onClick={onOpenDashboard} />
       </div>
 
+      {/* 整合式子面板 */}
+      <div className={`
+        w-[94%] bg-white/80 backdrop-blur-xl border border-white/60 shadow-lg rounded-2xl mb-2
+        transition-all duration-300 ease-out origin-bottom
+        ${(subPanel || showBoxMenu) && isExpanded ? 'opacity-100 translate-y-0 py-2 px-3 scale-100' : 'h-0 overflow-hidden opacity-0 translate-y-4 scale-95'}
+      `}>
+          {(subPanel === 'pen' || subPanel === 'highlighter') && (
+              <div className="flex items-center justify-between gap-3" onMouseDown={e => e.stopPropagation()}>
+                  <div className="flex gap-1.5">
+                    {subPanel === 'pen' ? (
+                       ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#000000'].map(color => (
+                          <button key={color} onClick={() => setPenColor(color)} 
+                              className={`w-6 h-6 rounded-full border border-black/5 transition-transform hover:scale-110 flex items-center justify-center ${penColor === color ? 'scale-125 ring-2 ring-offset-1 ring-indigo-50' : ''}`}
+                          >
+                              <div className="w-full h-full rounded-full" style={{ backgroundColor: color }}></div>
+                          </button>
+                       ))
+                    ) : (
+                       ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8'].map(color => (
+                          <button key={color} onClick={() => setPenColor(color)} 
+                              className={`w-6 h-6 rounded-full border border-black/5 transition-transform hover:scale-110 flex items-center justify-center ${penColor === color ? 'scale-125 ring-2 ring-offset-1 ring-gray-200' : ''}`}
+                          >
+                              <div className="w-full h-full rounded-full opacity-80" style={{ backgroundColor: color }}></div>
+                          </button>
+                       ))
+                    )}
+                  </div>
+                  <div className="w-px h-4 bg-gray-300"></div>
+                  <div className="flex items-center gap-2 flex-1">
+                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                      <input type="range" min="2" max={subPanel==='highlighter' ? 40 : 20} value={penSize} onChange={(e) => setPenSize(parseInt(e.target.value))} className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  </div>
+                  <button onClick={() => setSubPanel(null)} className="p-1 hover:bg-gray-200 rounded-full text-gray-500"><X className="w-3 h-3" /></button>
+              </div>
+          )}
+          {subPanel === 'zoom' && (
+             <div className="flex items-center justify-center gap-4">
+                <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-600 active:scale-95"><Minus className="w-4 h-4" /></button>
+                <span className="text-sm font-bold text-gray-700 w-12 text-center tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+                <button onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.1))} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-600 active:scale-95"><Plus className="w-4 h-4" /></button>
+             </div>
+          )}
+          {showBoxMenu && (
+             <div className="grid grid-cols-4 gap-1">
+                <GridMenuItem icon={<Dices className="text-purple-500 w-5 h-5" />} label="抽籤" />
+                <GridMenuItem icon={<Users className="text-blue-500 w-5 h-5" />} label="分組" />
+                <GridMenuItem icon={<MousePointer2 className="text-emerald-500 w-5 h-5" />} label="聚光燈" />
+                <GridMenuItem icon={<StickyNote className="text-yellow-500 w-5 h-5" />} label="便利貼" />
+             </div>
+          )}
+      </div>
+
+      {/* 主工具列 */}
+      <div className={`
+        relative bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgba(0,0,0,0.12)] 
+        transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full ring-1 ring-black/5 flex items-center justify-center
+        ${isExpanded ? 'px-2 py-2 min-w-[580px]' : 'w-14 h-14 cursor-pointer hover:scale-110 active:scale-95'}
+      `}
+        onClick={() => !isExpanded && toggleExpand()}
+      >
+         {!isExpanded && (
+            <div className="animate-in zoom-in duration-300 text-indigo-600">
+                <PenTool className="w-6 h-6" />
+            </div>
+         )}
+
+         <div className={`flex items-center gap-1.5 overflow-hidden whitespace-nowrap ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 pointer-events-none'}`}>
+            
+            {/* Group 1: Navigation & Selection */}
+            {/* ✅ 改動：區分「一般指標」與「範圍選取」 */}
+            <ToolButton icon={<MousePointer2 className="w-5 h-5" />} label="一般選取" active={currentTool === 'cursor'} activeColor="bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200" onClick={() => {setCurrentTool('cursor'); setSubPanel(null); setShowBoxMenu(false)}} />
+            <ToolButton icon={<Scan className="w-5 h-5" />} label="範圍框選" active={currentTool === 'select'} activeColor="bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200" onClick={() => {setCurrentTool('select'); setSubPanel(null); setShowBoxMenu(false)}} />
+            <ToolButton icon={<Hand className="w-5 h-5" />} label="平移" active={currentTool === 'pan'} activeColor="bg-blue-50 text-blue-700" onClick={() => {setCurrentTool('pan'); setSubPanel(null); setShowBoxMenu(false)}} />
+            <ToolButton icon={<ZoomIn className="w-5 h-5" />} label="縮放" active={subPanel === 'zoom'} activeColor="bg-gray-100 text-gray-900" onClick={() => {setSubPanel(subPanel === 'zoom' ? null : 'zoom'); setShowBoxMenu(false)}} />
+            
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Group 2: Creation */}
+            <div className="relative group">
+                <ToolButton icon={<PenTool className="w-5 h-5" />} label="畫筆" active={currentTool === 'pen'} activeColor="bg-gray-800 text-white shadow-lg shadow-gray-400/50" 
+                  onClick={() => {
+                      setCurrentTool('pen');
+                      setPenColor('#ef4444');
+                      setPenSize(4);
+                      setSubPanel(subPanel === 'pen' ? null : 'pen');
+                      setShowBoxMenu(false);
+                  }} 
+                />
+            </div>
+            
+            <div className="relative group">
+                <ToolButton icon={<Highlighter className="w-5 h-5" />} label="螢光筆" active={currentTool === 'highlighter'} activeColor="bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200" 
+                  onClick={() => {
+                      setCurrentTool('highlighter');
+                      setPenColor('#fef08a');
+                      setPenSize(20);
+                      setSubPanel(subPanel === 'highlighter' ? null : 'highlighter');
+                      setShowBoxMenu(false);
+                  }} 
+                />
+                 {currentTool === 'highlighter' && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border border-black/10" style={{backgroundColor: penColor}}></div>}
+            </div>
+
+            <ToolButton icon={<Eraser className="w-5 h-5" />} label="橡皮擦" active={currentTool === 'eraser'} activeColor="bg-rose-50 text-rose-600" onClick={() => {setCurrentTool('eraser'); setSubPanel(null)}} />
+            
+            <ToolButton icon={<Zap className="w-5 h-5" />} label="雷射筆" active={currentTool === 'laser'} activeColor="bg-red-50 text-red-600 shadow-[0_0_15px_rgba(239,68,68,0.3)]" onClick={() => {setCurrentTool('laser'); setSubPanel(null)}} />
+            
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+            
+            <ToolButton icon={<Timer className="w-5 h-5" />} label="計時" active={showTimer} activeColor="bg-orange-100 text-orange-600" onClick={() => setShowTimer(!showTimer)} />
+            <ToolButton icon={<Box className="w-5 h-5" />} label="百寶箱" active={showBoxMenu} activeColor="bg-indigo-50 text-indigo-700" onClick={() => {setShowBoxMenu(!showBoxMenu); setSubPanel(null)}} />
+            <ToolButton icon={<LayoutDashboard className="w-5 h-5" />} label="儀表板" onClick={onOpenDashboard} />
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleExpand(); }}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              title="收起工具列"
+            >
+                <ChevronRight className="w-5 h-5" />
+            </button>
+         </div>
+      </div>
     </div>
     </>
   );
 };
 
-// --- 4. 手寫塗鴉層 (Drawing Layer) ---
-const DrawingLayer = ({ active, strokes, currentPath, onDrawStart, onDrawMove, onDrawEnd, penColor, penSize }: any) => {
+// --- 4. 繪圖層 (Drawing Layer) ---
+const DrawingLayer = ({ active, strokes, currentPath, onDrawStart, onDrawMove, onDrawEnd, penColor, penSize, currentTool, selectionBox, laserPath }: any) => {
   return (
     <svg 
       className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20"
@@ -226,9 +298,35 @@ const DrawingLayer = ({ active, strokes, currentPath, onDrawStart, onDrawMove, o
       onMouseUp={onDrawEnd}
       onMouseLeave={onDrawEnd}
     >
-      {strokes.map((stroke: any, i: number) => (
+      <defs>
+        <filter id="laser-bloom" height="300%" width="300%" x="-100%" y="-100%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
+          <feColorMatrix in="blur1" type="matrix" values="0 0 0 0 1  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0" result="redGlow" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur2" />
+          <feMerge>
+            <feMergeNode in="redGlow" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {strokes.filter((s:any) => s.tool === 'highlighter').map((stroke: any, i: number) => (
         <path
-          key={i}
+          key={`hl-${i}`}
+          d={stroke.path}
+          stroke={stroke.color}
+          strokeWidth={stroke.size}
+          fill="none"
+          strokeLinecap="butt"
+          strokeLinejoin="round"
+          style={{ mixBlendMode: 'multiply', opacity: 0.6 }}
+        />
+      ))}
+
+      {strokes.filter((s:any) => s.tool !== 'highlighter').map((stroke: any, i: number) => (
+        <path
+          key={`pen-${i}`}
           d={stroke.path}
           stroke={stroke.color}
           strokeWidth={stroke.size}
@@ -237,33 +335,196 @@ const DrawingLayer = ({ active, strokes, currentPath, onDrawStart, onDrawMove, o
           strokeLinejoin="round"
         />
       ))}
+      
       {currentPath && (
         <path
           d={currentPath}
           stroke={penColor}
           strokeWidth={penSize}
           fill="none"
-          strokeLinecap="round"
+          strokeLinecap={currentTool === 'highlighter' ? "butt" : "round"}
           strokeLinejoin="round"
+          style={currentTool === 'highlighter' ? { mixBlendMode: 'multiply', opacity: 0.6 } : {}}
         />
+      )}
+
+      {/* 範圍選取框 */}
+      {selectionBox && (
+         <rect 
+            x={selectionBox.x}
+            y={selectionBox.y}
+            width={selectionBox.width}
+            height={selectionBox.height}
+            fill="rgba(59, 130, 246, 0.1)" 
+            stroke="#3b82f6"              
+            strokeWidth={1.5}
+            strokeDasharray="4 2"
+            rx={4}
+         />
+      )}
+
+      {/* 雷射筆特效 */}
+      {laserPath.length > 0 && (
+          <g filter="url(#laser-bloom)">
+            {laserPath.map((point: any, i: number) => {
+                if (i === laserPath.length - 1) return null;
+                const nextPoint = laserPath[i + 1];
+                const progress = i / (laserPath.length - 1);
+                const size = 1 + (8 * Math.pow(progress, 3)); 
+
+                return (
+                    <line
+                        key={`glow-${point.timestamp}`}
+                        x1={point.x} y1={point.y}
+                        x2={nextPoint.x} y2={nextPoint.y}
+                        stroke="#ef4444" 
+                        strokeWidth={size}
+                        strokeOpacity={0.8}
+                        strokeLinecap="round"
+                    />
+                );
+            })}
+            {laserPath.map((point: any, i: number) => {
+                if (i === laserPath.length - 1) return null;
+                const nextPoint = laserPath[i + 1];
+                const progress = i / (laserPath.length - 1);
+                if (progress < 0.3) return null;
+                const size = 1 + (4 * Math.pow(progress, 4)); 
+
+                return (
+                    <line
+                        key={`core-${point.timestamp}`}
+                        x1={point.x} y1={point.y}
+                        x2={nextPoint.x} y2={nextPoint.y}
+                        stroke="#ffffff"
+                        strokeWidth={size}
+                        strokeOpacity={0.9}
+                        strokeLinecap="round"
+                    />
+                );
+            })}
+            {laserPath.length > 0 && (
+                <circle 
+                    cx={laserPath[laserPath.length - 1].x} 
+                    cy={laserPath[laserPath.length - 1].y} 
+                    r={5} 
+                    fill="#ffffff" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                />
+            )}
+          </g>
       )}
     </svg>
   );
 };
 
-// --- 5. 課本內容 (Textbook) ---
+// --- 5. 可拖曳心智圖元件 ---
+const DraggableMindMap = ({ data, onDelete, onUpdate, scale }: any) => {
+    const isDragging = useRef(false);
+    const lastPos = useRef({ x: 0, y: 0 });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        isDragging.current = true;
+        lastPos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current) return;
+            e.preventDefault();
+            const dx = (e.clientX - lastPos.current.x) / scale;
+            const dy = (e.clientY - lastPos.current.y) / scale;
+            
+            onUpdate(data.id, dx, dy);
+            lastPos.current = { x: e.clientX, y: e.clientY };
+        };
+
+        const handleMouseUp = () => { isDragging.current = false; };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [data.id, onUpdate, scale]);
+
+    return (
+        <div 
+            className="absolute z-10 pointer-events-auto group animate-in zoom-in duration-300"
+            style={{ left: data.x, top: data.y }}
+        >
+            <svg className="absolute overflow-visible pointer-events-none" style={{ left: 0, top: 0 }}>
+                {data.edges.map((edge: any, i: number) => {
+                    const start = data.nodes.find((n:any) => n.id === edge.source);
+                    const end = data.nodes.find((n:any) => n.id === edge.target);
+                    if(!start || !end) return null;
+                    const startX = start.offsetX;
+                    const startY = start.offsetY;
+                    const endX = end.offsetX;
+                    const endY = end.offsetY;
+                    const dx = endX - startX;
+                    const c1x = startX + dx * 0.5;
+                    const c2x = endX - dx * 0.5;
+                    return (
+                        <path 
+                            key={i}
+                            d={`M ${startX} ${startY} C ${c1x} ${startY}, ${c2x} ${endY}, ${endX} ${endY}`}
+                            stroke="#cbd5e1" strokeWidth="2" fill="none"
+                        />
+                    );
+                })}
+            </svg>
+
+            {data.nodes.map((node: any) => (
+                <div 
+                    key={node.id}
+                    className={`
+                        absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center 
+                        rounded-2xl shadow-lg border-2 transition-all duration-200
+                        ${node.type === 'root' 
+                            ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-400 text-white w-32 h-20 z-20 cursor-move shadow-indigo-200'
+                            : 'bg-white/90 backdrop-blur border-indigo-100 text-gray-700 w-24 h-14 z-10'
+                        }
+                    `}
+                    style={{ left: node.offsetX, top: node.offsetY }}
+                    onMouseDown={node.type === 'root' ? handleMouseDown : undefined}
+                >
+                    {node.type === 'root' && <BrainCircuit className="w-5 h-5 mb-1 opacity-80" />}
+                    <span className={`${node.type === 'root' ? 'text-sm' : 'text-xs'} font-bold text-center leading-tight px-1 select-none`}>
+                        {node.label}
+                    </span>
+                    
+                    {node.type === 'root' && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
+                            className="absolute -top-3 -right-3 p-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// --- 6. 課本內容 (Textbook) ---
 const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) => {
   const handleMouseUp = () => {
-    if (currentTool !== 'select') return;
+    // 如果是「範圍框選 (Scan)」，則不觸發文字選取
+    if (currentTool === 'select') return;
+
+    // 如果是「一般指標 (Cursor)」或其他工具，允許選取文字
     const selection = window.getSelection();
     if (selection && selection.toString().trim().length > 0) {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       onTextSelected({
         text: selection.toString(),
-        // 注意：這裡的座標是相對於 Viewport 的，需要呼叫者處理
-        top: rect.top,
-        left: rect.left + rect.width / 2
+        clientRect: rect
       });
     } else {
       clearSelection();
@@ -273,11 +534,12 @@ const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) =
   return (
     <div className="h-full">
       <div 
-        className="max-w-5xl mx-auto py-16 px-12 space-y-10 pb-48 select-text bg-white shadow-xl min-h-[1400px] my-8 rounded-sm"
+        className={`max-w-5xl mx-auto py-16 px-12 space-y-10 pb-48 bg-white shadow-xl min-h-[1400px] my-8 rounded-sm
+           ${currentTool === 'select' ? 'select-none' : 'select-text'} 
+        `}
         onMouseUp={handleMouseUp}
-        style={{ cursor: currentTool === 'pan' ? 'grab' : currentTool === 'select' ? 'text' : 'auto' }}
+        style={{ cursor: currentTool === 'pan' ? 'grab' : currentTool === 'select' ? 'crosshair' : 'auto' }}
       >
-        {/* Header */}
         <div className="flex justify-between items-end border-b-2 border-slate-100 pb-6">
           <div>
              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Biology / Chapter 2</div>
@@ -293,7 +555,6 @@ const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) =
           </div>
         </div>
 
-        {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-7 space-y-8">
              <div className="bg-slate-50 border-l-4 border-indigo-400 p-6 rounded-r-xl">
@@ -329,7 +590,6 @@ const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) =
           </div>
 
           <div className="lg:col-span-5 flex flex-col gap-6 sticky top-24">
-             {/* 3D Model Placeholder */}
              <div className="relative group cursor-pointer transition-all hover:translate-y-1">
                 <div className="aspect-square bg-slate-900 rounded-3xl shadow-2xl overflow-hidden relative border-4 border-slate-100">
                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black"></div>
@@ -340,27 +600,9 @@ const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) =
                           <span className="absolute text-orange-200 font-bold text-lg tracking-widest drop-shadow-md">3D MODEL</span>
                       </div>
                    </div>
-                   <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-between items-end">
-                      <div className="flex gap-2">
-                         <button className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur text-white"><Box className="w-4 h-4" /></button>
-                         <button className="p-2 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur text-white"><Zap className="w-4 h-4" /></button>
-                      </div>
-                      <span className="text-[10px] text-white/60 font-mono border border-white/20 px-2 py-1 rounded">Interactive View</span>
-                   </div>
                 </div>
                 <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
                    點擊拆解構造
-                </div>
-             </div>
-             
-             {/* Gallery */}
-             <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                <h5 className="font-bold text-gray-500 text-xs uppercase mb-3 flex items-center gap-2">
-                  <Image className="w-3 h-3" /> 相關圖庫
-                </h5>
-                <div className="grid grid-cols-2 gap-2">
-                   <div className="aspect-video bg-gray-100 rounded-lg bg-[url('https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center hover:opacity-90 cursor-pointer"></div>
-                   <div className="aspect-video bg-gray-100 rounded-lg bg-[url('https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&q=80&w=300')] bg-cover bg-center hover:opacity-90 cursor-pointer"></div>
                 </div>
              </div>
           </div>
@@ -370,14 +612,39 @@ const TextbookContent = ({ currentTool, onTextSelected, clearSelection }: any) =
   );
 };
 
-// --- 6. AI 魔法選單 (Context Menu) ---
+// --- 7. ✅ 修正：具備邊緣偵測的 AI 魔法選單 ---
 const SelectionFloatingMenu = ({ position, onTrigger, onExplain, onMindMap }: any) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [adjustedPos, setAdjustedPos] = useState(position);
+
+  // 當 position 改變時，重新計算位置，防止選單超出螢幕
+  useLayoutEffect(() => {
+      if (position && menuRef.current) {
+          const rect = menuRef.current.getBoundingClientRect();
+          let newTop = position.top + 10;
+          let newLeft = position.left;
+
+          // 1. 右側邊界檢查：如果選單超出右邊，就靠左顯示
+          if (newLeft + rect.width > window.innerWidth) {
+              newLeft = window.innerWidth - rect.width - 20; 
+          }
+
+          // 2. 底部邊界檢查：如果選單超出下面，就改顯示在上方
+          if (newTop + rect.height > window.innerHeight) {
+              newTop = position.top - rect.height - 20;
+          }
+
+          setAdjustedPos({ top: newTop, left: newLeft });
+      }
+  }, [position]);
+
   if (!position) return null;
 
   return (
     <div 
-      className="fixed z-[70] flex flex-col gap-2 animate-in zoom-in-95 duration-200 origin-top-left" 
-      style={{ top: position.top + 20, left: position.left }}
+      ref={menuRef}
+      className="fixed z-[70] flex flex-col gap-2 animate-in zoom-in-95 duration-200" 
+      style={{ top: adjustedPos?.top, left: adjustedPos?.left }}
     >
       <div className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-2xl shadow-2xl shadow-indigo-500/20 p-1.5 flex flex-col gap-1 min-w-[180px]">
         <div className="px-2 py-1.5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
@@ -387,8 +654,6 @@ const SelectionFloatingMenu = ({ position, onTrigger, onExplain, onMindMap }: an
         <MenuButton icon={<FileQuestion className="w-4 h-4 text-purple-500" />} label="生成測驗題" onClick={onTrigger} />
         <MenuButton icon={<BookOpen className="w-4 h-4 text-blue-500" />} label="重點摘要卡" onClick={onExplain} subLabel="Summarize"/>
         <MenuButton icon={<Share2 className="w-4 h-4 text-emerald-500" />} label="生成關聯圖" onClick={onMindMap} subLabel="Mind Map"/>
-        <div className="h-px bg-gray-100 my-0.5"></div>
-        <MenuButton icon={<Search className="w-4 h-4 text-gray-400" />} label="搜尋相關圖庫" onClick={() => {}} />
       </div>
     </div>
   );
@@ -405,167 +670,178 @@ const MenuButton = ({ icon, label, onClick, subLabel }: any) => (
     </button>
 );
 
-// --- 7. AI 便利貼 (Sticky Note) ---
-const AIMemoCard = ({ data, onDelete }: any) => {
+// --- 8. AI 便利貼 ---
+const AIMemoCard = ({ data, onDelete, onUpdate, scale }: any) => {
+    const isDragging = useRef(false);
+    const lastPos = useRef({ x: 0, y: 0 });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        isDragging.current = true;
+        lastPos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging.current) return;
+            e.preventDefault();
+            const dx = (e.clientX - lastPos.current.x) / scale;
+            const dy = (e.clientY - lastPos.current.y) / scale;
+            onUpdate(data.id, dx, dy);
+            lastPos.current = { x: e.clientX, y: e.clientY };
+        };
+        const handleMouseUp = () => { isDragging.current = false; };
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [data.id, onUpdate, scale]);
+
     return (
-        <div className="absolute z-10 w-64 bg-yellow-50 rounded-xl shadow-xl border border-yellow-200/60 p-4 animate-in zoom-in duration-300 origin-top-left group cursor-move hover:shadow-2xl hover:scale-105 transition-all" style={{ top: data.y, left: data.x }}>
-            <div className="flex justify-between items-start mb-2">
+        <div 
+            className="absolute z-10 w-64 bg-yellow-50 rounded-xl shadow-xl border border-yellow-200/60 p-4 origin-top-left group cursor-move hover:shadow-2xl hover:scale-105 transition-all animate-in zoom-in duration-300" 
+            style={{ top: data.y, left: data.x }}
+            onMouseDown={handleMouseDown}
+        >
+            <div className="flex justify-between items-start mb-2 pointer-events-none">
                 <div className="flex items-center gap-1.5 text-yellow-700 font-bold text-xs uppercase tracking-wider">
                     <Sparkles className="w-3 h-3" /> AI Summary
                 </div>
-                <button onClick={onDelete} className="text-yellow-400 hover:text-yellow-700 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 h-4" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="pointer-events-auto text-yellow-400 hover:text-yellow-700 opacity-0 group-hover:opacity-100 transition-opacity"><XCircle className="w-4 h-4" /></button>
             </div>
-            <div className="text-sm font-bold text-gray-800 mb-1">{data.keyword}</div>
-            <p className="text-xs text-gray-600 leading-relaxed font-medium">{data.content}</p>
-            <div className="mt-3 flex gap-2">
-                <span className="px-2 py-1 bg-white/50 rounded-md text-[10px] text-yellow-800 font-bold border border-yellow-100">#重點</span>
-                <span className="px-2 py-1 bg-white/50 rounded-md text-[10px] text-yellow-800 font-bold border border-yellow-100">#考題</span>
-            </div>
+            <div className="text-sm font-bold text-gray-800 mb-1 pointer-events-none select-none">{data.keyword}</div>
+            <p className="text-xs text-gray-600 leading-relaxed font-medium pointer-events-none select-none">{data.content}</p>
         </div>
     );
 };
 
-// --- 8. AI 出題視窗 ---
-const QuizPopupContent = ({ selectedText }: { selectedText: string }) => {
+// --- 9. AI 出題側邊欄 (Right Side Panel) ---
+const RightSidePanel = ({ isOpen, onClose, selectedText }: any) => {
   const [step, setStep] = useState(1);
-  useEffect(() => { if (step === 1) setTimeout(() => setStep(2), 1800); }, []);
+  
+  useEffect(() => { 
+      if (isOpen) {
+          setStep(1);
+          const timer = setTimeout(() => setStep(2), 1800); 
+          return () => clearTimeout(timer);
+      }
+  }, [isOpen]);
 
   return (
-    <div className="h-full flex flex-col p-2">
-       {step === 1 ? (
-         <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8">
-            <div className="relative">
-               <div className="absolute inset-0 rounded-full bg-indigo-400/20 animate-ping"></div>
-               <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-200">
-                   <Sparkles className="w-10 h-10 text-white animate-pulse" />
-               </div>
-            </div>
-            <div className="max-w-xs mx-auto">
-               <h3 className="text-xl font-bold text-gray-900 mb-2">AI 正在閱讀並出題...</h3>
-               <p className="text-sm text-gray-500 leading-relaxed">正在分析「<span className="text-indigo-600 font-medium">{selectedText.substring(0, 8)}...</span>」相關的概念與重點。</p>
-            </div>
-         </div>
-       ) : (
-         <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2 text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full text-xs font-bold border border-indigo-100">
-                    <BrainCircuit className="w-3.5 h-3.5" /> <span>AI 推薦題型</span>
+    <div 
+        className={`fixed top-0 right-0 bottom-0 w-96 bg-white/90 backdrop-blur-xl border-l border-gray-200 shadow-2xl z-[55] transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+    >
+       {/* Panel Header */}
+       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+           <div className="flex items-center gap-2 font-bold text-gray-700">
+               <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg"><BrainCircuit size={18} /></div>
+               AI 智慧出題
+           </div>
+           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 text-gray-400 rounded-lg transition-colors"><X size={18}/></button>
+       </div>
+
+       {/* Panel Content */}
+       <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+           {step === 1 ? (
+             <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
+                <div className="relative">
+                   <div className="absolute inset-0 rounded-full bg-indigo-400/20 animate-ping"></div>
+                   <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                       <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                   </div>
                 </div>
-                <div className="flex gap-2">
-                    <button className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"><RefreshCw className="w-4 h-4" /></button>
+                <div>
+                   <h3 className="font-bold text-gray-900 mb-1">AI 分析中...</h3>
+                   <p className="text-xs text-gray-500 max-w-[200px] mx-auto">正在分析「<span className="text-indigo-600">{selectedText.substring(0, 6)}...</span>」相關概念。</p>
                 </div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex-1 overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg font-bold text-gray-900 mb-6 leading-normal">關於<span className="mx-1 border-b-2 border-indigo-200">粒線體</span>的功能，下列敘述何者正確？</h3>
-                <div className="space-y-3">
-                    {["控制細胞遺傳性狀", "進行呼吸作用產生能量 (ATP)", "儲存水分與廢物 (液泡)", "進行光合作用 (葉綠體)"].map((opt, idx) => (
-                        <button key={idx} className={`w-full text-left p-4 rounded-xl font-medium flex items-center gap-4 border transition-all duration-200 group ${idx === 1 ? 'bg-green-50 border-green-500 ring-1 ring-green-500 text-green-800' : 'bg-white border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-slate-600'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${idx === 1 ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-white group-hover:text-indigo-600'}`}>
-                                {String.fromCharCode(65 + idx)}
-                            </div>
-                            <span className="flex-1">{opt}</span>
-                            {idx === 1 && <CheckCircle2 className="w-5 h-5 text-green-600 animate-in zoom-in spin-in-90 duration-300" />}
-                        </button>
-                    ))}
+             </div>
+           ) : (
+             <div className="space-y-6 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                
+                {/* 題目卡片 */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4 ring-1 ring-black/5">
+                    <div className="flex items-start justify-between">
+                        <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Question 1</span>
+                        <div className="flex gap-1">
+                            <button className="text-gray-300 hover:text-indigo-500"><Lightbulb className="w-4 h-4" /></button>
+                        </div>
+                    </div>
+                    
+                    <h3 className="font-bold text-gray-800 leading-relaxed text-sm">關於<span className="mx-1 border-b-2 border-indigo-200">粒線體</span>的功能，下列敘述何者正確？</h3>
+                    
+                    <div className="space-y-2">
+                        {["控制細胞遺傳性狀", "進行呼吸作用產生 ATP", "儲存水分與廢物", "進行光合作用"].map((opt, idx) => (
+                            <button key={idx} className={`w-full text-left p-3 rounded-xl text-xs font-medium flex items-center gap-3 border transition-all duration-200 group ${idx === 1 ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-transparent hover:bg-white hover:border-gray-200 text-slate-600'}`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${idx === 1 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500 group-hover:bg-white group-hover:text-indigo-600'}`}>
+                                    {String.fromCharCode(65 + idx)}
+                                </div>
+                                <span className="flex-1">{opt}</span>
+                                {idx === 1 && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
-            <div className="flex gap-4 pt-6 mt-auto">
-               <button className="flex-[2] py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all">
-                   <Send className="w-5 h-5" /> <span>派送全班測驗</span>
-               </button>
-               <button className="flex-1 py-3.5 bg-white hover:bg-purple-50 text-purple-700 font-bold rounded-xl border border-purple-200 flex items-center justify-center gap-2 transition-colors">
-                   <Gamepad2 className="w-5 h-5" /> <span>Kahoot!</span>
-               </button>
-            </div>
-         </div>
-       )}
+
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4 ring-1 ring-black/5 opacity-60 hover:opacity-100 transition-opacity">
+                    <div className="flex items-start justify-between">
+                        <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Question 2</span>
+                    </div>
+                    <h3 className="font-bold text-gray-800 leading-relaxed text-sm">真核細胞中，哪一個構造擁有雙層膜？</h3>
+                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gray-200 w-1/3"></div>
+                    </div>
+                </div>
+
+             </div>
+           )}
+       </div>
+
+       {/* Panel Footer */}
+       <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+           <button className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+               <Plus className="w-4 h-4" /> 生成更多題目
+           </button>
+       </div>
     </div>
   );
 };
 
-// --- 9. 儀表板 ---
+// --- 10. 儀表板 ---
 const LoiLoDashboardContent = () => {
-    const [isGrading, setIsGrading] = useState(true);
-    const [graded, setGraded] = useState(false);
-    useEffect(() => { setTimeout(() => setGraded(true), 2500); setTimeout(() => setIsGrading(false), 2500); }, []);
     return (
       <div className="h-full flex flex-col bg-slate-50/50">
-        <div className="flex items-center justify-between mb-6 px-1">
-           <div className="flex gap-4">
-              <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-                  <span className="text-xs text-gray-400 font-bold uppercase">提交進度</span>
-                  <span className="text-xl font-black text-slate-800">24<span className="text-gray-400 text-sm ml-1 font-medium">/ 28</span></span>
-              </div>
-              <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-                  <span className="text-xs text-gray-400 font-bold uppercase">平均分數</span>
-                  <span className="text-xl font-black text-green-600">87.5</span>
-              </div>
-           </div>
-           <div className="flex gap-2">
-             <button className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-sm hover:bg-indigo-200 transition-colors">公布解答</button>
-             <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors">鎖定畫面</button>
-           </div>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
-          <div className="grid grid-cols-4 gap-6 pb-12">
+        <div className="grid grid-cols-4 gap-6 p-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden ring-1 ring-gray-100">
-                {(graded || (isGrading && i % 2 === 0)) && ( 
-                    <div className={`absolute top-3 right-3 z-10 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-md animate-in zoom-in duration-300 ${isGrading ? 'bg-indigo-50/90 text-indigo-600 ring-1 ring-indigo-200' : 'bg-green-500 text-white shadow-green-200'}`}>
-                        {isGrading ? (<><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span className="text-xs font-bold">分析中...</span></>) : (<><span className="text-xs font-medium opacity-90">Score</span><span className="text-sm font-extrabold">{85 + i}</span></>)}
-                    </div>
-                )}
                 <div className="aspect-[4/3] bg-slate-50 relative border-b border-gray-100 overflow-hidden">
-                    <div className="absolute inset-4 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center opacity-80 group-hover:scale-105 transition-transform duration-500"><span className="text-3xl opacity-20 filter grayscale">✏️</span></div>
-                    {isGrading && i % 2 === 0 && (<div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]"></div>)}
+                    <div className="absolute inset-4 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center opacity-80"><span className="text-3xl opacity-20 filter grayscale">✏️</span></div>
                 </div>
                 <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-slate-200 border-2 border-white shadow-sm"></div>
                         <div>
                             <div className="font-bold text-gray-800 text-sm leading-tight">Student {i}</div>
-                            <div className="text-[10px] text-gray-400 font-medium">14 號 • 已提交</div>
+                            <div className="text-[10px] text-gray-400 font-medium">已提交</div>
                         </div>
                     </div>
-                    {graded && (<div className="mt-3 p-2.5 bg-green-50/80 border border-green-100 rounded-xl rounded-tl-none text-xs text-green-800 leading-relaxed animate-in fade-in slide-in-from-left-2 shadow-sm"><span className="font-bold mr-1">🤖 AI:</span>觀念正確，但繪圖細節可加強。</div>)}
                 </div>
               </div>
             ))}
-          </div>
         </div>
       </div>
     );
 };
 
-// --- 10. AI 思考特效 ---
-const AIProcessingOverlay = ({ isProcessing }: { isProcessing: boolean }) => {
-  if (!isProcessing) return null;
-  return (
-    <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex items-center justify-center">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center animate-in zoom-in duration-300 border border-indigo-100">
-        <div className="relative w-24 h-24 mb-6">
-           <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
-           <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-           <BrainCircuit className="absolute inset-0 m-auto w-10 h-10 text-indigo-600 animate-pulse" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">AI 正在深度閱讀...</h3>
-        <div className="text-gray-500 text-sm flex flex-col items-center gap-1 font-medium">
-            <span className="animate-pulse delay-75">分析課文語意結構...</span>
-            <span className="animate-pulse delay-150">對照課綱學習重點...</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // --- Helper Components ---
 const ToolButton = ({ icon, label, active, activeColor = "bg-gray-100 text-gray-900", customClass = "", onClick }: any) => (
-  <button onClick={onClick} className={`relative w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${active ? activeColor + ' scale-110' : `text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:scale-105 ${customClass}`}`} title={label}>
+  <button onClick={onClick} className={`relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-200 ${active ? activeColor + ' scale-110 shadow-sm' : `text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:scale-105 ${customClass}`}`} title={label}>
     {icon}
   </button>
 );
 const GridMenuItem = ({ icon, label, color }: any) => (
-  <button className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all ${color}`}><div className="scale-90">{icon}</div><span className="text-xs font-bold text-gray-600">{label}</span></button>
+  <button className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl hover:bg-gray-50 transition-all`}><div className="scale-90">{icon}</div><span className="text-xs font-bold text-gray-600">{label}</span></button>
 );
 const Modal = ({ isOpen, onClose, title, icon, children, fullWidth }: any) => {
   if (!isOpen) return null;
@@ -584,68 +860,159 @@ const Modal = ({ isOpen, onClose, title, icon, children, fullWidth }: any) => {
 
 // --- Main App Component ---
 const App = () => {
-  const [currentTool, setCurrentTool] = useState('select');
-  // 無限畫布狀態 (取代單純的 zoomLevel)
+  const [currentTool, setCurrentTool] = useState('cursor'); // 預設改為一般指標
   const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1 });
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState('');
+  const [selectedText, setSelectedText] = useState('選取範圍內容');
   const [selectionMenuPos, setSelectionMenuPos] = useState<any>(null);
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  
+  const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
 
-  // 繪圖與平移狀態
+  // 繪圖狀態
   const [penColor, setPenColor] = useState('#ef4444');
-  const [penSize, setPenSize] = useState(3);
+  const [penSize, setPenSize] = useState(4);
   const [strokes, setStrokes] = useState<any[]>([]);
   const [currentPoints, setCurrentPoints] = useState<string[]>([]);
+  const [currentPointsRaw, setCurrentPointsRaw] = useState<{x:number, y:number}[]>([]); 
   const [isDrawing, setIsDrawing] = useState(false);
   
+  // 雷射筆狀態
+  const [laserPath, setLaserPath] = useState<{x: number, y: number, timestamp: number}[]>([]);
+
+  const [selectionBox, setSelectionBox] = useState<any>(null); 
+  const selectionStart = useRef<{x: number, y: number} | null>(null);
+
+  // AI 內容狀態
+  const [aiMemos, setAiMemos] = useState<any[]>([]);
+  const [mindMaps, setMindMaps] = useState<any[]>([]);
+
   const [isPanning, setIsPanning] = useState(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
-  // AI 便利貼
-  const [aiMemos, setAiMemos] = useState<any[]>([]);
+  // 雷射筆消失邏輯
+  useEffect(() => {
+    let animationFrameId: number;
+    const decayLaser = () => {
+        const now = Date.now();
+        setLaserPath(prev => {
+            const newPath = prev.filter(p => now - p.timestamp < 500); 
+            return newPath.length !== prev.length ? newPath : prev;
+        });
+        animationFrameId = requestAnimationFrame(decayLaser);
+    };
+    if (laserPath.length > 0) {
+        animationFrameId = requestAnimationFrame(decayLaser);
+    }
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [laserPath.length]);
 
   // AI 觸發邏輯
   const handleAITrigger = () => {
     setSelectionMenuPos(null);
+    setSelectionBox(null); 
     setIsAIProcessing(true);
-    setTimeout(() => { setIsAIProcessing(false); setIsQuizOpen(true); }, 1500);
+    
+    setTimeout(() => { 
+        setIsAIProcessing(false); 
+        setIsQuizPanelOpen(true); 
+        setIsSidebarOpen(true); 
+    }, 2500);
+  };
+
+  const getSpawnPosition = () => {
+      let spawnX = 400;
+      let spawnY = 300;
+
+      if (selectionMenuPos && canvasRef.current) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          spawnX = (selectionMenuPos.left - rect.left) / viewport.scale;
+          spawnY = (selectionMenuPos.top - rect.top) / viewport.scale;
+          spawnX += 20; 
+          spawnY += 20;
+      }
+      
+      return { x: spawnX, y: spawnY };
   };
 
   const handleAIExplain = () => {
-    const currentPos = selectionMenuPos || { top: 300, left: 500 };
+    const pos = getSpawnPosition();
     setSelectionMenuPos(null);
+    setSelectionBox(null);
     setIsAIProcessing(true);
     setTimeout(() => {
         setIsAIProcessing(false);
         const newMemo = {
             id: Date.now(),
-            x: currentPos.left + 250,
-            y: currentPos.top,
-            keyword: selectedText.substring(0, 10) + (selectedText.length > 10 ? '...' : ''),
-            content: "這是 AI 根據上下文生成的重點摘要。粒線體透過呼吸作用產生 ATP，就像電池一樣為細胞提供能量。雙層膜結構增加了反應面積。",
+            x: pos.x,
+            y: pos.y,
+            keyword: "重點分析",
+            content: "AI 已分析您選取的區域：包含粒線體結構圖與相關文字。粒線體是細胞產生能量(ATP)的場所。",
         };
         setAiMemos(prev => [...prev, newMemo]);
-    }, 1200);
+    }, 2000);
+  };
+
+  const handleAIMindMap = () => {
+      const pos = getSpawnPosition();
+      setSelectionMenuPos(null);
+      setSelectionBox(null);
+      setIsAIProcessing(true);
+
+      setTimeout(() => {
+          setIsAIProcessing(false);
+
+          const newMindMap = {
+              id: Date.now(),
+              x: pos.x,
+              y: pos.y,
+              nodes: [
+                  { id: 'root', offsetX: 0, offsetY: 0, label: '核心概念', type: 'root' },
+                  { id: '1', offsetX: 180, offsetY: -60, label: '特徵分析', type: 'child' },
+                  { id: '2', offsetX: 180, offsetY: 60, label: '功能運作', type: 'child' },
+                  { id: '3', offsetX: 340, offsetY: -60, label: '結構組成', type: 'child' },
+                  { id: '4', offsetX: 340, offsetY: 60, label: '能量轉換', type: 'child' },
+              ],
+              edges: [
+                  { source: 'root', target: '1' },
+                  { source: 'root', target: '2' },
+                  { source: '1', target: '3' },
+                  { source: '2', target: '4' },
+              ]
+          };
+
+          setMindMaps(prev => [...prev, newMindMap]);
+
+      }, 1500);
+  };
+
+  const getCanvasCoordinates = (e: React.MouseEvent) => {
+     if (!canvasRef.current) return { x: 0, y: 0 };
+     const rect = canvasRef.current.getBoundingClientRect();
+     return {
+         x: (e.clientX - rect.left) / viewport.scale,
+         y: (e.clientY - rect.top) / viewport.scale
+     };
   };
 
   // --- 畫布事件處理 ---
   
-  // 1. 滾輪縮放
   const handleWheel = (e: React.WheelEvent) => {
-    if (isQuizOpen || isDashboardOpen) return;
-    e.preventDefault();
-    const scaleAmount = -e.deltaY * 0.001;
-    const newScale = Math.min(Math.max(0.5, viewport.scale + scaleAmount), 3);
-    setViewport(prev => ({ ...prev, scale: newScale }));
+    if (isDashboardOpen) return;
+    if (e.ctrlKey || e.metaKey) { 
+        e.preventDefault();
+        const scaleAmount = -e.deltaY * 0.01;
+        const newScale = Math.min(Math.max(0.5, viewport.scale + scaleAmount), 3);
+        setViewport(prev => ({ ...prev, scale: newScale }));
+    }
   };
 
-  // 2. 平移 (Pan) - 作用在容器上
   const handlePanStart = (e: React.MouseEvent) => {
-    if (currentTool === 'pan' || e.button === 1) {
+    if (currentTool === 'pan' || (e.button === 1) || (e.buttons === 4)) {
       setIsPanning(true);
       lastMousePos.current = { x: e.clientX, y: e.clientY };
       e.preventDefault();
@@ -660,44 +1027,160 @@ const App = () => {
   };
   const handlePanEnd = () => setIsPanning(false);
 
-  // 3. 繪圖 (Draw) - 作用在 SVG 層
   const handleDrawStart = (e: React.MouseEvent) => {
-    if (currentTool !== 'pen') return;
-    setIsDrawing(true);
-    const { offsetX, offsetY } = e.nativeEvent;
-    setCurrentPoints([`M ${offsetX} ${offsetY}`]);
-  };
-  const handleDrawMove = (e: React.MouseEvent) => {
-    if (!isDrawing || currentTool !== 'pen') return;
-    const { offsetX, offsetY } = e.nativeEvent;
-    setCurrentPoints(prev => [...prev, `L ${offsetX} ${offsetY}`]);
-  };
-  const handleDrawEnd = () => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    if (currentPoints.length > 0) {
-      setStrokes(prev => [...prev, { path: currentPoints.join(' '), color: penColor, size: penSize }]);
-      setCurrentPoints([]);
+    const { x, y } = getCanvasCoordinates(e);
+    
+    // 繪圖工具
+    if (currentTool === 'pen' || currentTool === 'highlighter') {
+        setIsDrawing(true);
+        setCurrentPoints([`M ${x} ${y}`]);
+        setCurrentPointsRaw([{x, y}]);
+    }
+    
+    // ✅ 範圍框選邏輯 (Scan)
+    if (currentTool === 'select') {
+        setIsDrawing(true); 
+        selectionStart.current = { x, y };
+        setSelectionBox({ x, y, width: 0, height: 0 }); 
+        setSelectionMenuPos(null); 
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans text-gray-900 overflow-hidden flex flex-col">
-      <TopNavigation isSidebarOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-      <AIProcessingOverlay isProcessing={isAIProcessing} />
+  const handleDrawMove = (e: React.MouseEvent) => {
+    const { x, y } = getCanvasCoordinates(e);
 
-      {/* --- 無限畫布容器 --- */}
+    // 雷射筆邏輯
+    if (currentTool === 'laser') {
+        if (e.buttons === 1) { 
+            setLaserPath(prev => [...prev, { x, y, timestamp: Date.now() }]);
+        }
+        return;
+    }
+
+    if (currentTool === 'eraser' && e.buttons === 1) {
+        const eraseRadius = 20 / viewport.scale;
+        setStrokes(prevStrokes => prevStrokes.filter(stroke => {
+            if (!stroke.rawPoints) return true;
+            const isHit = stroke.rawPoints.some((p: any) => distanceBetween(p, {x, y}) < eraseRadius);
+            return !isHit;
+        }));
+        return;
+    }
+
+    if (!isDrawing) return;
+
+    // ✅ 更新選取框
+    if (currentTool === 'select' && selectionStart.current) {
+        const start = selectionStart.current;
+        const width = x - start.x;
+        const height = y - start.y;
+        
+        setSelectionBox({
+            x: width > 0 ? start.x : x,
+            y: height > 0 ? start.y : y,
+            width: Math.abs(width),
+            height: Math.abs(height)
+        });
+        return;
+    }
+
+    // 繪圖
+    if (currentTool !== 'pen' && currentTool !== 'highlighter') return;
+    setCurrentPoints(prev => [...prev, `L ${x} ${y}`]);
+    setCurrentPointsRaw(prev => [...prev, {x, y}]);
+  };
+
+  const handleDrawEnd = (e: React.MouseEvent) => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+
+    // 完成選取
+    if (currentTool === 'select' && selectionBox) {
+        if (selectionBox.width < 5 || selectionBox.height < 5) {
+            setSelectionBox(null);
+            setSelectionMenuPos(null);
+        } else {
+            if (canvasRef.current) {
+                const rect = canvasRef.current.getBoundingClientRect();
+                const menuX = (selectionBox.x + selectionBox.width) * viewport.scale + rect.left;
+                const menuY = (selectionBox.y + selectionBox.height) * viewport.scale + rect.top;
+                
+                setSelectionMenuPos({ 
+                    top: menuY, 
+                    left: menuX 
+                });
+                setSelectedText("已選取區域內容");
+            }
+        }
+        selectionStart.current = null;
+        return;
+    }
+
+    // 完成繪圖
+    if ((currentTool === 'pen' || currentTool === 'highlighter')) {
+      if (currentPoints.length > 0) {
+        let finalPath = currentPoints.join(' ');
+        let rawPoints = currentPointsRaw;
+
+        if (currentTool === 'highlighter' && currentPointsRaw.length > 5) {
+            const ys = currentPointsRaw.map(p => p.y);
+            const xs = currentPointsRaw.map(p => p.x);
+            const maxDiffY = Math.max(...ys) - Math.min(...ys);
+            const width = Math.max(...xs) - Math.min(...xs);
+
+            if (width > 20 && maxDiffY < 15) {
+                const avgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+                const minX = Math.min(...xs);
+                const maxX = Math.max(...xs);
+                finalPath = `M ${minX} ${avgY} L ${maxX} ${avgY}`;
+                rawPoints = [{x: minX, y: avgY}, {x: maxX, y: avgY}];
+            }
+        }
+
+        setStrokes(prev => [...prev, { 
+            path: finalPath, 
+            color: penColor, 
+            size: penSize,
+            tool: currentTool, 
+            rawPoints: rawPoints 
+        }]);
+        setCurrentPoints([]);
+        setCurrentPointsRaw([]);
+      }
+    }
+  };
+
+  const handleObjUpdate = (id: number, dx: number, dy: number, type: 'memo' | 'mindmap') => {
+      if (type === 'memo') {
+          setAiMemos(prev => prev.map(m => m.id === id ? { ...m, x: m.x + dx, y: m.y + dy } : m));
+      } else {
+          setMindMaps(prev => prev.map(m => m.id === id ? { ...m, x: m.x + dx, y: m.y + dy } : m));
+      }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-gray-900 overflow-hidden flex flex-col select-none">
+      <TopNavigation isSidebarOpen={isSidebarOpen || isQuizPanelOpen} toggleSidebar={() => {setIsSidebarOpen(!isSidebarOpen); setIsQuizPanelOpen(!isQuizPanelOpen)}} />
+      
       <div 
-        className="flex-1 relative overflow-hidden bg-slate-100 cursor-auto"
-        onMouseDown={handlePanStart}
-        onMouseMove={handlePanMove}
-        onMouseUp={handlePanEnd}
-        onMouseLeave={handlePanEnd}
+        ref={containerRef}
+        className="flex-1 relative overflow-hidden bg-slate-100 touch-none"
+        onMouseDown={(e) => { handlePanStart(e); handleDrawStart(e); }}
+        onMouseMove={(e) => { handlePanMove(e); handleDrawMove(e); }}
+        onMouseUp={(e) => { handlePanEnd(e); handleDrawEnd(e); }} 
+        onMouseLeave={(e) => { handlePanEnd(); handleDrawEnd(e); }}
         onWheel={handleWheel}
         style={{ 
-          cursor: currentTool === 'pan' || isPanning ? (isPanning ? 'grabbing' : 'grab') : 'default',
+          cursor: (() => {
+              if (currentTool === 'pan' || isPanning) return isPanning ? 'grabbing' : 'grab';
+              if (currentTool === 'cursor') return 'default'; // 一般選取
+              if (currentTool === 'select') return 'crosshair'; // 範圍框選
+              if (currentTool === 'laser') return 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewport=\'0 0 24 24\' style=\'fill:none;stroke:white;stroke-width:2px;\'><circle cx=\'12\' cy=\'12\' r=\'6\' fill=\'%23ef4444\'/></svg>") 12 12, auto';
+              return 'crosshair';
+          })(),
           backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
-          backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`
+          backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`,
+          backgroundPosition: `${viewport.x}px ${viewport.y}px`
         }}
       >
         
@@ -711,71 +1194,107 @@ const App = () => {
             setPenColor={setPenColor}
             penSize={penSize}
             setPenSize={setPenSize}
+            isAIProcessing={isAIProcessing}
         />
 
         {/* 變形層 (Transform Layer) */}
         <div 
-            className="w-full min-h-full flex justify-center py-20 origin-top-left transition-transform duration-75 ease-out will-change-transform"
+            className="w-full min-h-full flex justify-center py-20 origin-top-left will-change-transform"
             style={{ 
               transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
               pointerEvents: isPanning ? 'none' : 'auto' 
             }}
         >
-            <div className="relative">
+            <div className="relative" ref={canvasRef}>
                  {/* 課本層 */}
                  <TextbookContent 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
-                       if (currentTool === 'pen' || currentTool === 'pan') return;
-                       setSelectionMenuPos({ top: data.top, left: data.left });
+                       // 只有在 Cursor (一般選取) 模式下才允許文字選取
+                       if (currentTool !== 'cursor' || !canvasRef.current) return;
+                       
+                       const rect = canvasRef.current.getBoundingClientRect();
+                       const textRect = data.clientRect;
+                       const canvasX = (textRect.left - rect.left) / viewport.scale;
+                       const canvasY = (textRect.top - rect.top) / viewport.scale;
+                       const canvasW = textRect.width / viewport.scale;
+                       const canvasH = textRect.height / viewport.scale;
+
+                       setSelectionBox({
+                           x: canvasX,
+                           y: canvasY,
+                           width: canvasW,
+                           height: canvasH
+                       });
+
+                       setSelectionMenuPos({ 
+                           top: textRect.top + textRect.height, 
+                           left: textRect.left + textRect.width/2 
+                       });
                        setSelectedText(data.text);
                     }}
-                    clearSelection={() => setSelectionMenuPos(null)}
+                    clearSelection={() => {}}
                  />
                  
-                 {/* 手寫塗鴉層 (Overlay) */}
+                 {/* 繪圖與互動層 (Overlay) */}
                  <DrawingLayer 
-                    active={currentTool === 'pen'}
+                    active={currentTool === 'pen' || currentTool === 'highlighter' || currentTool === 'eraser' || currentTool === 'laser' || currentTool === 'select'}
                     strokes={strokes}
                     currentPath={currentPoints.join(' ')}
-                    onDrawStart={handleDrawStart}
-                    onDrawMove={handleDrawMove}
-                    onDrawEnd={handleDrawEnd}
+                    onDrawStart={()=>{}} 
+                    onDrawMove={()=>{}}
+                    onDrawEnd={()=>{}}
                     penColor={penColor}
                     penSize={penSize}
+                    currentTool={currentTool}
+                    selectionBox={selectionBox} 
+                    laserPath={laserPath}
                  />
 
-                 {/* AI 便利貼層 (Overlay) */}
+                 {/* 可拖曳心智圖層 */}
+                 {mindMaps.map(map => (
+                     <DraggableMindMap 
+                        key={map.id} 
+                        data={map} 
+                        scale={viewport.scale}
+                        onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, dx, dy, 'mindmap')}
+                        onDelete={(id: number) => setMindMaps(prev => prev.filter(m => m.id !== id))}
+                     />
+                 ))}
+
+                 {/* 支援拖曳的 AI 便利貼層 */}
                  {aiMemos.map(memo => (
                     <AIMemoCard 
                         key={memo.id} 
                         data={memo} 
+                        scale={viewport.scale}
+                        onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, dx, dy, 'memo')}
                         onDelete={() => setAiMemos(prev => prev.filter(m => m.id !== memo.id))} 
                     />
                  ))}
             </div>
         </div>
 
-        {/* Debug / Info */}
+        {/* Debug Info */}
         <div className="absolute bottom-4 left-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-mono text-gray-500 shadow-sm border border-gray-200 pointer-events-none select-none">
-            {Math.round(viewport.scale * 100)}%
+            {Math.round(viewport.scale * 100)}% | {currentTool}
         </div>
       </div>
-
-      {isSidebarOpen && (
-         <div className="absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-gray-200 shadow-xl z-40 animate-in slide-in-from-right duration-300 flex flex-col">
-            <div className="p-4 border-b border-gray-100 font-bold text-gray-700 flex items-center gap-2"><BrainCircuit className="w-5 h-5 text-indigo-600"/> AI 助教</div>
-            <div className="p-4 flex-1 overflow-auto"><div className="bg-indigo-50 p-3 rounded-xl text-sm text-indigo-800 leading-relaxed">👋 老師好，我已經準備好協助您進行關於「細胞構造」的課程了。</div></div>
-         </div>
-      )}
 
       <SelectionFloatingMenu 
         position={selectionMenuPos} 
         onTrigger={handleAITrigger}
         onExplain={handleAIExplain}
-        onMindMap={() => { alert("Demo: 這裡將生成心智圖節點"); setSelectionMenuPos(null); }}
+        onMindMap={handleAIMindMap} 
       />
-      <Modal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} title="AI 智慧出題" icon={<FileQuestion className="w-5 h-5" />}><QuizPopupContent selectedText={selectedText} /></Modal>
+      
+      {/* 側邊欄 (AI 面板) */}
+      <RightSidePanel 
+        isOpen={isQuizPanelOpen} 
+        onClose={() => {setIsQuizPanelOpen(false); setIsSidebarOpen(false)}} 
+        selectedText={selectedText}
+      />
+      
       <Modal isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} title="隨堂練習儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth><LoiLoDashboardContent /></Modal>
     </div>
   );
