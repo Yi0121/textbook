@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, FileQuestion } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { LayoutDashboard, FileQuestion, Sparkles, Move, MousePointer2 } from 'lucide-react';
 
-// --- 1. Components Imports ---
+// --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
 import FixedToolbar from './components/tools/FixedToolbar';
 import RightSidePanel from './components/layout/RightSidePanel';
@@ -16,225 +16,187 @@ import AIMemoCard from './components/canvas/AIMemoCard';
 import DraggableText from './components/canvas/DraggableText';
 import DraggableShape from './components/canvas/DraggableShape';
 import DashboardContent from './components/features/Dashboard';
+import FullScreenTimer from './components/ui/FullScreenTimer'; // [新增] 全螢幕計時器
 
 // Utils
 import { distanceBetween } from './utils/geometry';
 
+// [新增] 四格導航區域定義
+const NAV_ZONES = [
+    { id: 1, label: '左上', x: 0, y: 0, color: 'bg-blue-500' },
+    { id: 2, label: '右上', x: -1100, y: 0, color: 'bg-green-500' }, 
+    { id: 3, label: '左下', x: 0, y: -1500, color: 'bg-orange-500' }, 
+    { id: 4, label: '右下', x: -1100, y: -1500, color: 'bg-purple-500' },
+];
+
+// 使用 React.memo 優化底層教科書渲染
+const MemoizedTextbook = React.memo(TextbookContent);
+
 const App = () => {
-  // --- 2. State Management ---
-  
-  // UI State
+  // --- 1. UI & Demo State ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-  const [isAIProcessing, setIsAIProcessing] = useState(false);
   
-  // Tool State
+  // AI 狀態
+  const [aiState, setAiState] = useState<'idle' | 'thinking' | 'done'>('idle');
+  
+  // [新增] 教室工具狀態
+  const [isTimerOpen, setIsTimerOpen] = useState(false);
+  const [isGridMode, setIsGridMode] = useState(false); // 控制四格導航選單
+
+  // --- 2. Tool & Canvas State ---
   const [currentTool, setCurrentTool] = useState('cursor');
   const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1 });
   const [penColor, setPenColor] = useState('#ef4444');
   const [penSize, setPenSize] = useState(4);
 
-  // Data State (Canvas Objects)
+  // --- 3. Objects State ---
   const [strokes, setStrokes] = useState<any[]>([]);
   const [mindMaps, setMindMaps] = useState<any[]>([]);
   const [aiMemos, setAiMemos] = useState<any[]>([]);
   const [textObjects, setTextObjects] = useState<any[]>([]);
   const [shapes, setShapes] = useState<any[]>([]);
   
-  // Interaction State
-  const [currentPoints, setCurrentPoints] = useState<string[]>([]);
-  const [currentPointsRaw, setCurrentPointsRaw] = useState<{x:number, y:number}[]>([]); 
+  // --- 4. Interaction Refs & State ---
   const [laserPath, setLaserPath] = useState<{x: number, y: number, timestamp: number}[]>([]);
   const [selectionBox, setSelectionBox] = useState<any>(null); 
   const [selectionMenuPos, setSelectionMenuPos] = useState<any>(null);
-  const [selectedText, setSelectedText] = useState('選取範圍內容');
-  
-  // Refs
+  const [selectedText, setSelectedText] = useState('粒線體結構與功能');
+
+  // Refs (效能優化關鍵)
   const isDrawing = useRef(false);
   const isPanning = useRef(false);
+  const isSpacePressed = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const selectionStart = useRef<{x: number, y: number} | null>(null);
   
+  // [新增] 繪圖優化 Refs (取代 State)
+  const previewPathRef = useRef<SVGPathElement>(null); 
+  const currentPointsRef = useRef<string[]>([]);       
+  const rawPointsRef = useRef<{x:number, y:number}[]>([]); 
+
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // --- 3. Effects ---
+  // --- 5. Handlers ---
 
-  // E1. 雷射筆消失動畫 (500ms)
-  useEffect(() => {
-    let animationFrameId: number;
-    const decayLaser = () => {
-        const now = Date.now();
-        setLaserPath(prev => {
-            const newPath = prev.filter(p => now - p.timestamp < 500); 
-            return newPath.length !== prev.length ? newPath : prev;
-        });
-        animationFrameId = requestAnimationFrame(decayLaser);
-    };
-    if (laserPath.length > 0) {
-        animationFrameId = requestAnimationFrame(decayLaser);
-    }
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [laserPath.length]);
-
-  // E2. 縮放控制
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const onWheel = (e: WheelEvent) => {
-        if (isDashboardOpen) return;
-        if (e.ctrlKey || e.metaKey) { 
-            e.preventDefault(); 
-            const scaleAmount = -e.deltaY * 0.002; 
-            setViewport(prev => {
-                const newScale = Math.min(Math.max(0.5, prev.scale + scaleAmount), 3);
-                return { ...prev, scale: newScale };
-            });
-        }
-    };
-    container.addEventListener('wheel', onWheel, { passive: false });
-    return () => container.removeEventListener('wheel', onWheel);
-  }, [isDashboardOpen]);
-
-  // --- 4. Logic & Handlers ---
-
-  const getCanvasCoordinates = (e: React.MouseEvent) => {
+  const getCanvasCoordinates = useCallback((e: React.MouseEvent | MouseEvent) => {
      if (!canvasRef.current) return { x: 0, y: 0 };
      const rect = canvasRef.current.getBoundingClientRect();
      return {
          x: (e.clientX - rect.left) / viewport.scale,
          y: (e.clientY - rect.top) / viewport.scale
      };
-  };
+  }, [viewport.scale]);
 
-  const handleObjUpdate = (id: number, data: any, type: 'memo' | 'mindmap' | 'text' | 'shape') => {
-      if (type === 'memo') {
-          setAiMemos(prev => prev.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
-      } else if (type === 'mindmap') {
-          setMindMaps(prev => prev.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
-      } else if (type === 'text') {
-          setTextObjects(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
-      } else if (type === 'shape') {
-          setShapes(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
-      }
-  };
+  const handleObjUpdate = useCallback((id: number, data: any, type: 'memo' | 'mindmap' | 'text' | 'shape') => {
+      if (type === 'memo') setAiMemos(p => p.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
+      else if (type === 'mindmap') setMindMaps(p => p.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
+      else if (type === 'text') setTextObjects(p => p.map(t => t.id === id ? { ...t, ...data } : t));
+      else if (type === 'shape') setShapes(p => p.map(s => s.id === id ? { ...s, ...data } : s));
+  }, []);
 
-  const handleAddShape = (type: 'rect' | 'circle' | 'triangle') => {
-      const centerX = (window.innerWidth / 2 - viewport.x) / viewport.scale;
-      const centerY = (window.innerHeight / 2 - viewport.y) / viewport.scale;
-      
-      const newShape = {
-          id: Date.now(),
-          type: type,
-          x: centerX - 50,
-          y: centerY - 50,
-          color: '#10b981',
-          size: 100
-      };
-      setShapes(prev => [...prev, newShape]);
-      setCurrentTool('cursor');
-  };
-
-  // --- AI Actions ---
-  const handleAITrigger = () => {
-    setSelectionMenuPos(null);
-    setSelectionBox(null); 
-    setIsAIProcessing(true);
-    setTimeout(() => { 
-        setIsAIProcessing(false); 
-        setIsQuizPanelOpen(true); 
-        setIsSidebarOpen(true); 
-    }, 2500);
+  // --- AI Demo Logic ---
+  const simulateAIProcess = (callback: () => void) => {
+      setSelectionMenuPos(null);
+      setSelectionBox(null);
+      setAiState('thinking');
+      setTimeout(() => {
+          setAiState('idle');
+          callback();
+      }, 1500);
   };
 
   const getSpawnPosition = () => {
-      let spawnX = 400; let spawnY = 300;
       if (selectionMenuPos && canvasRef.current) {
           const rect = canvasRef.current.getBoundingClientRect();
-          spawnX = (selectionMenuPos.left - rect.left) / viewport.scale + 20;
-          spawnY = (selectionMenuPos.top - rect.top) / viewport.scale + 20;
+          return { 
+              x: (selectionMenuPos.left - rect.left) / viewport.scale + 50,
+              y: (selectionMenuPos.top - rect.top) / viewport.scale 
+          };
       }
-      return { x: spawnX, y: spawnY };
+      // Fallback: 根據 viewport 中心生成，確保可見
+      return { 
+          x: (-viewport.x + window.innerWidth/2) / viewport.scale, 
+          y: (-viewport.y + window.innerHeight/2) / viewport.scale 
+      };
+  };
+
+  const handleAITrigger = () => {
+    simulateAIProcess(() => {
+        setIsQuizPanelOpen(true); 
+        setIsSidebarOpen(true);
+    });
   };
 
   const handleAIExplain = () => {
     const pos = getSpawnPosition();
-    setSelectionMenuPos(null);
-    setSelectionBox(null);
-    setIsAIProcessing(true);
-    setTimeout(() => {
-        setIsAIProcessing(false);
+    simulateAIProcess(() => {
         setAiMemos(prev => [...prev, {
             id: Date.now(), x: pos.x, y: pos.y,
-            keyword: "重點分析", content: "AI 已分析您選取的區域：包含粒線體結構圖與相關文字。粒線體是細胞產生能量(ATP)的場所。"
+            keyword: "重點摘要", 
+            content: "AI 分析：這段文字描述了粒線體(Mitochondria)作為細胞能量工廠的角色。關鍵字：ATP合成、雙層膜結構。"
         }]);
-    }, 2000);
+    });
   };
 
   const handleAIMindMap = () => {
       const pos = getSpawnPosition();
-      setSelectionMenuPos(null);
-      setSelectionBox(null);
-      setIsAIProcessing(true);
-      setTimeout(() => {
-          setIsAIProcessing(false);
+      simulateAIProcess(() => {
           setMindMaps(prev => [...prev, {
               id: Date.now(), x: pos.x, y: pos.y,
               nodes: [
-                  { id: 'root', offsetX: 0, offsetY: 0, label: '核心概念', type: 'root' },
-                  { id: '1', offsetX: 180, offsetY: -60, label: '特徵分析', type: 'child' },
-                  { id: '2', offsetX: 180, offsetY: 60, label: '功能運作', type: 'child' },
-                  { id: '3', offsetX: 340, offsetY: -60, label: '結構組成', type: 'child' },
-                  { id: '4', offsetX: 340, offsetY: 60, label: '能量轉換', type: 'child' }
+                  { id: 'root', offsetX: 0, offsetY: 0, label: '粒線體', type: 'root' },
+                  { id: '1', offsetX: 150, offsetY: -50, label: '結構', type: 'child' },
+                  { id: '2', offsetX: 150, offsetY: 50, label: '功能', type: 'child' },
+                  { id: '3', offsetX: 300, offsetY: -80, label: '外膜', type: 'sub' },
+                  { id: '4', offsetX: 300, offsetY: -20, label: '內膜', type: 'sub' },
+                  { id: '5', offsetX: 300, offsetY: 50, label: '產生ATP', type: 'sub' }
               ],
               edges: [
                   { source: 'root', target: '1' }, { source: 'root', target: '2' },
-                  { source: '1', target: '3' }, { source: '2', target: '4' }
+                  { source: '1', target: '3' }, { source: '1', target: '4' }, { source: '2', target: '5' }
               ]
           }]);
-      }, 1500);
+      });
   };
 
-  // --- Interactions ---
-  const handlePanStart = (e: React.MouseEvent) => {
-    if (currentTool === 'pan' || (e.button === 1) || (e.buttons === 4)) {
+  // --- Grid Navigation Logic ---
+  const handleGridJump = (targetX: number, targetY: number) => {
+      setViewport({ x: targetX, y: targetY, scale: 1.0 });
+      setIsGridMode(false);
+  };
+
+  // --- Interaction Event Handlers ---
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // 平移模式檢查
+    if (currentTool === 'pan' || e.button === 1 || isSpacePressed.current) {
       isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
-      e.preventDefault();
+      return;
     }
-  };
-  const handlePanMove = (e: React.MouseEvent) => {
-    if (!isPanning.current) return;
-    const deltaX = e.clientX - lastMousePos.current.x;
-    const deltaY = e.clientY - lastMousePos.current.y;
-    setViewport(prev => ({ ...prev, x: prev.x + deltaX, y: prev.y + deltaY }));
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  };
-  const handlePanEnd = () => { isPanning.current = false; };
 
-  const handleDrawStart = (e: React.MouseEvent) => {
     const { x, y } = getCanvasCoordinates(e);
-    
+
     if (currentTool === 'text') {
-        const newText = {
-            id: Date.now(),
-            x: x,
-            y: y,
-            text: "",
-            color: penColor,
-            fontSize: 24
-        };
-        setTextObjects(prev => [...prev, newText]);
-        setCurrentTool('cursor'); 
+        setTextObjects(prev => [...prev, { id: Date.now(), x, y, text: "輸入筆記...", color: penColor, fontSize: 24 }]);
+        setCurrentTool('cursor');
         return;
     }
 
-    if (currentTool === 'pen' || currentTool === 'highlighter') {
+    // [修改] 繪圖工具：使用 Ref 與 Direct DOM Manipulation
+    if (['pen', 'highlighter'].includes(currentTool)) {
         isDrawing.current = true;
-        setCurrentPoints([`M ${x} ${y}`]);
-        setCurrentPointsRaw([{x, y}]);
+        
+        const startPoint = `M ${x} ${y}`;
+        currentPointsRef.current = [startPoint];
+        rawPointsRef.current = [{x, y}];
+        
+        if (previewPathRef.current) {
+            previewPathRef.current.setAttribute('d', startPoint);
+        }
     }
     
     if (currentTool === 'select') {
@@ -245,19 +207,27 @@ const App = () => {
     }
   };
 
-  const handleDrawMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning.current) {
+        const deltaX = e.clientX - lastMousePos.current.x;
+        const deltaY = e.clientY - lastMousePos.current.y;
+        setViewport(prev => ({ ...prev, x: prev.x + deltaX, y: prev.y + deltaY }));
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        return;
+    }
+
     const { x, y } = getCanvasCoordinates(e);
 
-    if (currentTool === 'laser') {
-        if (e.buttons === 1) setLaserPath(prev => [...prev, { x, y, timestamp: Date.now() }]);
+    if (currentTool === 'laser' && e.buttons === 1) {
+        setLaserPath(prev => [...prev, { x, y, timestamp: Date.now() }]);
         return;
     }
 
     if (currentTool === 'eraser' && e.buttons === 1) {
         const eraseRadius = 20 / viewport.scale;
-        setStrokes(prevStrokes => prevStrokes.filter(stroke => {
-            if (!stroke.rawPoints) return true;
-            return !stroke.rawPoints.some((p: any) => distanceBetween(p, {x, y}) < eraseRadius);
+        setStrokes(prev => prev.filter(s => {
+             if (!s.rawPoints) return true;
+             return !s.rawPoints.some((p:any) => distanceBetween(p, {x, y}) < eraseRadius);
         }));
         return;
     }
@@ -277,169 +247,279 @@ const App = () => {
         return;
     }
 
-    if (currentTool !== 'pen' && currentTool !== 'highlighter') return;
-    setCurrentPoints(prev => [...prev, `L ${x} ${y}`]);
-    setCurrentPointsRaw(prev => [...prev, {x, y}]);
+    // [修改] 繪圖工具：更新 Ref 與 DOM
+    if (['pen', 'highlighter'].includes(currentTool)) {
+        const pointCommand = `L ${x} ${y}`;
+        
+        currentPointsRef.current.push(pointCommand);
+        rawPointsRef.current.push({x, y});
+
+        if (previewPathRef.current) {
+            const d = currentPointsRef.current.join(' '); 
+            previewPathRef.current.setAttribute('d', d);
+        }
+    }
   };
 
-  const handleDrawEnd = () => {
+  const handleMouseUp = () => {
+    isPanning.current = false;
+    
     if (!isDrawing.current) return;
     isDrawing.current = false;
 
     if (currentTool === 'select' && selectionBox) {
-        if (selectionBox.width < 5 || selectionBox.height < 5) {
-            setSelectionBox(null);
-            setSelectionMenuPos(null);
-        } else {
+        if (selectionBox.width > 10 && selectionBox.height > 10) {
             if (canvasRef.current) {
                 const rect = canvasRef.current.getBoundingClientRect();
-                const menuX = (selectionBox.x + selectionBox.width) * viewport.scale + rect.left;
-                const menuY = (selectionBox.y + selectionBox.height) * viewport.scale + rect.top;
-                setSelectionMenuPos({ top: menuY, left: menuX });
-                setSelectedText("已選取區域內容");
+                setSelectionMenuPos({ 
+                    top: (selectionBox.y + selectionBox.height) * viewport.scale + rect.top, 
+                    left: (selectionBox.x + selectionBox.width/2) * viewport.scale + rect.left 
+                });
             }
+        } else {
+            setSelectionBox(null);
         }
         selectionStart.current = null;
         return;
     }
 
-    if ((currentTool === 'pen' || currentTool === 'highlighter') && currentPoints.length > 0) {
-        let finalPath = currentPoints.join(' ');
-        let rawPoints = currentPointsRaw;
+    // [修改] 繪圖結束：將 Ref 轉存 State
+    if (['pen', 'highlighter'].includes(currentTool) && currentPointsRef.current.length > 0) {
+        const finalPath = currentPointsRef.current.join(' ');
+        const rawPoints = [...rawPointsRef.current];
 
-        if (currentTool === 'highlighter' && currentPointsRaw.length > 5) {
-            const ys = currentPointsRaw.map(p => p.y);
-            const xs = currentPointsRaw.map(p => p.x);
-            const maxDiffY = Math.max(...ys) - Math.min(...ys);
-            const width = Math.max(...xs) - Math.min(...xs);
+        setStrokes(prev => [...prev, { 
+            id: Date.now(),
+            path: finalPath, 
+            color: penColor, 
+            size: penSize, 
+            tool: currentTool, 
+            rawPoints 
+        }]);
 
-            if (width > 20 && maxDiffY < 15) {
-                const avgY = ys.reduce((a, b) => a + b, 0) / ys.length;
-                const minX = Math.min(...xs);
-                const maxX = Math.max(...xs);
-                finalPath = `M ${minX} ${avgY} L ${maxX} ${avgY}`;
-                
-                const interpolatedPoints = [];
-                const steps = Math.ceil(width / 5);
-                for (let i = 0; i <= steps; i++) {
-                    interpolatedPoints.push({ x: minX + (maxX - minX) * (i / steps), y: avgY });
-                }
-                rawPoints = interpolatedPoints;
-            }
+        currentPointsRef.current = [];
+        rawPointsRef.current = [];
+        if (previewPathRef.current) {
+            previewPathRef.current.setAttribute('d', '');
         }
-
-        setStrokes(prev => [...prev, { path: finalPath, color: penColor, size: penSize, tool: currentTool, rawPoints }]);
-        setCurrentPoints([]);
-        setCurrentPointsRaw([]);
     }
   };
 
+  // --- Effects ---
+
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.code === 'Space') isSpacePressed.current = true;
+          if (e.key === 'Escape') {
+              setSelectionBox(null);
+              setSelectionMenuPos(null);
+              setCurrentTool('cursor');
+              setIsGridMode(false); // ESC 關閉導航
+          }
+      };
+      const handleKeyUp = (e: KeyboardEvent) => {
+          if (e.code === 'Space') isSpacePressed.current = false;
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      return () => {
+          window.removeEventListener('keydown', handleKeyDown);
+          window.removeEventListener('keyup', handleKeyUp);
+      };
+  }, []);
+
+  useEffect(() => {
+    if (laserPath.length === 0) return;
+    let frameId: number;
+    const animate = () => {
+        const now = Date.now();
+        setLaserPath(prev => {
+            const next = prev.filter(p => now - p.timestamp < 500);
+            return next.length === prev.length ? prev : next;
+        });
+        frameId = requestAnimationFrame(animate);
+    };
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [laserPath]);
+
+  useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+      const onWheel = (e: WheelEvent) => {
+          if (e.ctrlKey || e.metaKey) {
+              e.preventDefault();
+              const scaleAmount = -e.deltaY * 0.002;
+              setViewport(prev => ({ ...prev, scale: Math.min(Math.max(0.5, prev.scale + scaleAmount), 3) }));
+          }
+      };
+      container.addEventListener('wheel', onWheel, { passive: false });
+      return () => container.removeEventListener('wheel', onWheel);
+  }, []);
+
+
+  // --- Render ---
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-gray-900 overflow-hidden flex flex-col select-none">
-      <TopNavigation isSidebarOpen={isSidebarOpen || isQuizPanelOpen} toggleSidebar={() => {setIsSidebarOpen(!isSidebarOpen); setIsQuizPanelOpen(!isQuizPanelOpen)}} />
+    <div className="h-screen w-screen bg-slate-50 overflow-hidden flex flex-col select-none overscroll-none">
       
+      <TopNavigation 
+        isSidebarOpen={isSidebarOpen || isQuizPanelOpen} 
+        toggleSidebar={() => {setIsSidebarOpen(!isSidebarOpen); setIsQuizPanelOpen(!isQuizPanelOpen)}} 
+      />
+      
+      {aiState === 'thinking' && (
+          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-white/20 backdrop-blur-sm transition-all duration-300">
+              <div className="bg-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-indigo-100 animate-pulse">
+                  <Sparkles className="w-6 h-6 text-indigo-600 animate-spin-slow" />
+                  <span className="text-indigo-800 font-medium">AI 正在分析教材內容與筆跡...</span>
+              </div>
+          </div>
+      )}
+
+      {/* 主要畫布 */}
       <div 
         ref={containerRef}
         className="flex-1 relative overflow-hidden bg-slate-100 touch-none"
-        onMouseDown={(e) => { handlePanStart(e); handleDrawStart(e); }}
-        onMouseMove={(e) => { handlePanMove(e); handleDrawMove(e); }}
-        onMouseUp={(e) => { handlePanEnd(); handleDrawEnd(); }} 
-        onMouseLeave={(e) => { handlePanEnd(); handleDrawEnd(); }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp} 
+        onMouseLeave={handleMouseUp}
         style={{ 
-          cursor: (() => {
-              if (currentTool === 'pan' || isPanning.current) return isPanning.current ? 'grabbing' : 'grab';
-              if (currentTool === 'cursor') return 'default';
-              if (currentTool === 'text') return 'text';
-              if (currentTool === 'select') return 'crosshair';
-              if (currentTool === 'laser') return 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewport=\'0 0 24 24\' style=\'fill:none;stroke:white;stroke-width:2px;\'><circle cx=\'12\' cy=\'12\' r=\'6\' fill=\'%23ef4444\'/></svg>") 12 12, auto';
-              return 'crosshair';
-          })(),
-          backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
-          backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`,
-          backgroundPosition: `${viewport.x}px ${viewport.y}px`
+          cursor: isPanning.current || isSpacePressed.current ? 'grabbing' : currentTool === 'cursor' ? 'default' : 'crosshair'
         }}
       >
-        <FixedToolbar 
-            currentTool={currentTool} setCurrentTool={setCurrentTool}
-            onOpenDashboard={() => setIsDashboardOpen(true)}
-            zoomLevel={viewport.scale} setZoomLevel={(newScale: any) => setViewport(prev => ({...prev, scale: typeof newScale === 'function' ? newScale(prev.scale) : newScale}))}
-            penColor={penColor} setPenColor={setPenColor}
-            penSize={penSize} setPenSize={setPenSize}
-            isAIProcessing={isAIProcessing}
-            onAddShape={handleAddShape}
+        <div 
+            className="absolute inset-0 pointer-events-none opacity-50"
+            style={{
+                backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+                backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`,
+                backgroundPosition: `${viewport.x}px ${viewport.y}px`
+            }}
         />
 
         <div 
-            className="w-full min-h-full flex justify-center py-20 origin-top-left will-change-transform"
+            className="w-full h-full flex justify-center py-20 origin-top-left will-change-transform"
             style={{ 
               transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
-              pointerEvents: isPanning.current ? 'none' : 'auto' 
             }}
         >
-            <div className="relative" ref={canvasRef}>
-                 <TextbookContent 
+            <div className="relative shadow-xl bg-white" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
+                 
+                 {/* 教科書層 */}
+                 <MemoizedTextbook 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
-                       if (currentTool === 'cursor') return; 
-                       if (!canvasRef.current) return;
-
-                       const rect = canvasRef.current.getBoundingClientRect();
-                       const textRect = data.clientRect;
+                       if (currentTool !== 'cursor') return; 
+                       const rect = data.clientRect;
+                       if(!canvasRef.current) return;
+                       const baseRect = canvasRef.current.getBoundingClientRect();
+                       
                        setSelectionBox({
-                           x: (textRect.left - rect.left) / viewport.scale,
-                           y: (textRect.top - rect.top) / viewport.scale,
-                           width: textRect.width / viewport.scale,
-                           height: textRect.height / viewport.scale
+                           x: (rect.left - baseRect.left) / viewport.scale,
+                           y: (rect.top - baseRect.top) / viewport.scale,
+                           width: rect.width / viewport.scale,
+                           height: rect.height / viewport.scale
                        });
-                       setSelectionMenuPos({ top: textRect.top + textRect.height, left: textRect.left + textRect.width/2 });
+                       setSelectionMenuPos({ 
+                           top: rect.bottom, 
+                           left: rect.left + rect.width/2 
+                       });
                        setSelectedText(data.text);
                     }}
                     clearSelection={() => {}}
                  />
                  
+                 {/* 繪圖層 (傳入 Ref) */}
                  <DrawingLayer 
-                    active={['pen', 'highlighter', 'eraser', 'laser', 'select'].includes(currentTool)}
+                    ref={previewPathRef}
+                    active={true}
                     strokes={strokes}
-                    currentPath={currentPoints}
-                    onDrawStart={()=>{}} onDrawMove={()=>{}} onDrawEnd={()=>{}}
-                    penColor={penColor} penSize={penSize} currentTool={currentTool}
-                    selectionBox={selectionBox} laserPath={laserPath}
+                    penColor={penColor} 
+                    penSize={penSize} 
+                    currentTool={currentTool}
+                    selectionBox={selectionBox} 
+                    laserPath={laserPath}
                  />
                  
-                 {mindMaps.map(map => (
-                     <DraggableMindMap 
-                        key={map.id} data={map} scale={viewport.scale} 
-                        onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
-                        onDelete={(id: number) => setMindMaps(prev => prev.filter(m => m.id !== id))}
-                     />
-                 ))}
-                 
-                 {aiMemos.map(memo => (
-                    <AIMemoCard 
-                        key={memo.id} data={memo} scale={viewport.scale} 
-                        onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'memo')} 
-                        onDelete={() => setAiMemos(prev => prev.filter(m => m.id !== memo.id))} 
-                    />
-                 ))}
+                 {/* 物件層 (鎖定穿透邏輯) */}
+                 <div className={`absolute inset-0 z-10 ${['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) ? 'pointer-events-none' : ''}`}>
+                    {mindMaps.map(map => (
+                        <DraggableMindMap 
+                            key={map.id} data={map} scale={viewport.scale} 
+                            onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
+                            onDelete={(id: number) => setMindMaps(p => p.filter(m => m.id !== id))}
+                        />
+                    ))}
+                    
+                    {aiMemos.map(memo => (
+                        <AIMemoCard 
+                            key={memo.id} data={memo} scale={viewport.scale} 
+                            onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'memo')} 
+                            onDelete={() => setAiMemos(p => p.filter(m => m.id !== memo.id))} 
+                        />
+                    ))}
 
-                 {textObjects.map(text => (
-                    <DraggableText
-                        key={text.id} data={text} scale={viewport.scale}
-                        onUpdate={(id: number, newData: any) => handleObjUpdate(id, newData, 'text')}
-                        onDelete={(id: number) => setTextObjects(prev => prev.filter(t => t.id !== id))}
-                    />
-                 ))}
+                    {textObjects.map(text => (
+                        <DraggableText
+                            key={text.id} data={text} scale={viewport.scale}
+                            onUpdate={(id: number, d: any) => handleObjUpdate(id, d, 'text')}
+                            onDelete={(id: number) => setTextObjects(p => p.filter(t => t.id !== id))}
+                        />
+                    ))}
 
-                 {shapes.map(shape => (
-                    <DraggableShape 
-                        key={shape.id} data={shape} scale={viewport.scale}
-                        onUpdate={(id: number, newData: any) => handleObjUpdate(id, newData, 'shape')}
-                        onDelete={(id: number) => setShapes(prev => prev.filter(s => s.id !== id))}
-                    />
-                 ))}
+                    {shapes.map(shape => (
+                        <DraggableShape 
+                            key={shape.id} data={shape} scale={viewport.scale}
+                            onUpdate={(id: number, d: any) => handleObjUpdate(id, d, 'shape')}
+                            onDelete={(id: number) => setShapes(p => p.filter(s => s.id !== id))}
+                        />
+                    ))}
+                 </div>
             </div>
         </div>
+
+        <FixedToolbar 
+            currentTool={currentTool} setCurrentTool={setCurrentTool}
+            onOpenDashboard={() => setIsDashboardOpen(true)}
+            zoomLevel={viewport.scale} 
+            setZoomLevel={(s: any) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
+            penColor={penColor} setPenColor={setPenColor}
+            penSize={penSize} setPenSize={setPenSize}
+            isAIProcessing={aiState === 'thinking'}
+            onAddShape={(type: any) => {
+                 const centerX = (-viewport.x + window.innerWidth / 2) / viewport.scale;
+                 const centerY = (-viewport.y + window.innerHeight / 2) / viewport.scale;
+                 setShapes(prev => [...prev, { id: Date.now(), type, x: centerX, y: centerY, color: '#10b981', size: 100 }]);
+                 setCurrentTool('cursor');
+            }}
+            // [新增] 傳遞控制函數
+            onToggleTimer={() => setIsTimerOpen(true)}
+            onToggleGrid={() => setIsGridMode(true)}
+        />
       </div>
+
+      {/* [新增] 四格導航 Overlay */}
+      {isGridMode && (
+          <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-200">
+             <div className="absolute inset-0" onClick={() => setIsGridMode(false)} />
+             <div className="relative w-[90vw] h-[80vh] bg-white/10 p-8 rounded-3xl border border-white/20 shadow-2xl grid grid-cols-2 grid-rows-2 gap-6">
+                 <button onClick={() => setIsGridMode(false)} className="absolute -top-12 right-0 text-white hover:text-indigo-300 font-bold flex items-center gap-2">關閉 <div className="p-1 border rounded-md text-xs">ESC</div></button>
+                 {NAV_ZONES.map((zone) => (
+                     <button key={zone.id} onClick={() => handleGridJump(zone.x, zone.y)} className="relative group overflow-hidden rounded-2xl border-4 border-white/10 hover:border-white transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-slate-800 flex items-center justify-center">
+                        <div className={`absolute inset-0 opacity-20 ${zone.color} group-hover:opacity-30 transition-opacity`} />
+                        <div className="absolute top-6 left-8 text-6xl font-black text-white/10 group-hover:text-white/30 transition-colors">0{zone.id}</div>
+                        <div className="z-10 text-center">
+                            <div className="text-3xl font-bold text-white mb-2">{zone.label}</div>
+                            <div className="text-white/60 text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all">點擊快速跳轉</div>
+                        </div>
+                     </button>
+                 ))}
+             </div>
+          </div>
+      )}
+
+      {/* [新增] 全螢幕計時器 */}
+      <FullScreenTimer isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} />
 
       <SelectionFloatingMenu 
           position={selectionMenuPos} 
@@ -451,7 +531,7 @@ const App = () => {
       
       <RightSidePanel isOpen={isQuizPanelOpen} onClose={() => {setIsQuizPanelOpen(false); setIsSidebarOpen(false)}} selectedText={selectedText} />
       
-      <Modal isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} title="隨堂練習儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth>
+      <Modal isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} title="學習數據儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth>
           <DashboardContent />
       </Modal>
     </div>

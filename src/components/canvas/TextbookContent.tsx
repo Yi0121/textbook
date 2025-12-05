@@ -1,5 +1,4 @@
 import React from 'react';
-import { BookOpen } from 'lucide-react';
 
 interface TextbookContentProps {
   currentTool: string;
@@ -8,8 +7,15 @@ interface TextbookContentProps {
 }
 
 const TextbookContent: React.FC<TextbookContentProps> = ({ currentTool, onTextSelected, clearSelection }) => {
+  
+  // 定義哪些工具屬於「繪圖類」，這些工具使用時不應觸發文字選取
+  const isDrawingTool = ['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool);
+
   const handleMouseUp = () => {
-    // 範圍選取模式下，不處理預設的文字選取
+    // 如果是繪圖工具，直接忽略，避免干擾繪圖結束的判定
+    if (isDrawingTool) return;
+
+    // 範圍選取模式下，不處理預設的文字選取 (由 App.tsx 的 SelectionBox 處理)
     if (currentTool === 'select') return;
 
     // 一般指標模式下，允許選取文字
@@ -29,65 +35,47 @@ const TextbookContent: React.FC<TextbookContentProps> = ({ currentTool, onTextSe
   return (
     <div className="h-full">
       <div 
-        className={`max-w-5xl mx-auto py-16 px-12 space-y-10 pb-48 bg-white shadow-xl min-h-[1400px] my-8 rounded-sm
-           ${currentTool === 'select' ? 'select-none' : 'select-text'} 
+        className={`
+           max-w-5xl mx-auto py-16 px-12 space-y-10 pb-48 bg-white shadow-xl min-h-[1400px] my-8 rounded-sm transition-colors duration-300
+           ${/* 關鍵修改：如果是繪圖工具，關閉指針事件 (pointer-events-none)，讓滑鼠事件穿透 */ ''}
+           ${isDrawingTool ? 'pointer-events-none select-none' : ''}
+           ${currentTool === 'select' ? 'cursor-crosshair select-none' : ''}
+           ${currentTool === 'cursor' ? 'cursor-text select-text' : ''}
         `}
         onMouseUp={handleMouseUp}
-        style={{ cursor: currentTool === 'pan' ? 'grab' : currentTool === 'select' ? 'crosshair' : 'auto' }}
       >
-        {/* Header */}
-        <div className="flex justify-between items-end border-b-2 border-slate-100 pb-6">
-          <div>
-             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Biology / Chapter 2</div>
-             <h1 className="text-6xl font-black text-slate-800 tracking-tight leading-tight">
-               2-1 <span className="text-indigo-600">細胞的構造</span>
-               <br />與能量轉換
-             </h1>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-             <div className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100 flex items-center gap-1">
-                <BookOpen className="w-3 h-3" /> 數位教材 V.2.4
-             </div>
-          </div>
+        {/* 這裡是大標題與裝飾，保持不變 */}
+        <div className="border-b-4 border-slate-800 pb-6 mb-8 flex items-end justify-between">
+            <div>
+               <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight mb-2">細胞生物學概論</h1>
+               <p className="text-xl text-slate-500 font-medium">Chapter 3: The Mitochondria</p>
+            </div>
+            <div className="text-slate-400 font-mono text-sm">P. 42</div>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          <div className="lg:col-span-7 space-y-8">
-             <div className="bg-slate-50 border-l-4 border-indigo-400 p-6 rounded-r-xl">
-               <p className="text-xl text-slate-700 leading-relaxed font-serif italic">
-                 「細胞就像一個微型的繁忙城市，而<span className="font-bold text-slate-900">胞器</span>就是城市中各司其職的工廠與部門。」
-               </p>
-             </div>
-
-             <div className="prose prose-xl prose-indigo text-slate-600 leading-loose text-justify font-serif">
-               <p>
-                 在真核細胞中，<span className="font-bold text-indigo-700 bg-indigo-50 px-1 rounded border-b border-indigo-200 hover:bg-indigo-100 transition-colors">粒線體 (Mitochondria)</span> 扮演著至關重要的角色。它不僅僅是細胞的能量工廠，更是真核生物演化過程中的關鍵證據。
-               </p>
-               <p className="mt-8">
-                 粒線體的主要功能是進行<strong className="text-slate-900">呼吸作用 (Respiration)</strong>。透過氧化分解葡萄糖，將化學能轉換為細胞可以直接利用的能量貨幣——
-                 <span className="inline-block bg-yellow-200 text-yellow-900 px-2 py-0.5 mx-1 rounded-md font-bold cursor-pointer hover:scale-110 hover:shadow-md transition-all border border-yellow-300 transform -rotate-1" title="點擊選取以生成考題！">
-                   ATP (三磷酸腺苷)
-                 </span>。
-               </p>
-               <p className="mt-8">
-                 值得注意的是，粒線體擁有雙層膜結構。外膜平滑，內膜則向內摺疊形成<span className="font-bold text-slate-800 border-b-2 border-dotted border-slate-400">嵴 (Cristae)</span>，這種特殊的構造大幅增加了內膜的表面積，讓更多與呼吸作用相關的酵素附著其上。
-               </p>
+        {/* 模擬課文內容 */}
+        <div className="grid grid-cols-12 gap-8 text-lg leading-relaxed text-slate-700">
+             <div className="col-span-7 space-y-6">
+                <p>
+                  <span className="font-bold text-slate-900">粒線體 (Mitochondria)</span> 是真核細胞中最重要的胞器之一，
+                  常被稱為細胞的「發電廠」。其主要功能是透過有氧呼吸產生 <span className="bg-yellow-100 px-1 border-b-2 border-yellow-300">三磷酸腺苷 (ATP)</span>，
+                  作為細胞活動的能量來源。
+                </p>
+                <p>
+                  粒線體擁有獨特的<span className="text-indigo-600 font-bold">雙層膜結構</span>。外膜平滑，內膜則向內摺疊形成
+                  <span className="italic font-serif text-slate-900"> 嵴 (Cristae)</span>，這種結構大幅增加了內膜的表面積，
+                  從而提高了電子傳遞鏈的效率。
+                </p>
              </div>
              
-             <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 flex gap-4 items-start mt-8">
-                <div className="bg-white p-2 rounded-full shadow-sm text-2xl">💡</div>
-                <div>
-                  <h4 className="font-bold text-emerald-800 mb-1">冷知識：母系遺傳</h4>
-                  <p className="text-sm text-emerald-700 leading-relaxed">
-                    你身體裡的粒線體 DNA 幾乎完全來自你的母親！這是因為精子的粒線體通常位於尾部，在受精過程中不會進入卵子。
-                  </p>
-                </div>
-             </div>
-          </div>
-
-          <div className="lg:col-span-5 flex flex-col gap-6 sticky top-24">
-             <div className="relative group cursor-pointer transition-all hover:translate-y-1">
+             {/* 右側 3D 模型示意圖區域 */}
+             <div className="col-span-5 relative">
+                <div className="relative group transition-all hover:translate-y-1">
+                {/* 注意：這邊移除了 cursor-pointer，並加上 pointer-events-auto 
+                    這是為了讓即使在繪圖模式下(父層 pointer-events-none)，
+                    如果未來真的有按鈕需要點，可以透過 pointer-events-auto 強制開啟交互。
+                    但在這個 Demo 中，我們希望繪圖時完全忽略圖片，所以保持父層的繼承即可。
+                */}
                 <div className="aspect-square bg-slate-900 rounded-3xl shadow-2xl overflow-hidden relative border-4 border-slate-100">
                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black"></div>
                    <div className="absolute inset-0 flex items-center justify-center">
@@ -98,11 +86,20 @@ const TextbookContent: React.FC<TextbookContentProps> = ({ currentTool, onTextSe
                       </div>
                    </div>
                 </div>
-                <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-bounce">
-                   點擊拆解構造
+                </div>
+                <div className="mt-4 text-sm text-slate-500 text-center italic">
+                    圖 3-1: 粒線體結構立體示意圖
                 </div>
              </div>
-          </div>
+
+             <div className="col-span-12 mt-6 p-6 bg-indigo-50 rounded-xl border border-indigo-100">
+                 <h3 className="text-indigo-900 font-bold text-lg mb-2">重點摘要</h3>
+                 <ul className="list-disc list-inside space-y-1 text-indigo-800">
+                     <li>粒線體是細胞能量工廠，產生 ATP。</li>
+                     <li>具有雙層膜結構，內膜摺疊形成嵴。</li>
+                     <li>擁有自己的 DNA (mtDNA) 和核糖體。</li>
+                 </ul>
+             </div>
         </div>
       </div>
     </div>

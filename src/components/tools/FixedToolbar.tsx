@@ -3,21 +3,8 @@ import {
   MousePointer2, Hand, ZoomIn, PenTool, Eraser, Zap, 
   Timer, Box, LayoutDashboard, ChevronRight, Minus, Plus, 
   X, Dices, Users, StickyNote, Scan, Highlighter, Loader2,
-  Type, Square, Circle, Triangle
+  Type, Grid2X2 
 } from 'lucide-react';
-
-import FloatingTimer from './FloatingTimer'; 
-
-// ... ToolButton & GridMenuItem 保持不變 ...
-const ToolButton = ({ icon, label, active, activeColor = "bg-gray-100 text-gray-900", customClass = "", onClick }: any) => (
-  <button onClick={onClick} className={`relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-200 ${active ? activeColor + ' scale-110 shadow-sm' : `text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:scale-105 ${customClass}`}`} title={label}>
-    {icon}
-  </button>
-);
-
-const GridMenuItem = ({ icon, label, color }: any) => (
-  <button className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl hover:bg-gray-50 transition-all`}><div className="scale-90">{icon}</div><span className="text-xs font-bold text-gray-600">{label}</span></button>
-);
 
 interface FixedToolbarProps {
   currentTool: string;
@@ -31,23 +18,32 @@ interface FixedToolbarProps {
   setPenSize: (size: number) => void;
   isAIProcessing: boolean;
   onAddShape: (type: 'rect' | 'circle' | 'triangle') => void;
+  onToggleTimer: () => void;
+  onToggleGrid: () => void;
 }
+
+const ToolButton = ({ icon, label, active, activeColor = "bg-gray-100 text-gray-900", customClass = "", onClick }: any) => (
+  <button onClick={onClick} className={`relative w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-200 ${active ? activeColor + ' scale-110 shadow-sm' : `text-gray-400 hover:bg-gray-100 hover:text-gray-600 hover:scale-105 ${customClass}`}`} title={label}>
+    {icon}
+  </button>
+);
+
+const GridMenuItem = ({ icon, label, color }: any) => (
+  <button className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl hover:bg-gray-50 transition-all`}><div className="scale-90">{icon}</div><span className="text-xs font-bold text-gray-600">{label}</span></button>
+);
 
 const FixedToolbar: React.FC<FixedToolbarProps> = ({ 
   currentTool, setCurrentTool, onOpenDashboard,
   zoomLevel, setZoomLevel,
   penColor, setPenColor, penSize, setPenSize,
-  isAIProcessing, onAddShape
+  isAIProcessing,
+  onToggleTimer, onToggleGrid
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showBoxMenu, setShowBoxMenu] = useState(false);
-  const [showTimer, setShowTimer] = useState(false);
-  // ✅ 新增 'text' 到子面板判斷
-  const [subPanel, setSubPanel] = useState<'pen' | 'highlighter' | 'text' | 'zoom' | 'shape' | null>(null);
-
+  const [subPanel, setSubPanel] = useState<'pen' | 'highlighter' | 'text' | 'zoom' | null>(null);
 
   useEffect(() => {
-    // 當選這三個工具時自動展開
     if (['pen', 'highlighter', 'text'].includes(currentTool)) {
         if (!isExpanded) setIsExpanded(true);
     }
@@ -62,9 +58,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
   };
 
   return (
-    <>
-    {showTimer && <FloatingTimer onClose={() => setShowTimer(false)} />}
-
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
       
       {isAIProcessing && (
@@ -80,7 +73,7 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
         transition-all duration-300 ease-out origin-bottom
         ${(subPanel || showBoxMenu) && isExpanded ? 'opacity-100 translate-y-0 py-2 px-3 scale-100' : 'h-0 overflow-hidden opacity-0 translate-y-4 scale-95'}
       `}>
-          {/* 畫筆 / 螢光筆 / 文字 的顏色設定共用這個面板 */}
+          {/* 顏色調整面板 */}
           {(subPanel === 'pen' || subPanel === 'highlighter' || subPanel === 'text') && (
               <div className="flex items-center justify-between gap-3" onMouseDown={e => e.stopPropagation()}>
                   <div className="flex gap-1.5">
@@ -97,7 +90,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                     }
                   </div>
                   
-                  {/* 文字工具不需要粗細條，只需要顏色 (或者未來加字號控制) */}
                   {subPanel !== 'text' && (
                     <>
                         <div className="w-px h-4 bg-gray-300"></div>
@@ -112,25 +104,7 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
               </div>
           )}
 
-          {/* ✅ 形狀選單 */}
-          {subPanel === 'shape' && (
-             <div className="flex items-center justify-center gap-6 py-1">
-                  <button onClick={() => onAddShape('rect')} className="p-2 hover:bg-indigo-50 rounded-xl text-indigo-600 flex flex-col items-center gap-1 group">
-                      <Square className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold">方形</span>
-                  </button>
-                  <button onClick={() => onAddShape('circle')} className="p-2 hover:bg-indigo-50 rounded-xl text-indigo-600 flex flex-col items-center gap-1 group">
-                      <Circle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold">圓形</span>
-                  </button>
-                  <button onClick={() => onAddShape('triangle')} className="p-2 hover:bg-indigo-50 rounded-xl text-indigo-600 flex flex-col items-center gap-1 group">
-                      <Triangle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                      <span className="text-[10px] font-bold">三角形</span>
-                  </button>
-              </div>
-          )}
-
-
+          {/* 縮放面板 */}
           {subPanel === 'zoom' && (
              <div className="flex items-center justify-center gap-4">
                 <button onClick={() => setZoomLevel((prev:number) => Math.max(0.5, prev - 0.1))} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-600 active:scale-95"><Minus className="w-4 h-4" /></button>
@@ -138,6 +112,8 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                 <button onClick={() => setZoomLevel((prev:number) => Math.min(3, prev + 0.1))} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-600 active:scale-95"><Plus className="w-4 h-4" /></button>
              </div>
           )}
+          
+          {/* 百寶箱選單 */}
           {showBoxMenu && (
              <div className="grid grid-cols-4 gap-1">
                 <GridMenuItem icon={<Dices className="text-purple-500 w-5 h-5" />} label="抽籤" />
@@ -152,7 +128,7 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
       <div className={`
         relative bg-white/90 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgba(0,0,0,0.12)] 
         transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full ring-1 ring-black/5 flex items-center justify-center
-        ${isExpanded ? 'px-2 py-2 min-w-[620px]' : 'w-14 h-14 cursor-pointer hover:scale-110 active:scale-95'}
+        ${isExpanded ? 'px-2 py-2 min-w-[580px]' : 'w-14 h-14 cursor-pointer hover:scale-110 active:scale-95'}
       `}
         onClick={() => !isExpanded && toggleExpand()}
       >
@@ -180,14 +156,11 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                  {currentTool === 'highlighter' && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full border border-black/10" style={{backgroundColor: penColor}}></div>}
             </div>
 
-            {/* ✅ 新增：插入文字工具 */}
             <div className="relative group">
                 <ToolButton icon={<Type className="w-5 h-5" />} label="插入文字" active={currentTool === 'text'} activeColor="bg-slate-800 text-white shadow-lg" 
                   onClick={() => {setCurrentTool('text'); setPenColor('#000000'); setSubPanel(subPanel === 'text' ? null : 'text'); setShowBoxMenu(false);}} 
                 />
             </div>
-
-            <ToolButton icon={<Square className="w-5 h-5" />} label="插入形狀" active={subPanel === 'shape'} activeColor="bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" onClick={() => {setSubPanel(subPanel === 'shape' ? null : 'shape'); setShowBoxMenu(false);}} />
 
             <ToolButton icon={<Eraser className="w-5 h-5" />} label="橡皮擦" active={currentTool === 'eraser'} activeColor="bg-rose-50 text-rose-600" onClick={() => {setCurrentTool('eraser'); setSubPanel(null)}} />
             
@@ -195,8 +168,24 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
             
             <div className="w-px h-6 bg-gray-200 mx-1"></div>
             
-            <ToolButton icon={<Timer className="w-5 h-5" />} label="計時" active={showTimer} activeColor="bg-orange-100 text-orange-600" onClick={() => setShowTimer(!showTimer)} />
+            <ToolButton 
+              icon={<Grid2X2 className="w-5 h-5" />} 
+              label="四格導航" 
+              active={false}
+              activeColor="bg-indigo-50 text-indigo-700" 
+              onClick={onToggleGrid} 
+            />
+
+            <ToolButton 
+              icon={<Timer className="w-5 h-5" />} 
+              label="全螢幕計時" 
+              active={false} 
+              activeColor="bg-orange-100 text-orange-600" 
+              onClick={onToggleTimer} 
+            />
+
             <ToolButton icon={<Box className="w-5 h-5" />} label="百寶箱" active={showBoxMenu} activeColor="bg-indigo-50 text-indigo-700" onClick={() => {setShowBoxMenu(!showBoxMenu); setSubPanel(null)}} />
+            
             <ToolButton icon={<LayoutDashboard className="w-5 h-5" />} label="儀表板" onClick={onOpenDashboard} />
 
             <div className="w-px h-6 bg-gray-200 mx-1"></div>
@@ -205,7 +194,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
          </div>
       </div>
     </div>
-    </>
   );
 };
 
