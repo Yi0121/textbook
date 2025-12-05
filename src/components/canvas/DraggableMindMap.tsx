@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { BrainCircuit, Trash2 } from 'lucide-react';
 
-// 注意：這裡假設你已經有 src/types/index.ts，如果沒有，請把 any 換回具體型別
 interface DraggableMindMapProps {
   data: any; 
   onDelete: (id: number) => void;
