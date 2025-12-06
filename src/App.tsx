@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { LayoutDashboard, FileQuestion, Sparkles, Move, MousePointer2 } from 'lucide-react';
+import { LayoutDashboard, FileQuestion, Sparkles, Move, MousePointer2, X } from 'lucide-react';
 
 // --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -14,7 +14,6 @@ import DrawingLayer from './components/canvas/DrawingLayer';
 import DraggableMindMap from './components/canvas/DraggableMindMap';
 import AIMemoCard from './components/canvas/AIMemoCard';
 import DraggableText from './components/canvas/DraggableText';
-import DraggableShape from './components/canvas/DraggableShape';
 import DashboardContent from './components/features/Dashboard';
 import FullScreenTimer from './components/ui/FullScreenTimer'; // [新增] 全螢幕計時器
 
@@ -56,7 +55,7 @@ const App = () => {
   const [mindMaps, setMindMaps] = useState<any[]>([]);
   const [aiMemos, setAiMemos] = useState<any[]>([]);
   const [textObjects, setTextObjects] = useState<any[]>([]);
-  const [shapes, setShapes] = useState<any[]>([]);
+
   
   // --- 4. Interaction Refs & State ---
   const [laserPath, setLaserPath] = useState<{x: number, y: number, timestamp: number}[]>([]);
@@ -90,11 +89,10 @@ const App = () => {
      };
   }, [viewport.scale]);
 
-  const handleObjUpdate = useCallback((id: number, data: any, type: 'memo' | 'mindmap' | 'text' | 'shape') => {
+  const handleObjUpdate = useCallback((id: number, data: any, type: 'memo' | 'mindmap' | 'text') => {
       if (type === 'memo') setAiMemos(p => p.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
       else if (type === 'mindmap') setMindMaps(p => p.map(m => m.id === id ? { ...m, x: m.x + data.dx, y: m.y + data.dy } : m));
       else if (type === 'text') setTextObjects(p => p.map(t => t.id === id ? { ...t, ...data } : t));
-      else if (type === 'shape') setShapes(p => p.map(s => s.id === id ? { ...s, ...data } : s));
   }, []);
 
   // --- AI Demo Logic ---
@@ -403,7 +401,7 @@ const App = () => {
               transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
             }}
         >
-            <div className="relative shadow-xl bg-white" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
+            <div className="relative bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
                  
                  {/* 教科書層 */}
                  <MemoizedTextbook 
@@ -466,14 +464,6 @@ const App = () => {
                             onDelete={(id: number) => setTextObjects(p => p.filter(t => t.id !== id))}
                         />
                     ))}
-
-                    {shapes.map(shape => (
-                        <DraggableShape 
-                            key={shape.id} data={shape} scale={viewport.scale}
-                            onUpdate={(id: number, d: any) => handleObjUpdate(id, d, 'shape')}
-                            onDelete={(id: number) => setShapes(p => p.filter(s => s.id !== id))}
-                        />
-                    ))}
                  </div>
             </div>
         </div>
@@ -486,37 +476,62 @@ const App = () => {
             penColor={penColor} setPenColor={setPenColor}
             penSize={penSize} setPenSize={setPenSize}
             isAIProcessing={aiState === 'thinking'}
-            onAddShape={(type: any) => {
-                 const centerX = (-viewport.x + window.innerWidth / 2) / viewport.scale;
-                 const centerY = (-viewport.y + window.innerHeight / 2) / viewport.scale;
-                 setShapes(prev => [...prev, { id: Date.now(), type, x: centerX, y: centerY, color: '#10b981', size: 100 }]);
-                 setCurrentTool('cursor');
-            }}
             // [新增] 傳遞控制函數
             onToggleTimer={() => setIsTimerOpen(true)}
             onToggleGrid={() => setIsGridMode(true)}
         />
       </div>
 
-      {/* [新增] 四格導航 Overlay */}
-      {isGridMode && (
-          <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-200">
-             <div className="absolute inset-0" onClick={() => setIsGridMode(false)} />
-             <div className="relative w-[90vw] h-[80vh] bg-white/10 p-8 rounded-3xl border border-white/20 shadow-2xl grid grid-cols-2 grid-rows-2 gap-6">
-                 <button onClick={() => setIsGridMode(false)} className="absolute -top-12 right-0 text-white hover:text-indigo-300 font-bold flex items-center gap-2">關閉 <div className="p-1 border rounded-md text-xs">ESC</div></button>
-                 {NAV_ZONES.map((zone) => (
-                     <button key={zone.id} onClick={() => handleGridJump(zone.x, zone.y)} className="relative group overflow-hidden rounded-2xl border-4 border-white/10 hover:border-white transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-slate-800 flex items-center justify-center">
-                        <div className={`absolute inset-0 opacity-20 ${zone.color} group-hover:opacity-30 transition-opacity`} />
-                        <div className="absolute top-6 left-8 text-6xl font-black text-white/10 group-hover:text-white/30 transition-colors">0{zone.id}</div>
-                        <div className="z-10 text-center">
-                            <div className="text-3xl font-bold text-white mb-2">{zone.label}</div>
-                            <div className="text-white/60 text-sm opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all">點擊快速跳轉</div>
-                        </div>
-                     </button>
-                 ))}
-             </div>
-          </div>
-      )}
+{/* [修改] 四格導航 - 工具列上方的小型彈出選單 */ }
+{
+    isGridMode && (
+        <>
+            {/* 1. 透明背景層 - 點擊空白處關閉選單 */}
+            <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsGridMode(false)} 
+            />
+
+            {/* 2. 小選單本體 - 定位在底部工具列上方 */}
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in duration-200">
+                <div className="bg-white p-2 rounded-2xl shadow-xl border border-gray-200 flex flex-col gap-2 w-64">
+                    
+                    <div className="text-xs font-bold text-gray-400 px-2 pt-1">快速跳轉</div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                        {NAV_ZONES.map(zone => (
+                            <button
+                                key={zone.id}
+                                onClick={() => {
+                                    setViewport({ x: zone.x, y: zone.y, scale: 1 });
+                                    setIsGridMode(false);
+                                }}
+                                className={`
+                                    relative h-16 rounded-xl border transition-all active:scale-95 flex items-center justify-center
+                                    ${zone.color.replace('bg-', 'bg-').replace('500', '50')} 
+                                    ${zone.color.replace('bg-', 'border-').replace('500', '200')}
+                                    hover:brightness-95
+                                `}
+                            >
+                                <span className={`font-bold ${zone.color.replace('bg-', 'text-').replace('500', '600')}`}>
+                                    {zone.label}
+                                </span>
+                                
+                                {/* 小裝飾：顯示區域 ID */}
+                                <span className="absolute bottom-1 right-2 text-[10px] opacity-40 font-mono">
+                                    0{zone.id}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                {/* 下方小箭頭裝飾 (指向工具列) */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-b border-r border-gray-200 rotate-45"></div>
+            </div>
+        </>
+    )
+}
 
       {/* [新增] 全螢幕計時器 */}
       <FullScreenTimer isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} />

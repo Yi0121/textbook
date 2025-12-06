@@ -17,7 +17,6 @@ interface FixedToolbarProps {
   penSize: number;
   setPenSize: (size: number) => void;
   isAIProcessing: boolean;
-  onAddShape: (type: 'rect' | 'circle' | 'triangle') => void;
   onToggleTimer: () => void;
   onToggleGrid: () => void;
 }
@@ -61,10 +60,10 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
       
       {isAIProcessing && (
-        <div className="h-12 w-80 mb-3 bg-white/95 backdrop-blur-2xl border border-indigo-100 shadow-xl rounded-2xl flex items-center justify-center gap-3 animate-in slide-in-from-bottom-2">
-             <div className="relative"><div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 animate-pulse"></div><Loader2 className="w-4 h-4 text-indigo-600 animate-spin relative z-10" /></div>
-             <span className="text-sm font-bold text-slate-700">AI 正在生成內容...</span>
-        </div>
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 h-10 px-4 bg-white/90 backdrop-blur-md border border-indigo-200 shadow-lg rounded-full flex items-center gap-2 animate-in slide-in-from-bottom-2 z-0">
+        <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+        <span className="text-xs font-bold text-indigo-900">AI 正在思考...</span>
+  </div>
       )}
 
       {/* 整合式子面板 */}

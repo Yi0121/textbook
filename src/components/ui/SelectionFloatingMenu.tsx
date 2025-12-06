@@ -12,23 +12,35 @@ const MenuButton = ({ icon, label, onClick, subLabel }: any) => (
     </button>
 );
 
-// ✅ 新增 onClose prop
 const SelectionFloatingMenu = ({ position, onTrigger, onExplain, onMindMap, onClose }: any) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPos, setAdjustedPos] = useState(position);
 
-  useLayoutEffect(() => {
-      if (position && menuRef.current) {
-          const rect = menuRef.current.getBoundingClientRect();
-          let newTop = position.top + 10;
-          let newLeft = position.left;
+// 在 SelectionFloatingMenu.tsx 的 useLayoutEffect 中
 
-          if (newLeft + rect.width > window.innerWidth) newLeft = window.innerWidth - rect.width - 20; 
-          if (newTop + rect.height > window.innerHeight) newTop = position.top - rect.height - 20;
-          
-          setAdjustedPos({ top: newTop, left: newLeft });
-      }
-  }, [position]);
+  useLayoutEffect(() => {
+    if (position && menuRef.current) {
+        const rect = menuRef.current.getBoundingClientRect();
+        let newTop = position.top + 10;
+        let newLeft = position.left;
+
+        // 右側邊界檢查
+        if (newLeft + rect.width > window.innerWidth) {
+            newLeft = window.innerWidth - rect.width - 20; 
+        }
+        
+        // [新增] 底部邊界檢查 (Flip Logic)
+        // 如果選單高度 + 預留空間會超出視窗高度
+        if (newTop + rect.height > window.innerHeight) {
+            // 改為顯示在選取框的「上方」
+            // 假設 position.top 是選取框的底部，我們需要知道選取框的高度來計算頂部
+            // 但這裡簡化處理：直接往上扣除選單高度 + 一些緩衝
+            newTop = position.top - rect.height - 40; 
+        }
+        
+        setAdjustedPos({ top: newTop, left: newLeft });
+    }
+}, [position]);
 
   if (!position) return null;
 
@@ -43,7 +55,6 @@ const SelectionFloatingMenu = ({ position, onTrigger, onExplain, onMindMap, onCl
         <div className="px-2 py-1.5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center justify-between gap-1 border-b border-indigo-50/50 mb-1">
             <div className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Assistant</div>
             
-            {/* ✅ 關閉按鈕 */}
             <button 
                 onClick={onClose}
                 className="bg-gray-100 hover:bg-gray-200 p-0.5 rounded text-gray-500 transition-colors"
@@ -53,9 +64,9 @@ const SelectionFloatingMenu = ({ position, onTrigger, onExplain, onMindMap, onCl
             </button>
         </div>
 
-        <MenuButton icon={<FileQuestion className="w-4 h-4 text-purple-500" />} label="生成測驗題" onClick={onTrigger} />
-        <MenuButton icon={<BookOpen className="w-4 h-4 text-blue-500" />} label="重點摘要卡" onClick={onExplain} subLabel="Summarize"/>
-        <MenuButton icon={<Share2 className="w-4 h-4 text-emerald-500" />} label="生成關聯圖" onClick={onMindMap} subLabel="Mind Map"/>
+        <MenuButton icon={<FileQuestion className="w-4 h-4 text-purple-500" />} label="解釋這段話" subLabel="用小學生聽得懂的方式" onClick={onExplain} />
+        <MenuButton icon={<Share2 className="w-4 h-4 text-pink-500" />} label="生成心智圖" subLabel="建立知識節點關聯" onClick={onMindMap} />
+        <MenuButton icon={<BookOpen className="w-4 h-4 text-blue-500" />} label="出題測驗" subLabel="生成3題相關選擇題" onClick={onTrigger} />
       </div>
     </div>
   );
