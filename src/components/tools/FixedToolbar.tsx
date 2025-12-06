@@ -21,6 +21,7 @@ interface FixedToolbarProps {
   onToggleGrid: () => void;
   onToggleSpotlight?: () => void; // 新增
   onToggleCurtain?: () => void;   // 新增
+  onToggleLuckyDraw?: () => void; // [新增]
 }
 
 // --- 1. 元件與設定分離 ---
@@ -62,7 +63,7 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
   currentTool, setCurrentTool, onOpenDashboard,
   zoomLevel, setZoomLevel,
   penColor, setPenColor, penSize, setPenSize,
-  onToggleTimer, onToggleGrid, onToggleSpotlight, onToggleCurtain
+  onToggleTimer, onToggleGrid, onToggleSpotlight, onToggleCurtain, onToggleLuckyDraw
 }) => {
   
   // --- State ---
@@ -138,7 +139,12 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
 
 if (activeSubPanel === 'box') {
         const items = [
-            { icon: Dices, label: '抽籤', color: 'text-purple-600 bg-purple-50', onClick: () => console.log('抽籤') },
+            { icon: Dices, 
+                label: '抽籤', 
+                color: 'text-purple-600 bg-purple-50', 
+                onClick: () => { onToggleLuckyDraw?.(); setActiveSubPanel(null); } 
+            },
+            
             { icon: Users, label: '分組', color: 'text-blue-600 bg-blue-50', onClick: () => console.log('分組') },
             
             // 這裡直接使用 onToggleSpotlight (不需要 props.)

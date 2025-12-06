@@ -16,8 +16,9 @@ import AIMemoCard from './components/canvas/AIMemoCard';
 import DraggableText from './components/canvas/DraggableText';
 import DashboardContent from './components/features/Dashboard';
 import ClassroomWidgets from './components/features/ClassroomWidgets';
+import LuckyDraw from './components/features/LuckyDraw';
 import FullScreenTimer from './components/ui/FullScreenTimer';
-import NavigationOverlay from './components/ui/NavigationOverlay'; // 確保路徑正確
+import NavigationOverlay from './components/ui/NavigationOverlay';
 
 // Utils
 import { distanceBetween } from './utils/geometry';
@@ -55,10 +56,11 @@ const App = () => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [aiState, setAiState] = useState<'idle' | 'thinking' | 'done'>('idle');
   const [widgetMode, setWidgetMode] = useState<'none' | 'spotlight' | 'curtain'>('none');
+  const [isLuckyDrawOpen, setIsLuckyDrawOpen] = useState(false);
   
   // 工具與導航狀態
   const [isTimerOpen, setIsTimerOpen] = useState(false);
-  const [showNavGrid, setShowNavGrid] = useState(false); // 統一使用這個控制導航
+  const [showNavGrid, setShowNavGrid] = useState(false);
   
   // 畫布狀態
   const [currentTool, setCurrentTool] = useState('cursor');
@@ -551,8 +553,10 @@ const App = () => {
             onToggleGrid={() => setShowNavGrid(true)}
             onToggleSpotlight={() => setWidgetMode(p => p === 'spotlight' ? 'none' : 'spotlight')}
             onToggleCurtain={() => setWidgetMode(p => p === 'curtain' ? 'none' : 'curtain')}
+            onToggleLuckyDraw={() => setIsLuckyDrawOpen(true)}
         />
       </div>
+        <LuckyDraw isOpen={isLuckyDrawOpen} onClose={() => setIsLuckyDrawOpen(false)} />
 
       <ClassroomWidgets mode={widgetMode} onClose={() => setWidgetMode('none')} />
 
