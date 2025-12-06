@@ -19,12 +19,10 @@ interface FixedToolbarProps {
   isAIProcessing: boolean;
   onToggleTimer: () => void;
   onToggleGrid: () => void;
-  onToggleSpotlight?: () => void; // 新增
-  onToggleCurtain?: () => void;   // 新增
-  onToggleLuckyDraw?: () => void; // [新增]
+  onToggleSpotlight?: () => void;
+  onToggleCurtain?: () => void;
+  onToggleLuckyDraw?: () => void;
 }
-
-// --- 1. 元件與設定分離 ---
 
 const COLORS = {
   pen: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#000000'],
@@ -32,32 +30,29 @@ const COLORS = {
   text: ['#000000', '#64748b', '#ef4444', '#3b82f6']
 };
 
-// 工具按鈕組件
-const ToolButton = ({ icon: Icon, label, isActive, activeColor, onClick, hasSubMenu, subMenuColor }: any) => (
+// [優化] ToolButton: 支援動態顏色 Icon，並增加點擊熱區
+const ToolButton = ({ icon: Icon, label, isActive, activeColor, iconColor, onClick, hasSubMenu, subMenuColor }: any) => (
   <button 
     onClick={onClick} 
     className={`
-      relative group w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200
+      relative group w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-200
       ${isActive 
-        ? `${activeColor} scale-110 shadow-sm ring-1 ring-black/5` 
-        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+        ? `${activeColor} shadow-inner ring-1 ring-black/5 translate-y-[1px]` 
+        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 hover:-translate-y-0.5'
       }
     `} 
     title={label}
   >
-    <Icon className="w-5 h-5" />
-    {/* 子選單指示點 */}
+    {/* 如果有指定 iconColor (通常是跟隨筆刷顏色)，則使用它，否則用預設繼承顏色 */}
+    <Icon className="w-5 h-5 transition-colors" style={{ color: isActive && iconColor ? iconColor : 'currentColor' }} />
+    
     {hasSubMenu && (
-      <div className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${isActive ? 'bg-current' : 'bg-gray-300'}`} />
-    )}
-    {/* 顏色預覽小點 */}
-    {subMenuColor && isActive && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: subMenuColor }} />
+      <div className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${isActive ? 'bg-current opacity-50' : 'bg-gray-300'}`} />
     )}
   </button>
 );
 
-const Separator = () => <div className="w-px h-6 bg-gray-200 mx-1" />;
+const Separator = () => <div className="w-px h-6 bg-gray-200 mx-1.5" />;
 
 const FixedToolbar: React.FC<FixedToolbarProps> = ({ 
   currentTool, setCurrentTool, onOpenDashboard,
@@ -66,7 +61,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
   onToggleTimer, onToggleGrid, onToggleSpotlight, onToggleCurtain, onToggleLuckyDraw
 }) => {
   
-  // --- State ---
   const [isExpanded, setIsExpanded] = useState(true);
   const [position, setPosition] = useState<'left' | 'center' | 'right'>('center');
   const [activeSubPanel, setActiveSubPanel] = useState<'pen' | 'highlighter' | 'text' | 'zoom' | 'box' | null>(null);
@@ -79,14 +73,15 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
     }
   }, [currentTool]);
 
-  const handleToolClick = (tool: string, hasSettings = false) => {
-    if (currentTool === tool && hasSettings) {
+  const handleToolClick = (tool: string) => {
+    // 點擊相同工具時，切換子面板顯示/隱藏
+    if (currentTool === tool) {
       setActiveSubPanel(activeSubPanel === tool ? null : tool as any);
     } else {
       setCurrentTool(tool);
+      // 預設值設定 (保留你的邏輯)
       if (tool === 'pen') { setPenColor('#ef4444'); setPenSize(4); }
       if (tool === 'highlighter') { setPenColor('#fef08a'); setPenSize(20); }
-      // [優化] 文字工具如果不重置顏色，可以讓使用者沿用上次選的顏色，這裡我先保留重置為黑色，你可以依需求移除這行
       if (tool === 'text') { setPenColor('#000000'); }
     }
   };
@@ -97,7 +92,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
       if (position === 'right') setPosition('center');
   };
 
-  // --- Render Sub-Panels ---
   const renderSubPanel = () => {
     if (!activeSubPanel) return null;
 
@@ -108,19 +102,19 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                 <div className="flex gap-2 justify-between">
                     {colors.map(c => (
                         <button key={c} onClick={() => setPenColor(c)} 
-                            className={`w-8 h-8 rounded-full border-2 transition-transform ${penColor === c ? 'border-indigo-500 scale-110' : 'border-transparent hover:scale-105'}`}
+                            className={`w-8 h-8 rounded-full border-2 transition-transform shadow-sm ${penColor === c ? 'border-indigo-500 scale-110 ring-2 ring-indigo-200' : 'border-white hover:scale-105'}`}
                             style={{ backgroundColor: c }}
                         />
                     ))}
                 </div>
                 {activeSubPanel !== 'text' && (
-                    <div className="flex items-center gap-2 px-1">
+                    <div className="flex items-center gap-3 px-1 pt-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
                         <input type="range" min="2" max={activeSubPanel === 'highlighter' ? 40 : 20} 
                             value={penSize} onChange={(e) => setPenSize(parseInt(e.target.value))} 
                             className="flex-1 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500" 
                         />
-                        <div className="w-4 h-4 rounded-full bg-gray-300" />
+                        <div className="w-4 h-4 rounded-full bg-gray-300" style={{ transform: `scale(${penSize/10 + 0.5})` }} />
                     </div>
                 )}
             </div>
@@ -130,44 +124,25 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
     if (activeSubPanel === 'zoom') {
         return (
             <div className="flex items-center gap-2 px-2">
-                <button onClick={() => setZoomLevel((p:number) => Math.max(0.5, p-0.1))} className="p-2 hover:bg-gray-100 rounded-lg"><Minus className="w-4 h-4" /></button>
-                <span className="font-mono font-bold w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
-                <button onClick={() => setZoomLevel((p:number) => Math.min(3, p+0.1))} className="p-2 hover:bg-gray-100 rounded-lg"><Plus className="w-4 h-4" /></button>
+                <button onClick={() => setZoomLevel((p:number) => Math.max(0.5, p-0.1))} className="p-2 hover:bg-gray-100 rounded-lg active:bg-gray-200"><Minus className="w-4 h-4" /></button>
+                <span className="font-mono font-bold w-12 text-center text-gray-700">{Math.round(zoomLevel * 100)}%</span>
+                <button onClick={() => setZoomLevel((p:number) => Math.min(3, p+0.1))} className="p-2 hover:bg-gray-100 rounded-lg active:bg-gray-200"><Plus className="w-4 h-4" /></button>
             </div>
         );
     }
 
-if (activeSubPanel === 'box') {
+    if (activeSubPanel === 'box') {
         const items = [
-            { icon: Dices, 
-                label: '抽籤', 
-                color: 'text-purple-600 bg-purple-50', 
-                onClick: () => { onToggleLuckyDraw?.(); setActiveSubPanel(null); } 
-            },
-            
+            { icon: Dices, label: '抽籤', color: 'text-purple-600 bg-purple-50', onClick: () => { onToggleLuckyDraw?.(); setActiveSubPanel(null); } },
             { icon: Users, label: '分組', color: 'text-blue-600 bg-blue-50', onClick: () => console.log('分組') },
-            
-            // 這裡直接使用 onToggleSpotlight (不需要 props.)
-            { 
-                icon: MousePointer2, 
-                label: '聚光燈', 
-                color: 'text-emerald-600 bg-emerald-50', 
-                onClick: () => { onToggleSpotlight?.(); setActiveSubPanel(null); } 
-            },
-            
-            // 這裡直接使用 onToggleCurtain (不需要 props.)
-            { 
-                icon: StickyNote, 
-                label: '遮幕', 
-                color: 'text-orange-600 bg-orange-50', 
-                onClick: () => { onToggleCurtain?.(); setActiveSubPanel(null); } 
-            },
+            { icon: MousePointer2, label: '聚光燈', color: 'text-emerald-600 bg-emerald-50', onClick: () => { onToggleSpotlight?.(); setActiveSubPanel(null); } },
+            { icon: StickyNote, label: '遮幕', color: 'text-orange-600 bg-orange-50', onClick: () => { onToggleCurtain?.(); setActiveSubPanel(null); } },
         ];
         return (
             <div className="grid grid-cols-4 gap-2">
                 {items.map((item, idx) => (
                     <button key={idx} onClick={item.onClick} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-50 transition-colors group">
-                        <div className={`p-2 rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
+                        <div className={`p-2.5 rounded-xl ${item.color} group-hover:scale-110 transition-transform shadow-sm`}>
                             <item.icon className="w-5 h-5" />
                         </div>
                         <span className="text-[10px] font-bold text-gray-500">{item.label}</span>
@@ -177,6 +152,7 @@ if (activeSubPanel === 'box') {
         );
     }
   };
+
   const getPositionClasses = () => {
       const base = "fixed bottom-6 z-[60] transition-all duration-500 ease-spring";
       if (position === 'center') return `${base} left-1/2 -translate-x-1/2 flex flex-col items-center`;
@@ -186,25 +162,24 @@ if (activeSubPanel === 'box') {
   };
 
   return (
-    // [重點修改] 加入 onMouseDown={(e) => e.stopPropagation()} 防止點擊工具列穿透到畫布
     <div className={getPositionClasses()} onMouseDown={(e) => e.stopPropagation()}>
       
-      {/* 1. 子面板 */}
+      {/* 子面板 */}
       <div className={`
-        mb-3 bg-white/90 backdrop-blur-xl border border-white/60 shadow-xl rounded-2xl overflow-hidden
+        mb-3 bg-white/95 backdrop-blur-xl border border-white/60 shadow-xl rounded-2xl overflow-hidden
         transition-all duration-300 origin-bottom
         ${activeSubPanel ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none h-0'}
       `}>
-         <div className="p-3">
+         <div className="p-3 min-w-[200px]">
             {renderSubPanel()}
          </div>
       </div>
 
-      {/* 2. 主工具列 */}
+      {/* 主工具列 */}
       <div className={`
-         bg-white/95 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50
+         bg-white/90 backdrop-blur-lg shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50
          rounded-2xl transition-all duration-500 flex items-center
-         ${isExpanded ? 'p-2 gap-1' : 'w-14 h-14 justify-center cursor-pointer hover:scale-110'}
+         ${isExpanded ? 'p-1.5 gap-0.5' : 'w-14 h-14 justify-center cursor-pointer hover:scale-110 hover:shadow-2xl'}
       `}>
           {!isExpanded && (
             <button onClick={() => setIsExpanded(true)} className="w-full h-full flex items-center justify-center text-indigo-600">
@@ -214,28 +189,28 @@ if (activeSubPanel === 'box') {
 
           {isExpanded && (
             <>
-                {/* 停靠控制手把 */}
-                <button onClick={cyclePosition} className="w-6 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing mr-1" title="切換位置 (左/中/右)">
+                <button onClick={cyclePosition} className="w-6 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing mr-1" title="切換位置">
                     <GripVertical className="w-4 h-4" />
                 </button>
 
-                <ToolButton icon={MousePointer2} label="一般選取" isActive={currentTool === 'cursor'} activeColor="bg-indigo-100 text-indigo-700" onClick={() => setCurrentTool('cursor')} />
-                <ToolButton icon={Scan} label="範圍選取" isActive={currentTool === 'select'} activeColor="bg-indigo-100 text-indigo-700" onClick={() => setCurrentTool('select')} />
-                <ToolButton icon={Hand} label="平移畫布" isActive={currentTool === 'pan'} activeColor="bg-blue-50 text-blue-600" onClick={() => setCurrentTool('pan')} />
+                <ToolButton icon={MousePointer2} label="一般選取" isActive={currentTool === 'cursor'} activeColor="bg-indigo-50 text-indigo-600" onClick={() => setCurrentTool('cursor')} />
+                <ToolButton icon={Scan} label="範圍選取" isActive={currentTool === 'select'} activeColor="bg-indigo-50 text-indigo-600" onClick={() => setCurrentTool('select')} />
+                <ToolButton icon={Hand} label="平移畫布" isActive={currentTool === 'pan'} activeColor="bg-indigo-50 text-indigo-600" onClick={() => setCurrentTool('pan')} />
                 
                 <Separator />
 
+                {/* [優化] 傳入 iconColor, 讓圖示跟隨筆刷顏色 */}
                 <ToolButton icon={PenTool} label="畫筆" 
-                    isActive={currentTool === 'pen'} activeColor="bg-gray-900 text-white" hasSubMenu 
-                    onClick={() => handleToolClick('pen', true)} 
+                    isActive={currentTool === 'pen'} activeColor="bg-gray-100" iconColor={penColor} hasSubMenu 
+                    onClick={() => handleToolClick('pen')} 
                 />
                 <ToolButton icon={Highlighter} label="螢光筆" 
-                    isActive={currentTool === 'highlighter'} activeColor="bg-yellow-100 text-yellow-700" hasSubMenu subMenuColor={currentTool === 'highlighter' ? penColor : null}
-                    onClick={() => handleToolClick('highlighter', true)} 
+                    isActive={currentTool === 'highlighter'} activeColor="bg-gray-100" iconColor={penColor} hasSubMenu
+                    onClick={() => handleToolClick('highlighter')} 
                 />
                 <ToolButton icon={Type} label="文字" 
-                    isActive={currentTool === 'text'} activeColor="bg-slate-100 text-slate-900" hasSubMenu 
-                    onClick={() => handleToolClick('text', true)} 
+                    isActive={currentTool === 'text'} activeColor="bg-gray-100" iconColor={penColor} hasSubMenu 
+                    onClick={() => handleToolClick('text')} 
                 />
                 <ToolButton icon={Eraser} label="橡皮擦" isActive={currentTool === 'eraser'} activeColor="bg-rose-50 text-rose-600" onClick={() => setCurrentTool('eraser')} />
 
@@ -243,7 +218,7 @@ if (activeSubPanel === 'box') {
 
                 <ToolButton icon={Grid2X2} label="導航" isActive={false} activeColor="" onClick={onToggleGrid} />
                 <ToolButton icon={Timer} label="計時器" isActive={false} activeColor="" onClick={onToggleTimer} />
-                <ToolButton icon={Box} label="百寶箱" isActive={activeSubPanel === 'box'} activeColor="bg-purple-100 text-purple-700" onClick={() => setActiveSubPanel(activeSubPanel === 'box' ? null : 'box')} />
+                <ToolButton icon={Box} label="百寶箱" isActive={activeSubPanel === 'box'} activeColor="bg-purple-50 text-purple-600" onClick={() => setActiveSubPanel(activeSubPanel === 'box' ? null : 'box')} />
                 
                 <Separator />
 
