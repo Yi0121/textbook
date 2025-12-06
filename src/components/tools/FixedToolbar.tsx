@@ -220,6 +220,9 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                 <ToolButton icon={Timer} label="計時器" isActive={false} activeColor="" onClick={onToggleTimer} />
                 <ToolButton icon={Box} label="百寶箱" isActive={activeSubPanel === 'box'} activeColor="bg-purple-50 text-purple-600" onClick={() => setActiveSubPanel(activeSubPanel === 'box' ? null : 'box')} />
                 
+                {/* --- 在這裡補回雷射筆 --- */}
+                <ToolButton icon={Zap} label="雷射筆" isActive={currentTool === 'laser'} activeColor="bg-red-50 text-red-600" onClick={() => setCurrentTool('laser')} />
+                
                 <Separator />
 
                 <ToolButton icon={ZoomIn} label="縮放" isActive={activeSubPanel === 'zoom'} activeColor="bg-gray-100 text-gray-900" onClick={() => setActiveSubPanel(activeSubPanel === 'zoom' ? null : 'zoom')} />

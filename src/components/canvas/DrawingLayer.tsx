@@ -1,13 +1,12 @@
 import React, { useMemo, forwardRef } from 'react';
 
-// --- 1. 幾何演算法：將點陣列轉換為平滑曲線 (Quadratic Bezier) ---
+// --- 1. 幾何演算法：將點陣列轉換為平滑曲線 ---
 const getSmoothPath = (points: {x: number, y: number}[]) => {
   if (!points || points.length === 0) return '';
   if (points.length < 3) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
 
   let d = `M ${points[0].x} ${points[0].y}`;
 
-  // 使用二次貝茲曲線連接中點，消除鋸齒
   for (let i = 1; i < points.length - 1; i++) {
     const p1 = points[i];
     const p2 = points[i + 1];
@@ -22,10 +21,9 @@ const getSmoothPath = (points: {x: number, y: number}[]) => {
   return d;
 };
 
-// --- 2. 獨立筆畫元件 (效能關鍵：React.memo) ---
+// --- 2. 獨立筆畫元件 ---
 const StrokePath = React.memo(({ stroke }: { stroke: any }) => {
   const d = useMemo(() => {
-    // 如果有原始點資料(rawPoints)，就進行平滑運算；否則使用原本的 path
     return stroke.rawPoints ? getSmoothPath(stroke.rawPoints) : stroke.path;
   }, [stroke.rawPoints, stroke.path]);
 
@@ -37,13 +35,17 @@ const StrokePath = React.memo(({ stroke }: { stroke: any }) => {
       stroke={stroke.color}
       strokeWidth={stroke.size}
       fill="none"
-      strokeLinecap={isHighlighter ? "butt" : "round"}
+      strokeLinecap="round"
       strokeLinejoin="round"
-      strokeOpacity={isHighlighter ? 0.5 : 1}
-      style={{ mixBlendMode: isHighlighter ? 'multiply' : 'normal' }}
+      strokeOpacity={isHighlighter ? 0.4 : 1}
+      style={{ 
+        mixBlendMode: isHighlighter ? 'multiply' : 'normal',
+        transition: 'stroke-width 0.2s',
+      }}
+      shapeRendering="geometricPrecision"
     />
   );
-});
+}, (prev, next) => prev.stroke.id === next.stroke.id);
 
 // --- Main Component ---
 interface DrawingLayerProps {
@@ -65,25 +67,32 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
   laserPath
 }, ref) => {
 
+  // 計算雷射筆的路徑
+  const laserD = useMemo(() => getSmoothPath(laserPath), [laserPath]);
+  const laserTip = laserPath.length > 0 ? laserPath[laserPath.length - 1] : null;
+
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+    <svg 
+      className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20"
+      style={{ willChange: 'contents' }} 
+    >
       <defs>
-        {/* 雷射筆發光濾鏡 */}
-        <filter id="laser-bloom" height="300%" width="300%" x="-100%" y="-100%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
+        {/* [修正] 雷射光暈濾鏡：改用單純的高斯模糊，去除產生白點的 ColorMatrix */}
+        <filter id="laser-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
           <feMerge>
-            <feMergeNode in="blur1" />
+            <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
 
-      {/* 1. 歷史筆跡 (使用優化過的 StrokePath) */}
+      {/* 1. 歷史筆跡 */}
       {strokes.map((stroke: any) => (
         <StrokePath key={stroke.id} stroke={stroke} />
       ))}
 
-      {/* 2. 正在畫的筆跡 (Ghost Path - 透過 Ref 直接操作 DOM) */}
+      {/* 2. 正在畫的筆跡 (Ghost Path) */}
       <path
         ref={ref}
         stroke={penColor}
@@ -92,7 +101,7 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
         strokeLinecap={currentTool === 'highlighter' ? "butt" : "round"}
         strokeLinejoin="round"
         strokeOpacity={currentTool === 'highlighter' ? 0.5 : 1}
-        style={currentTool === 'highlighter' ? { mixBlendMode: 'multiply' } : {}}
+        style={{ mixBlendMode: currentTool === 'highlighter' ? 'multiply' : 'normal' }}
       />
 
       {/* 3. 範圍選取框 */}
@@ -100,22 +109,56 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
          <rect 
             x={selectionBox.x} y={selectionBox.y}
             width={selectionBox.width} height={selectionBox.height}
-            fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" rx={4}
+            fill="rgba(99, 102, 241, 0.1)" 
+            stroke="#6366f1" 
+            strokeWidth={1.5} 
+            strokeDasharray="6 4" 
+            rx={8} 
+            className="animate-pulse"
          />
       )}
 
-      {/* 4. 雷射筆特效 */}
-      {laserPath.length > 0 && (
-          <g filter="url(#laser-bloom)">
+{/* 4. [修正] 雷射筆特效：移除動畫，改用靜態光暈 */}
+      {laserPath.length > 0 && laserTip && (
+          <g>
+            {/* 層級 A: 紅色路徑光暈 */}
             <path
-                d={getSmoothPath(laserPath)}
-                stroke="#ef4444" strokeWidth="6" strokeOpacity={0.6} fill="none" strokeLinecap="round"
-                className="transition-opacity duration-75"
+                d={laserD}
+                stroke="#ef4444" 
+                strokeWidth="8" 
+                strokeOpacity={0.3} 
+                fill="none" 
+                strokeLinecap="round"
+                filter="url(#laser-glow)"
             />
+            
+            {/* 層級 B: 亮白核心路徑 */}
+            <path
+                d={laserD}
+                stroke="#ffffff" 
+                strokeWidth="2" 
+                strokeOpacity={0.9} 
+                fill="none" 
+                strokeLinecap="round"
+            />
+
+            {/* 筆頭：外層光暈 (靜態，無動畫) */}
             <circle 
-                cx={laserPath[laserPath.length - 1].x} 
-                cy={laserPath[laserPath.length - 1].y} 
-                r={6} fill="#ffffff" stroke="#ef4444" strokeWidth={2}
+                cx={laserTip.x} 
+                cy={laserTip.y} 
+                r={8} 
+                fill="#ef4444" 
+                fillOpacity={0.5}
+                stroke="none"
+            />
+            
+            {/* 筆頭：中心實心白點 */}
+            <circle 
+                cx={laserTip.x} 
+                cy={laserTip.y} 
+                r={3.5} 
+                fill="#ffffff"
+                stroke="none"
             />
           </g>
       )}

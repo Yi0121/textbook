@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Plus, Minus, Type } from 'lucide-react';
+import { Trash2, GripVertical } from 'lucide-react';
 
 interface DraggableTextProps {
   data: { id: number; x: number; y: number; text: string; color: string; fontSize: number; fontFamily?: string };
@@ -12,34 +12,79 @@ const DraggableText: React.FC<DraggableTextProps> = ({ data, onUpdate, onDelete,
   const [isEditing, setIsEditing] = useState(false);
   const [tempText, setTempText] = useState(data.text);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
-  // 拖曳邏輯
-  const isDragging = useRef(false);
-  const lastPos = useRef({ x: 0, y: 0 });
+  // UI 狀態：控制視覺 (是否被抓起)
+  const [isDraggingState, setIsDraggingState] = useState(false);
 
+  // 效能優化：使用 Ref 紀錄拖曳數據，不觸發 Render
+  const dragData = useRef({
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      totalDx: 0,
+      totalDy: 0
+  });
+
+  // 自動聚焦輸入框
   useEffect(() => {
     if (isEditing && inputRef.current) {
         inputRef.current.focus();
+        inputRef.current.select(); // 全選方便修改
     }
   }, [isEditing]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // [重要] 如果正在編輯，或者點擊的是輸入框，就不啟動拖曳
     if (isEditing) return;
+    
     e.stopPropagation();
-    isDragging.current = true;
-    lastPos.current = { x: e.clientX, y: e.clientY };
+    
+    dragData.current = {
+        isDragging: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        totalDx: 0,
+        totalDy: 0
+    };
+    setIsDraggingState(true);
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
+      if (!dragData.current.isDragging || !containerRef.current) return;
       e.preventDefault();
-      const dx = (e.clientX - lastPos.current.x) / scale;
-      const dy = (e.clientY - lastPos.current.y) / scale;
-      onUpdate(data.id, { x: data.x + dx, y: data.y + dy });
-      lastPos.current = { x: e.clientX, y: e.clientY };
+
+      const dx = (e.clientX - dragData.current.startX) / scale;
+      const dy = (e.clientY - dragData.current.startY) / scale;
+
+      // 直接移動 DOM，不寫入 React State -> 解決延遲
+      containerRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+      
+      dragData.current.totalDx = dx;
+      dragData.current.totalDy = dy;
     };
-    const handleMouseUp = () => { isDragging.current = false; };
+
+    const handleMouseUp = () => {
+      if (!dragData.current.isDragging) return;
+      
+      dragData.current.isDragging = false;
+      setIsDraggingState(false);
+
+      // 拖曳結束，更新真實座標
+      if (dragData.current.totalDx !== 0 || dragData.current.totalDy !== 0) {
+         // 注意：這裡我們只更新位置，不更新文字內容
+         onUpdate(data.id, { 
+             x: data.x + dragData.current.totalDx, 
+             y: data.y + dragData.current.totalDy 
+         });
+      }
+
+      // 重置 transform
+      if (containerRef.current) {
+          containerRef.current.style.transform = 'none';
+      }
+    };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -47,55 +92,39 @@ const DraggableText: React.FC<DraggableTextProps> = ({ data, onUpdate, onDelete,
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [data.id, data.x, data.y, onUpdate, scale]);
+  }, [data.id, data.x, data.y, onUpdate, scale]); // 依賴項加入 x, y 確保計算基準正確
 
+  // 處理文字輸入完成
   const handleBlur = () => {
-      // 稍微延遲 Blur，防止點擊上方工具列時觸發 Blur 導致關閉
-      setTimeout(() => {
-        // 如果點擊的是工具列按鈕，我們不關閉編輯模式 (這裡簡化處理，實際專案可用 relatedTarget)
-      }, 100);
-  };
-
-  const finishEditing = () => {
       setIsEditing(false);
-      onUpdate(data.id, { text: tempText });
-      if (tempText.trim() === "") onDelete(data.id);
+      if (tempText !== data.text) {
+          onUpdate(data.id, { text: tempText });
+      }
   };
-
-  // 字體切換列表
-  const fonts = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
   return (
     <div
-      className={`absolute group ${isEditing ? 'z-50' : 'z-10 cursor-move'}`}
-      style={{ left: data.x, top: data.y }}
+      ref={containerRef}
+      className={`absolute z-30 group flex items-start`}
+      style={{ 
+          top: data.y, 
+          left: data.x,
+          transition: isDraggingState ? 'none' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      }}
       onMouseDown={handleMouseDown}
       onDoubleClick={() => setIsEditing(true)}
     >
-      {/* 編輯模式下的迷你工具列 */}
-      {isEditing && (
-          <div 
-            className="absolute -top-12 left-0 bg-white shadow-lg rounded-lg border border-gray-200 flex items-center gap-1 p-1 z-50 whitespace-nowrap"
-            onMouseDown={(e) => e.stopPropagation()} // 防止拖曳
-          >
-              <button onClick={() => onUpdate(data.id, { fontSize: Math.max(12, data.fontSize - 2) })} className="p-1.5 hover:bg-gray-100 rounded text-gray-600"><Minus className="w-3 h-3" /></button>
-              <span className="text-xs font-mono w-6 text-center select-none">{data.fontSize}</span>
-              <button onClick={() => onUpdate(data.id, { fontSize: Math.min(72, data.fontSize + 2) })} className="p-1.5 hover:bg-gray-100 rounded text-gray-600"><Plus className="w-3 h-3" /></button>
-              <div className="w-px h-4 bg-gray-200 mx-1"></div>
-              <button 
-                onClick={() => {
-                    const currentIdx = fonts.indexOf(data.fontFamily || 'sans-serif');
-                    const nextFont = fonts[(currentIdx + 1) % fonts.length];
-                    onUpdate(data.id, { fontFamily: nextFont });
-                }} 
-                className="p-1.5 hover:bg-gray-100 rounded text-gray-600 flex items-center gap-1 text-xs font-bold"
-              >
-                  <Type className="w-3 h-3" />
-                  {data.fontFamily === 'serif' ? '襯線' : (data.fontFamily === 'cursive' ? '手寫' : '黑體')}
-              </button>
-              <div className="w-px h-4 bg-gray-200 mx-1"></div>
-              <button onClick={finishEditing} className="px-2 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600">完成</button>
-          </div>
+      
+      {/* 拖曳時的裝飾把手 (只有 Hover 或 拖曳時顯示) */}
+      {!isEditing && (
+        <div className={`
+            absolute -left-6 top-1/2 -translate-y-1/2 p-1 rounded-md
+            text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 cursor-grab active:cursor-grabbing
+            transition-opacity duration-200
+            ${isDraggingState ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+        `}>
+            <GripVertical className="w-4 h-4" />
+        </div>
       )}
 
       {isEditing ? (
@@ -103,33 +132,48 @@ const DraggableText: React.FC<DraggableTextProps> = ({ data, onUpdate, onDelete,
           ref={inputRef}
           value={tempText}
           onChange={(e) => setTempText(e.target.value)}
-          className="bg-white/90 border-2 border-indigo-500 rounded p-1 outline-none min-w-[100px] shadow-lg overflow-hidden"
+          onBlur={handleBlur}
+          onKeyDown={(e) => { e.stopPropagation(); }} // 防止觸發全域快捷鍵
+          className="bg-white shadow-xl rounded-lg p-3 outline-none min-w-[120px] resize overflow-hidden border-2 border-indigo-500 animate-in zoom-in-95 duration-200"
           style={{ 
               fontSize: `${data.fontSize}px`, 
               color: data.color,
               fontFamily: data.fontFamily || 'sans-serif',
-              resize: 'both'
+              lineHeight: 1.4
           }}
+          placeholder="輸入文字..."
         />
       ) : (
         <div className="relative">
             <div 
-                className="whitespace-pre-wrap p-1 border-2 border-transparent hover:border-indigo-200 rounded transition-colors select-none"
+                className={`
+                    whitespace-pre-wrap px-2 py-1 border-2 border-transparent rounded-lg transition-all
+                    ${isDraggingState 
+                        ? 'bg-indigo-50/50 border-indigo-300/50 scale-105' 
+                        : 'hover:bg-gray-50/50 hover:border-gray-200'
+                    }
+                `}
                 style={{ 
                     fontSize: `${data.fontSize}px`, 
                     color: data.color,
-                    fontFamily: data.fontFamily || 'sans-serif'
+                    fontFamily: data.fontFamily || 'sans-serif',
+                    lineHeight: 1.4,
+                    cursor: isDraggingState ? 'grabbing' : 'grab'
                 }}
             >
-                {data.text || "點擊輸入文字"}
+                {data.text || <span className="text-gray-400 italic">點擊輸入文字...</span>}
             </div>
+            
             {/* 刪除按鈕 */}
-            <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
-                className="absolute -top-4 -right-4 p-1 bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-                <Trash2 className="w-3 h-3" />
-            </button>
+            {!isDraggingState && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
+                    className="absolute -top-3 -right-3 p-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                    title="刪除"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            )}
         </div>
       )}
     </div>
