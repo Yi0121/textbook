@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { LayoutDashboard, FileQuestion, Sparkles, Move, MousePointer2, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { LayoutDashboard, Sparkles } from 'lucide-react';
 
 // --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -15,62 +15,78 @@ import DraggableMindMap from './components/canvas/DraggableMindMap';
 import AIMemoCard from './components/canvas/AIMemoCard';
 import DraggableText from './components/canvas/DraggableText';
 import DashboardContent from './components/features/Dashboard';
-import FullScreenTimer from './components/ui/FullScreenTimer'; // [新增] 全螢幕計時器
+import ClassroomWidgets from './components/features/ClassroomWidgets';
+import FullScreenTimer from './components/ui/FullScreenTimer';
+import NavigationOverlay from './components/ui/NavigationOverlay'; // 確保路徑正確
 
 // Utils
 import { distanceBetween } from './utils/geometry';
 
-// [新增] 四格導航區域定義
+
+const getTouchDistance = (touches: React.TouchList) => {
+  return Math.hypot(
+    touches[0].clientX - touches[1].clientX,
+    touches[0].clientY - touches[1].clientY
+  );
+};
+
+// 計算兩個觸控點的中心座標 (這是為了讓縮放以兩指中間為準)
+const getTouchCenter = (touches: React.TouchList) => {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
+};
+
+// 四格導航配置
 const NAV_ZONES = [
-    { id: 1, label: '左上', x: 0, y: 0, color: 'bg-blue-500' },
-    { id: 2, label: '右上', x: -1100, y: 0, color: 'bg-green-500' }, 
-    { id: 3, label: '左下', x: 0, y: -1500, color: 'bg-orange-500' }, 
-    { id: 4, label: '右下', x: -1100, y: -1500, color: 'bg-purple-500' },
+    { id: 1, label: '課程大綱', description: '本章節學習重點與目標', x: 0, y: 0, color: 'bg-blue-500' },
+    { id: 2, label: '核心觀念', description: '粒線體與細胞呼吸作用', x: 1200, y: 0, color: 'bg-green-500' },
+    { id: 3, label: '實驗數據', description: 'ATP 生成效率分析圖表', x: 0, y: 800, color: 'bg-orange-500' },
+    { id: 4, label: '課後練習', description: '隨堂測驗與重點複習', x: 1200, y: 800, color: 'bg-purple-500' },
 ];
 
-// 使用 React.memo 優化底層教科書渲染
 const MemoizedTextbook = React.memo(TextbookContent);
 
 const App = () => {
-  // --- 1. UI & Demo State ---
+  // --- 1. UI & State ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-  
-  // AI 狀態
   const [aiState, setAiState] = useState<'idle' | 'thinking' | 'done'>('idle');
+  const [widgetMode, setWidgetMode] = useState<'none' | 'spotlight' | 'curtain'>('none');
   
-  // [新增] 教室工具狀態
+  // 工具與導航狀態
   const [isTimerOpen, setIsTimerOpen] = useState(false);
-  const [isGridMode, setIsGridMode] = useState(false); // 控制四格導航選單
-
-  // --- 2. Tool & Canvas State ---
+  const [showNavGrid, setShowNavGrid] = useState(false); // 統一使用這個控制導航
+  
+  // 畫布狀態
   const [currentTool, setCurrentTool] = useState('cursor');
   const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1 });
   const [penColor, setPenColor] = useState('#ef4444');
   const [penSize, setPenSize] = useState(4);
 
-  // --- 3. Objects State ---
+  // 物件狀態
   const [strokes, setStrokes] = useState<any[]>([]);
   const [mindMaps, setMindMaps] = useState<any[]>([]);
   const [aiMemos, setAiMemos] = useState<any[]>([]);
   const [textObjects, setTextObjects] = useState<any[]>([]);
 
-  
-  // --- 4. Interaction Refs & State ---
+  // 互動暫存狀態
   const [laserPath, setLaserPath] = useState<{x: number, y: number, timestamp: number}[]>([]);
   const [selectionBox, setSelectionBox] = useState<any>(null); 
   const [selectionMenuPos, setSelectionMenuPos] = useState<any>(null);
   const [selectedText, setSelectedText] = useState('粒線體結構與功能');
 
-  // Refs (效能優化關鍵)
+  // Refs
   const isDrawing = useRef(false);
   const isPanning = useRef(false);
   const isSpacePressed = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  const lastTouchDistance = useRef<number | null>(null);
+  const isPinching = useRef(false);
   const selectionStart = useRef<{x: number, y: number} | null>(null);
   
-  // [新增] 繪圖優化 Refs (取代 State)
   const previewPathRef = useRef<SVGPathElement>(null); 
   const currentPointsRef = useRef<string[]>([]);       
   const rawPointsRef = useRef<{x:number, y:number}[]>([]); 
@@ -78,15 +94,16 @@ const App = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // --- 5. Handlers ---
+  // --- 2. 核心邏輯 Helpers ---
 
+  // 坐標轉換：螢幕像素 -> 畫布邏輯坐標
   const getCanvasCoordinates = useCallback((e: React.MouseEvent | MouseEvent) => {
-     if (!canvasRef.current) return { x: 0, y: 0 };
-     const rect = canvasRef.current.getBoundingClientRect();
-     return {
-         x: (e.clientX - rect.left) / viewport.scale,
-         y: (e.clientY - rect.top) / viewport.scale
-     };
+      if (!canvasRef.current) return { x: 0, y: 0 };
+      const rect = canvasRef.current.getBoundingClientRect();
+      return {
+          x: (e.clientX - rect.left) / viewport.scale,
+          y: (e.clientY - rect.top) / viewport.scale
+      };
   }, [viewport.scale]);
 
   const handleObjUpdate = useCallback((id: number, data: any, type: 'memo' | 'mindmap' | 'text') => {
@@ -95,7 +112,13 @@ const App = () => {
       else if (type === 'text') setTextObjects(p => p.map(t => t.id === id ? { ...t, ...data } : t));
   }, []);
 
-  // --- AI Demo Logic ---
+  // 快速導航跳轉 (處理負值座標)
+  const handleQuickNav = (targetX: number, targetY: number) => {
+      setViewport({ x: -targetX, y: -targetY, scale: 1.0 });
+      setShowNavGrid(false);
+  };
+
+  // --- 3. AI 模擬邏輯 ---
   const simulateAIProcess = (callback: () => void) => {
       setSelectionMenuPos(null);
       setSelectionBox(null);
@@ -114,27 +137,20 @@ const App = () => {
               y: (selectionMenuPos.top - rect.top) / viewport.scale 
           };
       }
-      // Fallback: 根據 viewport 中心生成，確保可見
       return { 
           x: (-viewport.x + window.innerWidth/2) / viewport.scale, 
           y: (-viewport.y + window.innerHeight/2) / viewport.scale 
       };
   };
 
-  const handleAITrigger = () => {
-    simulateAIProcess(() => {
-        setIsQuizPanelOpen(true); 
-        setIsSidebarOpen(true);
-    });
-  };
+  const handleAITrigger = () => simulateAIProcess(() => { setIsQuizPanelOpen(true); setIsSidebarOpen(true); });
 
   const handleAIExplain = () => {
     const pos = getSpawnPosition();
     simulateAIProcess(() => {
         setAiMemos(prev => [...prev, {
-            id: Date.now(), x: pos.x, y: pos.y,
-            keyword: "重點摘要", 
-            content: "AI 分析：這段文字描述了粒線體(Mitochondria)作為細胞能量工廠的角色。關鍵字：ATP合成、雙層膜結構。"
+            id: Date.now(), x: pos.x, y: pos.y, keyword: "重點摘要", 
+            content: "AI 分析：這段文字描述了粒線體(Mitochondria)作為細胞能量工廠的角色。"
         }]);
     });
   };
@@ -147,29 +163,16 @@ const App = () => {
               nodes: [
                   { id: 'root', offsetX: 0, offsetY: 0, label: '粒線體', type: 'root' },
                   { id: '1', offsetX: 150, offsetY: -50, label: '結構', type: 'child' },
-                  { id: '2', offsetX: 150, offsetY: 50, label: '功能', type: 'child' },
-                  { id: '3', offsetX: 300, offsetY: -80, label: '外膜', type: 'sub' },
-                  { id: '4', offsetX: 300, offsetY: -20, label: '內膜', type: 'sub' },
-                  { id: '5', offsetX: 300, offsetY: 50, label: '產生ATP', type: 'sub' }
+                  { id: '2', offsetX: 150, offsetY: 50, label: '功能', type: 'child' }
               ],
-              edges: [
-                  { source: 'root', target: '1' }, { source: 'root', target: '2' },
-                  { source: '1', target: '3' }, { source: '1', target: '4' }, { source: '2', target: '5' }
-              ]
+              edges: [ { source: 'root', target: '1' }, { source: 'root', target: '2' } ]
           }]);
       });
   };
 
-  // --- Grid Navigation Logic ---
-  const handleGridJump = (targetX: number, targetY: number) => {
-      setViewport({ x: targetX, y: targetY, scale: 1.0 });
-      setIsGridMode(false);
-  };
-
-  // --- Interaction Event Handlers ---
+  // --- 4. 滑鼠與繪圖事件 ---
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // 平移模式檢查
     if (currentTool === 'pan' || e.button === 1 || isSpacePressed.current) {
       isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -184,17 +187,12 @@ const App = () => {
         return;
     }
 
-    // [修改] 繪圖工具：使用 Ref 與 Direct DOM Manipulation
     if (['pen', 'highlighter'].includes(currentTool)) {
         isDrawing.current = true;
-        
         const startPoint = `M ${x} ${y}`;
         currentPointsRef.current = [startPoint];
         rawPointsRef.current = [{x, y}];
-        
-        if (previewPathRef.current) {
-            previewPathRef.current.setAttribute('d', startPoint);
-        }
+        if (previewPathRef.current) previewPathRef.current.setAttribute('d', startPoint);
     }
     
     if (currentTool === 'select') {
@@ -245,23 +243,16 @@ const App = () => {
         return;
     }
 
-    // [修改] 繪圖工具：更新 Ref 與 DOM
     if (['pen', 'highlighter'].includes(currentTool)) {
         const pointCommand = `L ${x} ${y}`;
-        
         currentPointsRef.current.push(pointCommand);
         rawPointsRef.current.push({x, y});
-
-        if (previewPathRef.current) {
-            const d = currentPointsRef.current.join(' '); 
-            previewPathRef.current.setAttribute('d', d);
-        }
+        if (previewPathRef.current) previewPathRef.current.setAttribute('d', currentPointsRef.current.join(' '));
     }
   };
 
   const handleMouseUp = () => {
     isPanning.current = false;
-    
     if (!isDrawing.current) return;
     isDrawing.current = false;
 
@@ -281,38 +272,33 @@ const App = () => {
         return;
     }
 
-    // [修改] 繪圖結束：將 Ref 轉存 State
     if (['pen', 'highlighter'].includes(currentTool) && currentPointsRef.current.length > 0) {
         const finalPath = currentPointsRef.current.join(' ');
         const rawPoints = [...rawPointsRef.current];
-
         setStrokes(prev => [...prev, { 
             id: Date.now(),
-            path: finalPath, 
-            color: penColor, 
-            size: penSize, 
-            tool: currentTool, 
-            rawPoints 
+            path: finalPath, color: penColor, size: penSize, tool: currentTool, rawPoints 
         }]);
-
         currentPointsRef.current = [];
         rawPointsRef.current = [];
-        if (previewPathRef.current) {
-            previewPathRef.current.setAttribute('d', '');
-        }
+        if (previewPathRef.current) previewPathRef.current.setAttribute('d', '');
     }
   };
 
-  // --- Effects ---
+  // --- 5. Global Events (縮放優化 & 快捷鍵) ---
 
   useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
           if (e.code === 'Space') isSpacePressed.current = true;
+          // [優化] 加入復原 (Undo) 功能
+          if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+              setStrokes(prev => prev.slice(0, -1));
+          }
           if (e.key === 'Escape') {
               setSelectionBox(null);
               setSelectionMenuPos(null);
               setCurrentTool('cursor');
-              setIsGridMode(false); // ESC 關閉導航
+              setShowNavGrid(false);
           }
       };
       const handleKeyUp = (e: KeyboardEvent) => {
@@ -326,6 +312,7 @@ const App = () => {
       };
   }, []);
 
+  // [優化] 雷射筆動畫 Loop
   useEffect(() => {
     if (laserPath.length === 0) return;
     let frameId: number;
@@ -341,14 +328,35 @@ const App = () => {
     return () => cancelAnimationFrame(frameId);
   }, [laserPath]);
 
+  // [重點優化] 游標中心縮放邏輯 (Zoom-to-Point)
   useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
+
       const onWheel = (e: WheelEvent) => {
           if (e.ctrlKey || e.metaKey) {
               e.preventDefault();
-              const scaleAmount = -e.deltaY * 0.002;
-              setViewport(prev => ({ ...prev, scale: Math.min(Math.max(0.5, prev.scale + scaleAmount), 3) }));
+              
+              setViewport(prev => {
+                  const zoomSensitivity = 0.002;
+                  const delta = -e.deltaY * zoomSensitivity;
+                  const newScale = Math.min(Math.max(0.5, prev.scale + delta), 3);
+                  
+                  // 計算滑鼠在 Canvas 內的相對位置 (0~1)
+                  // 這裡假設 Container 等於視窗大小
+                  const rect = container.getBoundingClientRect();
+                  const mouseX = e.clientX - rect.left;
+                  const mouseY = e.clientY - rect.top;
+
+                  // 關鍵公式：
+                  // 新的 Offset = 滑鼠位置 - (滑鼠位置 - 舊Offset) * (新比例 / 舊比例)
+                  // 簡單來說：讓滑鼠指向的那個點，在縮放前後保持在螢幕的同一個像素位置
+                  const scaleRatio = newScale / prev.scale;
+                  const newX = mouseX - (mouseX - prev.x) * scaleRatio;
+                  const newY = mouseY - (mouseY - prev.y) * scaleRatio;
+
+                  return { x: newX, y: newY, scale: newScale };
+              });
           }
       };
       container.addEventListener('wheel', onWheel, { passive: false });
@@ -366,15 +374,15 @@ const App = () => {
       />
       
       {aiState === 'thinking' && (
-          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-white/20 backdrop-blur-sm transition-all duration-300">
-              <div className="bg-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-indigo-100 animate-pulse">
-                  <Sparkles className="w-6 h-6 text-indigo-600 animate-spin-slow" />
-                  <span className="text-indigo-800 font-medium">AI 正在分析教材內容與筆跡...</span>
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-300">
+              <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-indigo-200 flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
+                  <span className="text-indigo-700 font-medium text-sm">AI 正在分析教材與筆跡...</span>
               </div>
           </div>
       )}
 
-      {/* 主要畫布 */}
+      {/* 主要畫布 Container */}
       <div 
         ref={containerRef}
         className="flex-1 relative overflow-hidden bg-slate-100 touch-none"
@@ -382,10 +390,87 @@ const App = () => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp} 
         onMouseLeave={handleMouseUp}
-        style={{ 
-          cursor: isPanning.current || isSpacePressed.current ? 'grabbing' : currentTool === 'cursor' ? 'default' : 'crosshair'
+        // --- [新增] 觸控事件 (處理手指操作) ---
+        onTouchStart={(e) => {
+            // 1. 如果是兩根手指 -> 開始縮放模式
+            if (e.touches.length === 2) {
+                isPinching.current = true;
+                isDrawing.current = false; // 強制停止繪圖
+                lastTouchDistance.current = getTouchDistance(e.touches);
+                return;
+            }
+            // 2. 如果是一根手指 -> 視為滑鼠點擊 (繪圖或平移)
+            if (e.touches.length === 1) {
+                // 模擬 MouseDown
+                const touch = e.touches[0];
+                const mouseEvent = {
+                    ...e,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    button: 0, // 左鍵
+                    buttons: 1
+                } as any;
+                handleMouseDown(mouseEvent);
+            }
         }}
+
+        onTouchMove={(e) => {
+            // 1. 雙指縮放邏輯
+            if (e.touches.length === 2 && isPinching.current && lastTouchDistance.current) {
+                const newDistance = getTouchDistance(e.touches);
+                const center = getTouchCenter(e.touches);
+                
+                // 計算縮放比例因子 (大於1是放大，小於1是縮小)
+                const scaleFactor = newDistance / lastTouchDistance.current;
+                
+                // 更新距離供下一次計算
+                lastTouchDistance.current = newDistance;
+
+                // 執行縮放 (邏輯同滑鼠滾輪，但使用 center 作為基準點)
+                setViewport(prev => {
+                    const newScale = Math.min(Math.max(0.5, prev.scale * scaleFactor), 3);
+                    
+                    // 計算中心點在 Canvas 內的相對位置
+                    if (!containerRef.current) return prev;
+                    const rect = containerRef.current.getBoundingClientRect();
+                    const mouseX = center.x - rect.left;
+                    const mouseY = center.y - rect.top;
+
+                    // 重新計算 Offset 以保持中心點不動
+                    // 公式：NewOffset = Mouse - (Mouse - OldOffset) * (NewScale / OldScale)
+                    const scaleRatio = newScale / prev.scale;
+                    const newX = mouseX - (mouseX - prev.x) * scaleRatio;
+                    const newY = mouseY - (mouseY - prev.y) * scaleRatio;
+
+                    return { x: newX, y: newY, scale: newScale };
+                });
+                return;
+            }
+
+            // 2. 單指移動邏輯 -> 模擬 MouseMove
+            if (e.touches.length === 1 && !isPinching.current) {
+                const touch = e.touches[0];
+                const mouseEvent = {
+                    ...e,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    buttons: 1
+                } as any;
+                handleMouseMove(mouseEvent);
+            }
+        }}
+
+        onTouchEnd={(e) => {
+            // 手指離開時重置狀態
+            isPinching.current = false;
+            lastTouchDistance.current = null;
+            
+            // 模擬 MouseUp
+            handleMouseUp();
+        }}
+        style={{ cursor: isPanning.current || isSpacePressed.current ? 'grabbing' : currentTool === 'cursor' ? 'default' : 'crosshair' }}
       >
+        {/* 背景網格 (跟隨 Viewport) */}
         <div 
             className="absolute inset-0 pointer-events-none opacity-50"
             style={{
@@ -395,40 +480,32 @@ const App = () => {
             }}
         />
 
+        {/* 內容層 (Transform Layer) */}
         <div 
             className="w-full h-full flex justify-center py-20 origin-top-left will-change-transform"
-            style={{ 
-              transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
-            }}
+            style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
         >
             <div className="relative bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
-                 
-                 {/* 教科書層 */}
-                 <MemoizedTextbook 
+                  
+                  <MemoizedTextbook 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
-                       if (currentTool !== 'cursor') return; 
+                       if (currentTool !== 'cursor' || !canvasRef.current) return; 
                        const rect = data.clientRect;
-                       if(!canvasRef.current) return;
                        const baseRect = canvasRef.current.getBoundingClientRect();
-                       
                        setSelectionBox({
                            x: (rect.left - baseRect.left) / viewport.scale,
                            y: (rect.top - baseRect.top) / viewport.scale,
                            width: rect.width / viewport.scale,
                            height: rect.height / viewport.scale
                        });
-                       setSelectionMenuPos({ 
-                           top: rect.bottom, 
-                           left: rect.left + rect.width/2 
-                       });
+                       setSelectionMenuPos({ top: rect.bottom, left: rect.left + rect.width/2 });
                        setSelectedText(data.text);
                     }}
                     clearSelection={() => {}}
-                 />
-                 
-                 {/* 繪圖層 (傳入 Ref) */}
-                 <DrawingLayer 
+                  />
+                  
+                  <DrawingLayer 
                     ref={previewPathRef}
                     active={true}
                     strokes={strokes}
@@ -437,34 +514,28 @@ const App = () => {
                     currentTool={currentTool}
                     selectionBox={selectionBox} 
                     laserPath={laserPath}
-                 />
-                 
-                 {/* 物件層 (鎖定穿透邏輯) */}
-                 <div className={`absolute inset-0 z-10 ${['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) ? 'pointer-events-none' : ''}`}>
-                    {mindMaps.map(map => (
-                        <DraggableMindMap 
-                            key={map.id} data={map} scale={viewport.scale} 
-                            onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
-                            onDelete={(id: number) => setMindMaps(p => p.filter(m => m.id !== id))}
-                        />
-                    ))}
-                    
-                    {aiMemos.map(memo => (
-                        <AIMemoCard 
-                            key={memo.id} data={memo} scale={viewport.scale} 
-                            onUpdate={(id: number, dx: number, dy: number) => handleObjUpdate(id, {dx, dy}, 'memo')} 
+                  />
+                  
+                  <div className={`absolute inset-0 z-10 ${['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) ? 'pointer-events-none' : ''}`}>
+                     {mindMaps.map(map => (
+                         <DraggableMindMap key={map.id} data={map} scale={viewport.scale} 
+                            onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
+                            onDelete={(id) => setMindMaps(p => p.filter(m => m.id !== id))}
+                         />
+                     ))}
+                     {aiMemos.map(memo => (
+                         <AIMemoCard key={memo.id} data={memo} scale={viewport.scale} 
+                            onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'memo')} 
                             onDelete={() => setAiMemos(p => p.filter(m => m.id !== memo.id))} 
-                        />
-                    ))}
-
-                    {textObjects.map(text => (
-                        <DraggableText
-                            key={text.id} data={text} scale={viewport.scale}
-                            onUpdate={(id: number, d: any) => handleObjUpdate(id, d, 'text')}
-                            onDelete={(id: number) => setTextObjects(p => p.filter(t => t.id !== id))}
-                        />
-                    ))}
-                 </div>
+                         />
+                     ))}
+                     {textObjects.map(text => (
+                         <DraggableText key={text.id} data={text} scale={viewport.scale}
+                            onUpdate={(id, d) => handleObjUpdate(id, d, 'text')}
+                            onDelete={(id) => setTextObjects(p => p.filter(t => t.id !== id))}
+                         />
+                     ))}
+                  </div>
             </div>
         </div>
 
@@ -476,64 +547,22 @@ const App = () => {
             penColor={penColor} setPenColor={setPenColor}
             penSize={penSize} setPenSize={setPenSize}
             isAIProcessing={aiState === 'thinking'}
-            // [新增] 傳遞控制函數
             onToggleTimer={() => setIsTimerOpen(true)}
-            onToggleGrid={() => setIsGridMode(true)}
+            onToggleGrid={() => setShowNavGrid(true)}
+            onToggleSpotlight={() => setWidgetMode(p => p === 'spotlight' ? 'none' : 'spotlight')}
+            onToggleCurtain={() => setWidgetMode(p => p === 'curtain' ? 'none' : 'curtain')}
         />
       </div>
 
-{/* [修改] 四格導航 - 工具列上方的小型彈出選單 */ }
-{
-    isGridMode && (
-        <>
-            {/* 1. 透明背景層 - 點擊空白處關閉選單 */}
-            <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setIsGridMode(false)} 
-            />
+      <ClassroomWidgets mode={widgetMode} onClose={() => setWidgetMode('none')} />
 
-            {/* 2. 小選單本體 - 定位在底部工具列上方 */}
-            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 fade-in duration-200">
-                <div className="bg-white p-2 rounded-2xl shadow-xl border border-gray-200 flex flex-col gap-2 w-64">
-                    
-                    <div className="text-xs font-bold text-gray-400 px-2 pt-1">快速跳轉</div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                        {NAV_ZONES.map(zone => (
-                            <button
-                                key={zone.id}
-                                onClick={() => {
-                                    setViewport({ x: zone.x, y: zone.y, scale: 1 });
-                                    setIsGridMode(false);
-                                }}
-                                className={`
-                                    relative h-16 rounded-xl border transition-all active:scale-95 flex items-center justify-center
-                                    ${zone.color.replace('bg-', 'bg-').replace('500', '50')} 
-                                    ${zone.color.replace('bg-', 'border-').replace('500', '200')}
-                                    hover:brightness-95
-                                `}
-                            >
-                                <span className={`font-bold ${zone.color.replace('bg-', 'text-').replace('500', '600')}`}>
-                                    {zone.label}
-                                </span>
-                                
-                                {/* 小裝飾：顯示區域 ID */}
-                                <span className="absolute bottom-1 right-2 text-[10px] opacity-40 font-mono">
-                                    0{zone.id}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                
-                {/* 下方小箭頭裝飾 (指向工具列) */}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-b border-r border-gray-200 rotate-45"></div>
-            </div>
-        </>
-    )
-}
+      <NavigationOverlay 
+        isOpen={showNavGrid} 
+        onClose={() => setShowNavGrid(false)}
+        zones={NAV_ZONES}
+        onNavigate={handleQuickNav}
+      />
 
-      {/* [新增] 全螢幕計時器 */}
       <FullScreenTimer isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} />
 
       <SelectionFloatingMenu 
