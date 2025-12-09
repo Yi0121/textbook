@@ -150,7 +150,7 @@ export const ALL_TOOLS: ToolConfig[] = [
     id: 'nav_grid',
     label: '章節導航',
     icon: Grid2X2,
-    role: 'all',
+    role: 'teacher',
     isCore: false,
     category: 'navigation',
     actionType: 'toggle'
@@ -195,11 +195,10 @@ export const getDefaultToolbarState = (role: UserRole): string[] => {
   const defaultTools = [
     'cursor', 'select', 'pan', // 基礎
     'pen', 'highlighter', 'text', 'eraser', // 編輯
-    'nav_grid' // 導航
   ];
 
   if (role === 'teacher') {
-    return [...defaultTools, 'laser', 'timer', 'dashboard','ai_console'];
+    return [...defaultTools, 'laser', 'timer', 'dashboard','ai_console','navy_grid'];
   }
   
   if (role === 'student') {
