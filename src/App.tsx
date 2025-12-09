@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Sparkles, UserCog } from 'lucide-react';
+import { LayoutDashboard, Sparkles, UserCog, LayoutGrid } from 'lucide-react';
 
 // --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -9,7 +9,8 @@ import Modal from './components/ui/Modal';
 import SelectionFloatingMenu from './components/ui/SelectionFloatingMenu';
 
 // Canvas Components
-import TextbookContent from './components/canvas/TextbookContent';
+// import TextbookContent from './components/canvas/TextbookContent';
+import TextbookEditor from './components/canvas/TextbookEditor';
 import DrawingLayer from './components/canvas/DrawingLayer';
 import DraggableMindMap from './components/canvas/DraggableMindMap';
 import AIMemoCard from './components/canvas/AIMemoCard';
@@ -49,13 +50,14 @@ const NAV_ZONES = [
     { id: 4, label: '課後練習', description: '隨堂測驗與重點複習', x: 1200, y: 800, color: 'bg-purple-500' },
 ];
 
-const MemoizedTextbook = React.memo(TextbookContent);
+const MemoizedTextbook = React.memo(TextbookEditor);
 
 const App = () => {
   // --- 1. UI & State ---
   
   // 角色狀態
-  const [userRole, setUserRole] = useState<UserRole>('teacher'); 
+  const [userRole, setUserRole] = useState<UserRole>('teacher');
+  const [isEditMode, setIsEditMode] = useState(false); 
   
   // 側邊欄控制 (取代原本的 AI 視窗狀態)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);      // 控制 TopNavigation 的狀態同步
@@ -235,6 +237,7 @@ const App = () => {
   // --- 4. 滑鼠與繪圖事件 ---
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isEditMode && !isSpacePressed.current) return;
     if (currentTool === 'pan' || e.button === 1 || isSpacePressed.current) {
       isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -501,7 +504,8 @@ const App = () => {
         >
             <div className="relative bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
                   
-                  <MemoizedTextbook 
+                  <MemoizedTextbook
+                    isEditable={isEditMode && userRole === 'teacher'} 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
                        if ((currentTool !== 'cursor' && currentTool !== 'select') || !canvasRef.current) return; 
@@ -564,16 +568,34 @@ const App = () => {
         />
       </div>
 
-      {/* 開發者模式：角色切換器 (置中) */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-black/80 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-xl transition-all hover:scale-105">
+        {/* 開發者模式：角色切換器 (置中) - 已修正位置與層級 */}
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-black/90 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-2xl transition-all hover:scale-105 border border-white/10">
           <div className="flex items-center gap-2">
             <UserCog className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-400 font-bold hidden sm:inline">開發者模式:</span>
+            <span className="text-gray-400 font-bold hidden sm:inline">開發者:</span>
           </div>
+          
           <div className="flex bg-gray-700/50 rounded-full p-1">
-            <button onClick={() => setUserRole('teacher')} className={`px-4 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'teacher' ? 'bg-indigo-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>老師</button>
-            <button onClick={() => setUserRole('student')} className={`px-4 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'student' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>學生</button>
+            <button onClick={() => { setUserRole('teacher'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'teacher' ? 'bg-indigo-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>老師</button>
+            <button onClick={() => { setUserRole('student'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'student' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>學生</button>
           </div>
+
+          {/* 🔥 新增：編輯模式切換按鈕 (只有老師身分顯示) */}
+          {userRole === 'teacher' && (
+            <>
+              <div className="w-px h-4 bg-gray-600 mx-1"></div>
+              <button 
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={`px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1 ${
+                   isEditMode 
+                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {isEditMode ? '💾 完成' : '✏️ 編輯'}
+              </button>
+            </>
+          )}
       </div>
 
       {/* Widgets & Overlays */}
