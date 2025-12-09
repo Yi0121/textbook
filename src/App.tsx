@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Sparkles, UserCog } from 'lucide-react';
 
 // --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -54,12 +54,14 @@ const MemoizedTextbook = React.memo(TextbookContent);
 const App = () => {
   // --- 1. UI & State ---
   
-  // 角色與 AI 視窗狀態
+  // 角色狀態
   const [userRole, setUserRole] = useState<UserRole>('teacher'); 
-  const [isAITutorOpen, setIsAITutorOpen] = useState(false);     
+  
+  // 側邊欄控制 (取代原本的 AI 視窗狀態)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);      // 控制 TopNavigation 的狀態同步
+  const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);  // 控制 RightSidePanel 的開關
+  const [sidebarInitialTab, setSidebarInitialTab] = useState<'context' | 'chat'>('context'); // 控制打開時的分頁
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [aiState, setAiState] = useState<'idle' | 'thinking' | 'done'>('idle');
   const [widgetMode, setWidgetMode] = useState<'none' | 'spotlight' | 'curtain'>('none');
@@ -152,8 +154,27 @@ const App = () => {
       };
   };
 
-  // 共通 Trigger
-  const handleAITrigger = () => simulateAIProcess(() => { setIsQuizPanelOpen(true); setIsSidebarOpen(true); });
+  // [修改] 觸發 AI 對話 (點擊工具列上的按鈕)
+  const handleToggleAITutor = () => {
+      setSidebarInitialTab('chat'); // 設定預設分頁為聊天
+      
+      if (isQuizPanelOpen) {
+          // 如果已經打開，且現在是在看其他分頁，就切換過去；如果是關閉操作則關閉
+          // 這裡簡單處理：如果已打開就關閉，如果未打開就打開
+          setIsQuizPanelOpen(prev => !prev);
+          setIsSidebarOpen(prev => !prev);
+      } else {
+          setIsQuizPanelOpen(true);
+          setIsSidebarOpen(true);
+      }
+  };
+
+  // [修改] 觸發 AI 分析 (點擊懸浮選單)
+  const handleAITrigger = () => simulateAIProcess(() => { 
+      setSidebarInitialTab('context'); // 設定預設分頁為內容分析
+      setIsQuizPanelOpen(true); 
+      setIsSidebarOpen(true); 
+  });
 
   // [學生功能] 解釋
   const handleAIExplain = () => {
@@ -182,13 +203,14 @@ const App = () => {
       });
   };
 
-  // [老師功能] 生成測驗
+  // [老師功能] 生成測驗 (連動側邊欄)
   const handleGenerateQuiz = () => {
     setSelectionBox(null);
     setSelectionMenuPos(null);
     setAiState('thinking');
     setTimeout(() => {
         setAiState('idle');
+        setSidebarInitialTab('context'); // 切換到內容分析/測驗頁
         setIsQuizPanelOpen(true);
         setIsSidebarOpen(true);
     }, 1000);
@@ -235,6 +257,7 @@ const App = () => {
         if (previewPathRef.current) previewPathRef.current.setAttribute('d', startPoint);
     }
     
+    // 選取工具邏輯 (允許操作，但工具列顯示由 Config 控制)
     if (currentTool === 'select') {
         isDrawing.current = true;
         selectionStart.current = { x, y };
@@ -525,7 +548,7 @@ const App = () => {
             </div>
         </div>
 
-        {/* 工具列：依 userRole 顯示 */}
+        {/* 工具列 */}
         <FixedToolbar 
             userRole={userRole}
             currentTool={currentTool} setCurrentTool={setCurrentTool}
@@ -537,16 +560,19 @@ const App = () => {
             onOpenDashboard={() => setIsDashboardOpen(true)}
             onToggleSpotlight={() => setWidgetMode(p => p === 'spotlight' ? 'none' : 'spotlight')}
             onToggleLuckyDraw={() => setIsLuckyDrawOpen(true)}
-            onToggleAITutor={() => setIsAITutorOpen(prev => !prev)}
+            onToggleAITutor={handleToggleAITutor} // 修改：綁定切換側邊欄
         />
       </div>
 
-      {/* 開發測試用：角色切換器 */}
-      <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 bg-black/80 p-2 rounded-lg text-white text-xs opacity-50 hover:opacity-100 transition-opacity">
-          <div className="text-gray-400 font-bold mb-1">開發者模式:</div>
-          <div className="flex gap-2">
-            <button onClick={() => setUserRole('teacher')} className={`px-2 py-1 rounded ${userRole === 'teacher' ? 'bg-indigo-600' : 'bg-gray-700'}`}>老師端</button>
-            <button onClick={() => setUserRole('student')} className={`px-2 py-1 rounded ${userRole === 'student' ? 'bg-purple-600' : 'bg-gray-700'}`}>學生端</button>
+      {/* 開發者模式：角色切換器 (置中) */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 bg-black/80 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-xl transition-all hover:scale-105">
+          <div className="flex items-center gap-2">
+            <UserCog className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-400 font-bold hidden sm:inline">開發者模式:</span>
+          </div>
+          <div className="flex bg-gray-700/50 rounded-full p-1">
+            <button onClick={() => setUserRole('teacher')} className={`px-4 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'teacher' ? 'bg-indigo-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>老師</button>
+            <button onClick={() => setUserRole('student')} className={`px-4 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'student' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>學生</button>
           </div>
       </div>
 
@@ -559,17 +585,7 @@ const App = () => {
       />
       <FullScreenTimer isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} />
 
-      {/* AI 家教視窗 (學生端) */}
-      {isAITutorOpen && (
-          <div className="fixed right-6 bottom-24 w-80 h-96 bg-white shadow-2xl rounded-2xl border-2 border-purple-100 z-50 animate-in slide-in-from-right flex items-center justify-center">
-             <div className="text-center text-gray-400">
-                <span className="text-4xl block mb-2">🤖</span>
-                <p>AI 家教對話視窗</p>
-             </div>
-          </div>
-      )}
-
-      {/* 選取選單：傳入角色與不同功能 */}
+      {/* 選取選單 */}
       <SelectionFloatingMenu 
           position={selectionMenuPos} 
           onClose={() => { setSelectionBox(null); setSelectionMenuPos(null); }}
@@ -581,12 +597,13 @@ const App = () => {
           onLessonPlan={handleLessonPlan}     
       />
       
-      {/* 側邊欄：傳入角色以改變內容 */}
+      {/* 側邊欄 (整合 Context / Chat / Upload / Review) */}
       <RightSidePanel 
           isOpen={isQuizPanelOpen} 
           onClose={() => {setIsQuizPanelOpen(false); setIsSidebarOpen(false)}} 
           selectedText={selectedText} 
           userRole={userRole} 
+          initialTab={sidebarInitialTab} // 傳入預設分頁
       />
       
       <Modal isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} title="學習數據儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth>

@@ -1,7 +1,7 @@
 import { 
   MousePointer2, Hand, PenTool, Highlighter, Type, Eraser, 
   Zap, Timer, Grid2X2, LayoutDashboard, Dices, 
-  Focus, Blinds, Sparkles, Scan
+  Focus, Blinds, Sparkles, Scan, Bot
 } from 'lucide-react';
 
 // --- 定義型別 ---
@@ -134,6 +134,16 @@ export const ALL_TOOLS: ToolConfig[] = [
     category: 'system',
     actionType: 'modal'
   },
+  {
+    id: 'ai_console',
+    label: 'AI 中控台',
+    icon: Bot,
+    role: 'teacher',
+    isCore: true,     // 這是老師的核心功能
+    category: 'ai',
+    actionType: 'toggle',
+    activeColorClass: 'bg-indigo-50 text-indigo-600'
+  },
   
   // === 3. 課堂互動小工具 (收納在百寶箱或獨立顯示) ===
   {
@@ -175,6 +185,7 @@ export const ALL_TOOLS: ToolConfig[] = [
     actionType: 'toggle',
     activeColorClass: 'bg-purple-50 text-purple-600'
   }
+
 ];
 
 // --- Helper Functions ---
@@ -188,7 +199,7 @@ export const getDefaultToolbarState = (role: UserRole): string[] => {
   ];
 
   if (role === 'teacher') {
-    return [...defaultTools, 'laser', 'timer', 'dashboard'];
+    return [...defaultTools, 'laser', 'timer', 'dashboard','ai_console'];
   }
   
   if (role === 'student') {

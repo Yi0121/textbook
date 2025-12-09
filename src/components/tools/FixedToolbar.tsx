@@ -30,7 +30,7 @@ interface FixedToolbarProps {
   onOpenDashboard: () => void;
   onToggleSpotlight?: () => void;
   onToggleLuckyDraw?: () => void;
-  onToggleAITutor?: () => void;
+  onToggleAITutor?: () => void; // 這一個函數會負責打開側邊欄
 }
 
 const COLORS = {
@@ -50,8 +50,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
   const [visibleToolIds, setVisibleToolIds] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
   const [position, setPosition] = useState<'left' | 'center' | 'right'>('center');
-  
-  // 控制子選單 (顏色/粗細) 或 百寶箱 (Box)
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
 
   // 初始化：根據角色載入工具
@@ -59,20 +57,16 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
     setVisibleToolIds(getDefaultToolbarState(userRole));
   }, [userRole]);
 
-  // 當工具改變時，決定是否要開啟子選單
+  // --- 核心修改：點擊處理 ---
   const handleToolClick = (tool: ToolConfig) => {
-    // 1. 如果是切換模式類工具 (Set Tool)
+    // 1. 切換模式類工具
     if (tool.actionType === 'set-tool' && tool.targetStateValue) {
       setCurrentTool(tool.targetStateValue);
       
-      // 邏輯：如果是點擊當前已選取的工具，且它有子選單 -> 切換選單顯示
       if (currentTool === tool.targetStateValue && tool.hasSubMenu) {
         setActiveSubPanel(prev => prev === tool.id ? null : tool.id);
       } else if (tool.hasSubMenu) {
-        // 切換到新工具時，若有子選單預設不打開，保持畫面乾淨 (或者你想預設打開也可以)
         setActiveSubPanel(null); 
-        
-        // 設定預設顏色 (Optional)
         if (tool.id === 'pen') { setPenColor('#ef4444'); setPenSize(4); }
         if (tool.id === 'highlighter') { setPenColor('#fef08a'); setPenSize(20); }
       } else {
@@ -80,30 +74,32 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
       }
     }
     
-    // 2. 如果是開關類工具 (Toggle / Modal)
+    // 2. 開關類工具 (Toggle / Modal)
     else {
-      // 這裡做一個 Mapping 把 ID 對應到 props 傳進來的 function
       switch (tool.id) {
         case 'timer': actions.onToggleTimer(); break;
         case 'nav_grid': actions.onToggleGrid(); break;
         case 'dashboard': actions.onOpenDashboard(); break;
         case 'spotlight': actions.onToggleSpotlight?.(); break;
         case 'lucky_draw': actions.onToggleLuckyDraw?.(); break;
-        case 'ai_tutor': actions.onToggleAITutor?.(); break;
+        
+        // 👇 [修復點] 把這兩個 ID 都連動到 onToggleAITutor
+        case 'ai_tutor':    // 學生端按鈕 ID
+        case 'ai_console':  // 老師端按鈕 ID
+             actions.onToggleAITutor?.(); 
+             break;
       }
       
-      // 特殊處理：如果是百寶箱裡的小工具被點擊了，通常會關閉百寶箱面板
       if (activeSubPanel === 'box') {
         setActiveSubPanel(null);
       }
     }
   };
 
-  // --- 渲染子面板 (顏色選擇 / 粗細 / 百寶箱內容) ---
+  // --- 渲染子面板 ---
   const renderSubPanel = () => {
     if (!activeSubPanel) return null;
 
-    // A. 繪圖工具設定 (畫筆/螢光筆/文字)
     if (['pen', 'highlighter', 'text'].includes(activeSubPanel)) {
        const colors = COLORS[activeSubPanel as keyof typeof COLORS] || [];
        return (
@@ -130,24 +126,11 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
        );
     }
 
-    // B. 縮放控制
-    if (activeSubPanel === 'zoom') {
-        return (
-            <div className="flex items-center gap-2 px-2">
-                <button onClick={() => setZoomLevel((p:number) => Math.max(0.5, p-0.1))} className="p-2 hover:bg-gray-100 rounded-lg active:bg-gray-200"><Minus className="w-4 h-4" /></button>
-                <span className="font-mono font-bold w-12 text-center text-gray-700">{Math.round(zoomLevel * 100)}%</span>
-                <button onClick={() => setZoomLevel((p:number) => Math.min(3, p+0.1))} className="p-2 hover:bg-gray-100 rounded-lg active:bg-gray-200"><Plus className="w-4 h-4" /></button>
-            </div>
-        );
-    }
-
-    // C. 百寶箱 (Box) - 這裡我們動態撈取 'widget' 類別但不在主工具列上的工具
     if (activeSubPanel === 'box') {
-        // 找出所有角色可用，但沒有顯示在主工具列上的 widget
         const boxTools = ALL_TOOLS.filter(t => 
-           (t.role === 'all' || t.role === userRole) && // 權限符合
-           !visibleToolIds.includes(t.id) &&            // 不在主工具列上
-           ['widget', 'system'].includes(t.category)    // 是小工具
+           (t.role === 'all' || t.role === userRole) && 
+           !visibleToolIds.includes(t.id) && 
+           ['widget', 'system', 'ai'].includes(t.category) // 包含 ai 類別以免遺漏
         );
 
         return (
@@ -181,7 +164,7 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
   return (
     <div className={getPositionClasses()} onMouseDown={(e) => e.stopPropagation()}>
       
-      {/* 1. 子面板 (顏色/百寶箱) */}
+      {/* 子面板 */}
       <div className={`
         mb-3 bg-white/95 backdrop-blur-xl border border-white/60 shadow-xl rounded-2xl overflow-hidden
         transition-all duration-300 origin-bottom
@@ -192,38 +175,32 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
          </div>
       </div>
 
-      {/* 2. 主工具列 */}
+      {/* 主工具列 */}
       <div className={`
          bg-white/90 backdrop-blur-lg shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50
          rounded-2xl transition-all duration-500 flex items-center
          ${isExpanded ? 'p-1.5 gap-1' : 'w-14 h-14 justify-center cursor-pointer hover:scale-110 hover:shadow-2xl'}
       `}>
-          {/* 收合狀態：只顯示一個筆圖示 */}
           {!isExpanded && (
             <button onClick={() => setIsExpanded(true)} className="w-full h-full flex items-center justify-center text-indigo-600">
-                {/* 這裡可以放 App Logo 或主要工具 */}
                 <Box className="w-6 h-6" />
             </button>
           )}
 
-          {/* 展開狀態 */}
           {isExpanded && (
             <>
-                {/* 拖曳/位置切換把手 */}
                 <button onClick={() => setPosition(p => p === 'center' ? 'left' : p === 'left' ? 'right' : 'center')} 
                     className="w-6 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing mr-1"
                 >
                     <GripVertical className="w-4 h-4" />
                 </button>
 
-                {/* 動態渲染按鈕 Loop */}
                 {visibleToolIds.map((toolId) => {
                    const tool = ALL_TOOLS.find(t => t.id === toolId);
                    if(!tool) return null;
 
-                   // 判斷是否為「啟動中」狀態
                    const isActive = (tool.actionType === 'set-tool' && currentTool === tool.targetStateValue) || 
-                                    (activeSubPanel === tool.id); // 或者是打開了它的子選單
+                                    (activeSubPanel === tool.id);
 
                    return (
                       <button 
@@ -239,13 +216,10 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                       >
                          <tool.icon 
                             className="w-5 h-5 transition-colors" 
-                            // 特效：如果是畫筆且被選中，讓 Icon 變成目前的筆刷顏色
                             style={{ 
                                color: (isActive && ['pen', 'highlighter', 'text'].includes(tool.id)) ? penColor : 'currentColor' 
                             }} 
                          />
-                         
-                         {/* 子選單提示點 */}
                          {tool.hasSubMenu && (
                             <div className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${isActive ? 'bg-current opacity-50' : 'bg-gray-300'}`} />
                          )}
@@ -255,7 +229,14 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
 
                 <div className="w-px h-6 bg-gray-200 mx-1" />
 
-                {/* 獨立功能：百寶箱 (顯示所有沒被列出來的 Widget) */}
+                <div className="flex flex-col items-center gap-0.5 mx-1">
+                   <button onClick={() => setZoomLevel((p:number) => Math.min(3, p+0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600"><Plus className="w-3 h-3" /></button>
+                   <span className="text-[9px] font-bold text-gray-400 font-mono">{Math.round(zoomLevel * 100)}%</span>
+                   <button onClick={() => setZoomLevel((p:number) => Math.max(0.5, p-0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600"><Minus className="w-3 h-3" /></button>
+                </div>
+
+                <div className="w-px h-6 bg-gray-200 mx-1" />
+
                 <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
                     className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600' : 'text-gray-500 hover:bg-gray-100'}`}
                     title="百寶箱"
@@ -263,7 +244,6 @@ const FixedToolbar: React.FC<FixedToolbarProps> = ({
                     <Box className="w-5 h-5" />
                 </button>
 
-                {/* 收合按鈕 */}
                 <button onClick={() => setIsExpanded(false)} className="ml-1 w-8 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                     <ChevronLeft className="w-5 h-5" />
                 </button>
