@@ -23,6 +23,8 @@ import NavigationOverlay from './components/ui/NavigationOverlay';
 // Utils
 import { distanceBetween } from './utils/geometry';
 
+// 引入型別定義
+import { type UserRole } from './config/toolConfig';
 
 const getTouchDistance = (touches: React.TouchList) => {
   return Math.hypot(
@@ -31,7 +33,7 @@ const getTouchDistance = (touches: React.TouchList) => {
   );
 };
 
-// 計算兩個觸控點的中心座標 (這是為了讓縮放以兩指中間為準)
+// 計算兩個觸控點的中心座標
 const getTouchCenter = (touches: React.TouchList) => {
   return {
     x: (touches[0].clientX + touches[1].clientX) / 2,
@@ -51,6 +53,11 @@ const MemoizedTextbook = React.memo(TextbookContent);
 
 const App = () => {
   // --- 1. UI & State ---
+  
+  // 角色與 AI 視窗狀態
+  const [userRole, setUserRole] = useState<UserRole>('teacher'); 
+  const [isAITutorOpen, setIsAITutorOpen] = useState(false);     
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizPanelOpen, setIsQuizPanelOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -98,7 +105,7 @@ const App = () => {
 
   // --- 2. 核心邏輯 Helpers ---
 
-  // 坐標轉換：螢幕像素 -> 畫布邏輯坐標
+  // 坐標轉換
   const getCanvasCoordinates = useCallback((e: React.MouseEvent | MouseEvent) => {
       if (!canvasRef.current) return { x: 0, y: 0 };
       const rect = canvasRef.current.getBoundingClientRect();
@@ -114,13 +121,13 @@ const App = () => {
       else if (type === 'text') setTextObjects(p => p.map(t => t.id === id ? { ...t, ...data } : t));
   }, []);
 
-  // 快速導航跳轉 (處理負值座標)
   const handleQuickNav = (targetX: number, targetY: number) => {
       setViewport({ x: -targetX, y: -targetY, scale: 1.0 });
       setShowNavGrid(false);
   };
 
-  // --- 3. AI 模擬邏輯 ---
+  // --- 3. AI 功能邏輯 ---
+  
   const simulateAIProcess = (callback: () => void) => {
       setSelectionMenuPos(null);
       setSelectionBox(null);
@@ -145,8 +152,10 @@ const App = () => {
       };
   };
 
+  // 共通 Trigger
   const handleAITrigger = () => simulateAIProcess(() => { setIsQuizPanelOpen(true); setIsSidebarOpen(true); });
 
+  // [學生功能] 解釋
   const handleAIExplain = () => {
     const pos = getSpawnPosition();
     simulateAIProcess(() => {
@@ -157,6 +166,7 @@ const App = () => {
     });
   };
 
+  // [學生功能] 心智圖
   const handleAIMindMap = () => {
       const pos = getSpawnPosition();
       simulateAIProcess(() => {
@@ -170,6 +180,34 @@ const App = () => {
               edges: [ { source: 'root', target: '1' }, { source: 'root', target: '2' } ]
           }]);
       });
+  };
+
+  // [老師功能] 生成測驗
+  const handleGenerateQuiz = () => {
+    setSelectionBox(null);
+    setSelectionMenuPos(null);
+    setAiState('thinking');
+    setTimeout(() => {
+        setAiState('idle');
+        setIsQuizPanelOpen(true);
+        setIsSidebarOpen(true);
+    }, 1000);
+  };
+
+  // [老師功能] 備課引導
+  const handleLessonPlan = () => {
+    const pos = getSpawnPosition();
+    setSelectionBox(null);
+    setSelectionMenuPos(null);
+    setAiState('thinking');
+    setTimeout(() => {
+        setAiState('idle');
+        setAiMemos(prev => [...prev, {
+            id: Date.now(), x: pos.x, y: pos.y, 
+            keyword: "教學建議", 
+            content: "💡 教學引導：建議此處搭配 3D 模型展示 ATP 合成酶的旋轉機制，並提問學生關於原核生物的差異。"
+        }]);
+    }, 1000);
   };
 
   // --- 4. 滑鼠與繪圖事件 ---
@@ -287,12 +325,11 @@ const App = () => {
     }
   };
 
-  // --- 5. Global Events (縮放優化 & 快捷鍵) ---
+  // --- 5. Global Events ---
 
   useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
           if (e.code === 'Space') isSpacePressed.current = true;
-          // [優化] 加入復原 (Undo) 功能
           if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
               setStrokes(prev => prev.slice(0, -1));
           }
@@ -314,7 +351,6 @@ const App = () => {
       };
   }, []);
 
-  // [優化] 雷射筆動畫 Loop
   useEffect(() => {
     if (laserPath.length === 0) return;
     let frameId: number;
@@ -330,33 +366,22 @@ const App = () => {
     return () => cancelAnimationFrame(frameId);
   }, [laserPath]);
 
-  // [重點優化] 游標中心縮放邏輯 (Zoom-to-Point)
   useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
-
       const onWheel = (e: WheelEvent) => {
           if (e.ctrlKey || e.metaKey) {
               e.preventDefault();
-              
               setViewport(prev => {
                   const zoomSensitivity = 0.002;
                   const delta = -e.deltaY * zoomSensitivity;
                   const newScale = Math.min(Math.max(0.5, prev.scale + delta), 3);
-                  
-                  // 計算滑鼠在 Canvas 內的相對位置 (0~1)
-                  // 這裡假設 Container 等於視窗大小
                   const rect = container.getBoundingClientRect();
                   const mouseX = e.clientX - rect.left;
                   const mouseY = e.clientY - rect.top;
-
-                  // 關鍵公式：
-                  // 新的 Offset = 滑鼠位置 - (滑鼠位置 - 舊Offset) * (新比例 / 舊比例)
-                  // 簡單來說：讓滑鼠指向的那個點，在縮放前後保持在螢幕的同一個像素位置
                   const scaleRatio = newScale / prev.scale;
                   const newX = mouseX - (mouseX - prev.x) * scaleRatio;
                   const newY = mouseY - (mouseY - prev.y) * scaleRatio;
-
                   return { x: newX, y: newY, scale: newScale };
               });
           }
@@ -364,7 +389,6 @@ const App = () => {
       container.addEventListener('wheel', onWheel, { passive: false });
       return () => container.removeEventListener('wheel', onWheel);
   }, []);
-
 
   // --- Render ---
   return (
@@ -392,87 +416,52 @@ const App = () => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp} 
         onMouseLeave={handleMouseUp}
-        // --- [新增] 觸控事件 (處理手指操作) ---
+        
         onTouchStart={(e) => {
-            // 1. 如果是兩根手指 -> 開始縮放模式
             if (e.touches.length === 2) {
                 isPinching.current = true;
-                isDrawing.current = false; // 強制停止繪圖
+                isDrawing.current = false;
                 lastTouchDistance.current = getTouchDistance(e.touches);
                 return;
             }
-            // 2. 如果是一根手指 -> 視為滑鼠點擊 (繪圖或平移)
             if (e.touches.length === 1) {
-                // 模擬 MouseDown
                 const touch = e.touches[0];
-                const mouseEvent = {
-                    ...e,
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    button: 0, // 左鍵
-                    buttons: 1
-                } as any;
+                const mouseEvent = { ...e, clientX: touch.clientX, clientY: touch.clientY, button: 0, buttons: 1 } as any;
                 handleMouseDown(mouseEvent);
             }
         }}
-
         onTouchMove={(e) => {
-            // 1. 雙指縮放邏輯
             if (e.touches.length === 2 && isPinching.current && lastTouchDistance.current) {
                 const newDistance = getTouchDistance(e.touches);
                 const center = getTouchCenter(e.touches);
-                
-                // 計算縮放比例因子 (大於1是放大，小於1是縮小)
                 const scaleFactor = newDistance / lastTouchDistance.current;
-                
-                // 更新距離供下一次計算
                 lastTouchDistance.current = newDistance;
-
-                // 執行縮放 (邏輯同滑鼠滾輪，但使用 center 作為基準點)
                 setViewport(prev => {
                     const newScale = Math.min(Math.max(0.5, prev.scale * scaleFactor), 3);
-                    
-                    // 計算中心點在 Canvas 內的相對位置
-                    if (!containerRef.current) return prev;
-                    const rect = containerRef.current.getBoundingClientRect();
+                    const rect = containerRef.current!.getBoundingClientRect();
                     const mouseX = center.x - rect.left;
                     const mouseY = center.y - rect.top;
-
-                    // 重新計算 Offset 以保持中心點不動
-                    // 公式：NewOffset = Mouse - (Mouse - OldOffset) * (NewScale / OldScale)
                     const scaleRatio = newScale / prev.scale;
                     const newX = mouseX - (mouseX - prev.x) * scaleRatio;
                     const newY = mouseY - (mouseY - prev.y) * scaleRatio;
-
                     return { x: newX, y: newY, scale: newScale };
                 });
                 return;
             }
-
-            // 2. 單指移動邏輯 -> 模擬 MouseMove
             if (e.touches.length === 1 && !isPinching.current) {
                 const touch = e.touches[0];
-                const mouseEvent = {
-                    ...e,
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    buttons: 1
-                } as any;
+                const mouseEvent = { ...e, clientX: touch.clientX, clientY: touch.clientY, buttons: 1 } as any;
                 handleMouseMove(mouseEvent);
             }
         }}
-
-        onTouchEnd={(e) => {
-            // 手指離開時重置狀態
+        onTouchEnd={() => {
             isPinching.current = false;
             lastTouchDistance.current = null;
-            
-            // 模擬 MouseUp
             handleMouseUp();
         }}
         style={{ cursor: isPanning.current || isSpacePressed.current ? 'grabbing' : currentTool === 'cursor' ? 'default' : 'crosshair' }}
       >
-        {/* 背景網格 (跟隨 Viewport) */}
+        {/* 背景網格 */}
         <div 
             className="absolute inset-0 pointer-events-none opacity-50"
             style={{
@@ -482,7 +471,7 @@ const App = () => {
             }}
         />
 
-        {/* 內容層 (Transform Layer) */}
+        {/* 內容層 */}
         <div 
             className="w-full h-full flex justify-center py-20 origin-top-left will-change-transform"
             style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
@@ -492,7 +481,7 @@ const App = () => {
                   <MemoizedTextbook 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
-                       if (currentTool !== 'cursor' || !canvasRef.current) return; 
+                       if ((currentTool !== 'cursor' && currentTool !== 'select') || !canvasRef.current) return; 
                        const rect = data.clientRect;
                        const baseRect = canvasRef.current.getBoundingClientRect();
                        setSelectionBox({
@@ -508,14 +497,9 @@ const App = () => {
                   />
                   
                   <DrawingLayer 
-                    ref={previewPathRef}
-                    active={true}
-                    strokes={strokes}
-                    penColor={penColor} 
-                    penSize={penSize} 
-                    currentTool={currentTool}
-                    selectionBox={selectionBox} 
-                    laserPath={laserPath}
+                    ref={previewPathRef} active={true} strokes={strokes}
+                    penColor={penColor} penSize={penSize} currentTool={currentTool}
+                    selectionBox={selectionBox} laserPath={laserPath}
                   />
                   
                   <div className={`absolute inset-0 z-10 ${['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) ? 'pointer-events-none' : ''}`}>
@@ -541,43 +525,69 @@ const App = () => {
             </div>
         </div>
 
+        {/* 工具列：依 userRole 顯示 */}
         <FixedToolbar 
+            userRole={userRole}
             currentTool={currentTool} setCurrentTool={setCurrentTool}
-            onOpenDashboard={() => setIsDashboardOpen(true)}
-            zoomLevel={viewport.scale} 
-            setZoomLevel={(s: any) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
+            zoomLevel={viewport.scale} setZoomLevel={(s: any) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
             penColor={penColor} setPenColor={setPenColor}
             penSize={penSize} setPenSize={setPenSize}
-            isAIProcessing={aiState === 'thinking'}
             onToggleTimer={() => setIsTimerOpen(true)}
             onToggleGrid={() => setShowNavGrid(true)}
+            onOpenDashboard={() => setIsDashboardOpen(true)}
             onToggleSpotlight={() => setWidgetMode(p => p === 'spotlight' ? 'none' : 'spotlight')}
-            onToggleCurtain={() => setWidgetMode(p => p === 'curtain' ? 'none' : 'curtain')}
             onToggleLuckyDraw={() => setIsLuckyDrawOpen(true)}
+            onToggleAITutor={() => setIsAITutorOpen(prev => !prev)}
         />
       </div>
-        <LuckyDraw isOpen={isLuckyDrawOpen} onClose={() => setIsLuckyDrawOpen(false)} />
 
+      {/* 開發測試用：角色切換器 */}
+      <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 bg-black/80 p-2 rounded-lg text-white text-xs opacity-50 hover:opacity-100 transition-opacity">
+          <div className="text-gray-400 font-bold mb-1">開發者模式:</div>
+          <div className="flex gap-2">
+            <button onClick={() => setUserRole('teacher')} className={`px-2 py-1 rounded ${userRole === 'teacher' ? 'bg-indigo-600' : 'bg-gray-700'}`}>老師端</button>
+            <button onClick={() => setUserRole('student')} className={`px-2 py-1 rounded ${userRole === 'student' ? 'bg-purple-600' : 'bg-gray-700'}`}>學生端</button>
+          </div>
+      </div>
+
+      {/* Widgets & Overlays */}
+      <LuckyDraw isOpen={isLuckyDrawOpen} onClose={() => setIsLuckyDrawOpen(false)} />
       <ClassroomWidgets mode={widgetMode} onClose={() => setWidgetMode('none')} />
-
       <NavigationOverlay 
-        isOpen={showNavGrid} 
-        onClose={() => setShowNavGrid(false)}
-        zones={NAV_ZONES}
-        onNavigate={handleQuickNav}
+        isOpen={showNavGrid} onClose={() => setShowNavGrid(false)}
+        zones={NAV_ZONES} onNavigate={handleQuickNav}
       />
-
       <FullScreenTimer isOpen={isTimerOpen} onClose={() => setIsTimerOpen(false)} />
 
+      {/* AI 家教視窗 (學生端) */}
+      {isAITutorOpen && (
+          <div className="fixed right-6 bottom-24 w-80 h-96 bg-white shadow-2xl rounded-2xl border-2 border-purple-100 z-50 animate-in slide-in-from-right flex items-center justify-center">
+             <div className="text-center text-gray-400">
+                <span className="text-4xl block mb-2">🤖</span>
+                <p>AI 家教對話視窗</p>
+             </div>
+          </div>
+      )}
+
+      {/* 選取選單：傳入角色與不同功能 */}
       <SelectionFloatingMenu 
           position={selectionMenuPos} 
-          onTrigger={handleAITrigger} 
-          onExplain={handleAIExplain} 
-          onMindMap={handleAIMindMap} 
           onClose={() => { setSelectionBox(null); setSelectionMenuPos(null); }}
+          
+          userRole={userRole}           
+          onExplain={handleAIExplain}   
+          onMindMap={handleAIMindMap}   
+          onGenerateQuiz={handleGenerateQuiz} 
+          onLessonPlan={handleLessonPlan}     
       />
       
-      <RightSidePanel isOpen={isQuizPanelOpen} onClose={() => {setIsQuizPanelOpen(false); setIsSidebarOpen(false)}} selectedText={selectedText} />
+      {/* 側邊欄：傳入角色以改變內容 */}
+      <RightSidePanel 
+          isOpen={isQuizPanelOpen} 
+          onClose={() => {setIsQuizPanelOpen(false); setIsSidebarOpen(false)}} 
+          selectedText={selectedText} 
+          userRole={userRole} 
+      />
       
       <Modal isOpen={isDashboardOpen} onClose={() => setIsDashboardOpen(false)} title="學習數據儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth>
           <DashboardContent />
