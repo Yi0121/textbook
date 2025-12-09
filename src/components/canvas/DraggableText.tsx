@@ -2,178 +2,157 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Trash2, GripVertical } from 'lucide-react';
 
 interface DraggableTextProps {
-  data: { id: number; x: number; y: number; text: string; color: string; fontSize: number; fontFamily?: string };
-  onUpdate: (id: number, newData: any) => void;
-  onDelete: (id: number) => void;
+  data: {
+    id: number;
+    x: number;
+    y: number;
+    text: string;
+    color: string;
+    fontSize?: number;
+  };
   scale: number;
+  onUpdate: (id: number, data: { x: number; y: number; text?: string }) => void;
+  onDelete: (id: number) => void;
 }
 
-const DraggableText: React.FC<DraggableTextProps> = ({ data, onUpdate, onDelete, scale }) => {
+const DraggableText: React.FC<DraggableTextProps> = ({ data, scale, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [tempText, setTempText] = useState(data.text);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // UI 狀態：控制視覺 (是否被抓起)
-  const [isDraggingState, setIsDraggingState] = useState(false);
+  const [localText, setLocalText] = useState(data.text);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // 效能優化：使用 Ref 紀錄拖曳數據，不觸發 Render
-  const dragData = useRef({
-      isDragging: false,
-      startX: 0,
-      startY: 0,
-      totalDx: 0,
-      totalDy: 0
-  });
+  // 用 ref 記錄拖曳起始狀態，解決晃動問題
+  const dragStartRef = useRef<{ 
+    mouseX: number; 
+    mouseY: number; 
+    itemX: number; 
+    itemY: number 
+  } | null>(null);
 
-  // 自動聚焦輸入框
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // 當進入編輯模式，自動 focus
   useEffect(() => {
     if (isEditing && inputRef.current) {
-        inputRef.current.focus();
-        inputRef.current.select(); // 全選方便修改
+      inputRef.current.focus();
     }
   }, [isEditing]);
 
+  // 處理拖曳開始
   const handleMouseDown = (e: React.MouseEvent) => {
-    // [重要] 如果正在編輯，或者點擊的是輸入框，就不啟動拖曳
-    if (isEditing) return;
+    if (isEditing) return; // 編輯中不給拖
+    e.stopPropagation(); // 防止觸發畫布拖曳
     
-    e.stopPropagation();
+    setIsDragging(true);
     
-    dragData.current = {
-        isDragging: true,
-        startX: e.clientX,
-        startY: e.clientY,
-        totalDx: 0,
-        totalDy: 0
+    // 關鍵修正：記錄「按下瞬間」的滑鼠位置與物件位置
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      itemX: data.x,
+      itemY: data.y
     };
-    setIsDraggingState(true);
   };
 
+  // 全域滑鼠事件 (處理拖曳移動與結束)
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragData.current.isDragging || !containerRef.current) return;
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !dragStartRef.current) return;
+
       e.preventDefault();
 
-      const dx = (e.clientX - dragData.current.startX) / scale;
-      const dy = (e.clientY - dragData.current.startY) / scale;
+      // 計算滑鼠移動的距離 (除以 scale 以適應縮放)
+      const deltaX = (e.clientX - dragStartRef.current.mouseX) / scale;
+      const deltaY = (e.clientY - dragStartRef.current.mouseY) / scale;
 
-      // 直接移動 DOM，不寫入 React State -> 解決延遲
-      containerRef.current.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
-      
-      dragData.current.totalDx = dx;
-      dragData.current.totalDy = dy;
+      // 絕對位置更新：起始位置 + 移動距離
+      // 這種算法不會因為 React 渲染延遲而產生晃動
+      onUpdate(data.id, {
+        x: dragStartRef.current.itemX + deltaX,
+        y: dragStartRef.current.itemY + deltaY
+      });
     };
 
-    const handleMouseUp = () => {
-      if (!dragData.current.isDragging) return;
-      
-      dragData.current.isDragging = false;
-      setIsDraggingState(false);
-
-      // 拖曳結束，更新真實座標
-      if (dragData.current.totalDx !== 0 || dragData.current.totalDy !== 0) {
-         // 注意：這裡我們只更新位置，不更新文字內容
-         onUpdate(data.id, { 
-             x: data.x + dragData.current.totalDx, 
-             y: data.y + dragData.current.totalDy 
-         });
-      }
-
-      // 重置 transform
-      if (containerRef.current) {
-          containerRef.current.style.transform = 'none';
+    const handleWindowMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        dragStartRef.current = null;
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    if (isDragging) {
+      window.addEventListener('mousemove', handleWindowMouseMove);
+      window.addEventListener('mouseup', handleWindowMouseUp);
+    }
+
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [data.id, data.x, data.y, onUpdate, scale]); // 依賴項加入 x, y 確保計算基準正確
+  }, [isDragging, scale, data.id, onUpdate]);
 
-  // 處理文字輸入完成
   const handleBlur = () => {
-      setIsEditing(false);
-      if (tempText !== data.text) {
-          onUpdate(data.id, { text: tempText });
-      }
+    setIsEditing(false);
+    if (localText.trim() === '') {
+      onDelete(data.id); // 如果文字是空的，直接刪除
+    } else {
+      onUpdate(data.id, { x: data.x, y: data.y, text: localText });
+    }
   };
 
   return (
     <div
-      ref={containerRef}
-      className={`absolute z-30 group flex items-start`}
-      style={{ 
-          top: data.y, 
-          left: data.x,
-          transition: isDraggingState ? 'none' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      className={`absolute flex items-center group transition-colors duration-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      style={{
+        left: data.x,
+        top: data.y,
+        // 為了讓滑鼠指針在文字中心，可以考慮 transform (這裡先不動，避免位置跳動)
+        color: data.color,
+        fontSize: `${data.fontSize || 24}px`,
+        fontWeight: 'bold',
+        zIndex: isDragging || isEditing ? 50 : 10, // 拖曳時浮起
       }}
-      onMouseDown={handleMouseDown}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={() => setIsEditing(true)}
+      onMouseDown={handleMouseDown}
     >
-      
-      {/* 拖曳時的裝飾把手 (只有 Hover 或 拖曳時顯示) */}
-      {!isEditing && (
-        <div className={`
-            absolute -left-6 top-1/2 -translate-y-1/2 p-1 rounded-md
-            text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 cursor-grab active:cursor-grabbing
-            transition-opacity duration-200
-            ${isDraggingState ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-        `}>
-            <GripVertical className="w-4 h-4" />
+      {/* 刪除按鈕 (Hover 時顯示) */}
+      {!isEditing && (isHovered || isDragging) && (
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-1 bg-white shadow-lg rounded-lg p-1 border border-slate-200 animate-in fade-in zoom-in duration-150">
+           <button 
+             onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
+             className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded transition-colors"
+             title="刪除"
+           >
+             <Trash2 size={16} />
+           </button>
+           {/* 拖曳手把提示 */}
+           <div className="p-1 text-slate-300 border-l border-slate-100 cursor-grab">
+              <GripVertical size={16} />
+           </div>
         </div>
       )}
 
       {isEditing ? (
-        <textarea
+        <input
           ref={inputRef}
-          value={tempText}
-          onChange={(e) => setTempText(e.target.value)}
+          value={localText}
+          onChange={(e) => setLocalText(e.target.value)}
           onBlur={handleBlur}
-          onKeyDown={(e) => { e.stopPropagation(); }} // 防止觸發全域快捷鍵
-          className="bg-white shadow-xl rounded-lg p-3 outline-none min-w-[120px] resize overflow-hidden border-2 border-indigo-500 animate-in zoom-in-95 duration-200"
-          style={{ 
-              fontSize: `${data.fontSize}px`, 
-              color: data.color,
-              fontFamily: data.fontFamily || 'sans-serif',
-              lineHeight: 1.4
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleBlur();
+            e.stopPropagation(); // 防止觸發 App 的快捷鍵
           }}
-          placeholder="輸入文字..."
+          className="bg-white/80 border-2 border-indigo-400 rounded px-2 py-1 outline-none min-w-[100px] shadow-lg"
+          style={{ 
+            fontSize: `${data.fontSize || 24}px`,
+            color: data.color 
+          }}
         />
       ) : (
-        <div className="relative">
-            <div 
-                className={`
-                    whitespace-pre-wrap px-2 py-1 border-2 border-transparent rounded-lg transition-all
-                    ${isDraggingState 
-                        ? 'bg-indigo-50/50 border-indigo-300/50 scale-105' 
-                        : 'hover:bg-gray-50/50 hover:border-gray-200'
-                    }
-                `}
-                style={{ 
-                    fontSize: `${data.fontSize}px`, 
-                    color: data.color,
-                    fontFamily: data.fontFamily || 'sans-serif',
-                    lineHeight: 1.4,
-                    cursor: isDraggingState ? 'grabbing' : 'grab'
-                }}
-            >
-                {data.text || <span className="text-gray-400 italic">點擊輸入文字...</span>}
-            </div>
-            
-            {/* 刪除按鈕 */}
-            {!isDraggingState && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
-                    className="absolute -top-3 -right-3 p-1.5 bg-white border border-gray-200 rounded-full shadow-sm text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-                    title="刪除"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                </button>
-            )}
+        <div className={`px-2 py-1 rounded border-2 ${isHovered ? 'border-indigo-200 bg-indigo-50/30' : 'border-transparent'}`}>
+          {data.text}
         </div>
       )}
     </div>

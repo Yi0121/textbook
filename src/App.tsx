@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Sparkles, UserCog, LayoutGrid } from 'lucide-react';
+import { LayoutDashboard, Sparkles, UserCog } from 'lucide-react';
 
 // --- Components Imports ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -9,7 +9,6 @@ import Modal from './components/ui/Modal';
 import SelectionFloatingMenu from './components/ui/SelectionFloatingMenu';
 
 // Canvas Components
-// import TextbookContent from './components/canvas/TextbookContent';
 import TextbookEditor from './components/canvas/TextbookEditor';
 import DrawingLayer from './components/canvas/DrawingLayer';
 import DraggableMindMap from './components/canvas/DraggableMindMap';
@@ -23,6 +22,7 @@ import NavigationOverlay from './components/ui/NavigationOverlay';
 
 // Utils
 import { distanceBetween } from './utils/geometry';
+import { fetchAIImportedContent } from './utils/mockLLMService'; // 🔥 1. 確保引入模擬服務
 
 // 引入型別定義
 import { type UserRole } from './config/toolConfig';
@@ -58,6 +58,9 @@ const App = () => {
   // 角色狀態
   const [userRole, setUserRole] = useState<UserRole>('teacher');
   const [isEditMode, setIsEditMode] = useState(false); 
+
+  // 🔥 2. 新增：儲存教材內容 (從 RAG 匯入或是預設)
+  const [textbookContent, setTextbookContent] = useState<any>(undefined);
   
   // 側邊欄控制 (取代原本的 AI 視窗狀態)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);      // 控制 TopNavigation 的狀態同步
@@ -131,6 +134,23 @@ const App = () => {
   };
 
   // --- 3. AI 功能邏輯 ---
+
+  // 🔥 3. 新增：處理 RAG 匯入的函式
+  const handleImportContent = async () => {
+    // 進入思考模式 (顯示 Loading)
+    setAiState('thinking');
+    
+    // 呼叫模擬 API (這會等待 2 秒)
+    const newContent = await fetchAIImportedContent();
+    
+    // 更新內容
+    setTextbookContent(newContent);
+    setAiState('idle');
+    
+    // 自動切換到編輯模式讓老師修改
+    setIsEditMode(true);
+    setCurrentTool('cursor');
+  };
   
   const simulateAIProcess = (callback: () => void) => {
       setSelectionMenuPos(null);
@@ -161,8 +181,6 @@ const App = () => {
       setSidebarInitialTab('chat'); // 設定預設分頁為聊天
       
       if (isQuizPanelOpen) {
-          // 如果已經打開，且現在是在看其他分頁，就切換過去；如果是關閉操作則關閉
-          // 這裡簡單處理：如果已打開就關閉，如果未打開就打開
           setIsQuizPanelOpen(prev => !prev);
           setIsSidebarOpen(prev => !prev);
       } else {
@@ -237,7 +255,9 @@ const App = () => {
   // --- 4. 滑鼠與繪圖事件 ---
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // 🔥 如果是編輯模式，且沒按住空白鍵，就直接 Return，讓 TextbookEditor 接管事件
     if (isEditMode && !isSpacePressed.current) return;
+
     if (currentTool === 'pan' || e.button === 1 || isSpacePressed.current) {
       isPanning.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -502,9 +522,10 @@ const App = () => {
             className="w-full h-full flex justify-center py-20 origin-top-left will-change-transform"
             style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
         >
-            <div className="relative bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
+            <div className="relative bg-white shadow-2xl ring-1 ring-black/5 rounded-2xl select-text" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
                   
                   <MemoizedTextbook
+                    initialContent={textbookContent} // 🔥 4. 傳入模擬匯入的內容
                     isEditable={isEditMode && userRole === 'teacher'} 
                     currentTool={currentTool}
                     onTextSelected={(data: any) => {
@@ -529,25 +550,30 @@ const App = () => {
                     selectionBox={selectionBox} laserPath={laserPath}
                   />
                   
-                  <div className={`absolute inset-0 z-10 ${['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) ? 'pointer-events-none' : ''}`}>
-                     {mindMaps.map(map => (
-                         <DraggableMindMap key={map.id} data={map} scale={viewport.scale} 
-                            onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
-                            onDelete={(id) => setMindMaps(p => p.filter(m => m.id !== id))}
-                         />
-                     ))}
-                     {aiMemos.map(memo => (
-                         <AIMemoCard key={memo.id} data={memo} scale={viewport.scale} 
-                            onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'memo')} 
-                            onDelete={() => setAiMemos(p => p.filter(m => m.id !== memo.id))} 
-                         />
-                     ))}
-                     {textObjects.map(text => (
-                         <DraggableText key={text.id} data={text} scale={viewport.scale}
-                            onUpdate={(id, d) => handleObjUpdate(id, d, 'text')}
-                            onDelete={(id) => setTextObjects(p => p.filter(t => t.id !== id))}
-                         />
-                     ))}
+                  {/* 🔥 修改：如果是編輯模式，讓透明層 pointer-events-none (穿透)，這樣才能點到下方的文字 */}
+                  <div className={`absolute inset-0 z-10 ${
+                      (['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode) 
+                        ? 'pointer-events-none' 
+                        : ''
+                  }`}>
+                      {mindMaps.map(map => (
+                          <DraggableMindMap key={map.id} data={map} scale={viewport.scale} 
+                             onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'mindmap')} 
+                             onDelete={(id) => setMindMaps(p => p.filter(m => m.id !== id))}
+                          />
+                      ))}
+                      {aiMemos.map(memo => (
+                          <AIMemoCard key={memo.id} data={memo} scale={viewport.scale} 
+                             onUpdate={(id, dx, dy) => handleObjUpdate(id, {dx, dy}, 'memo')} 
+                             onDelete={() => setAiMemos(p => p.filter(m => m.id !== memo.id))} 
+                          />
+                      ))}
+                      {textObjects.map(text => (
+                          <DraggableText key={text.id} data={text} scale={viewport.scale}
+                             onUpdate={(id, d) => handleObjUpdate(id, d, 'text')}
+                             onDelete={(id) => setTextObjects(p => p.filter(t => t.id !== id))}
+                          />
+                      ))}
                   </div>
             </div>
         </div>
@@ -564,28 +590,45 @@ const App = () => {
             onOpenDashboard={() => setIsDashboardOpen(true)}
             onToggleSpotlight={() => setWidgetMode(p => p === 'spotlight' ? 'none' : 'spotlight')}
             onToggleLuckyDraw={() => setIsLuckyDrawOpen(true)}
-            onToggleAITutor={handleToggleAITutor} // 修改：綁定切換側邊欄
+            onToggleAITutor={handleToggleAITutor} 
         />
       </div>
 
-        {/* 開發者模式：角色切換器 (置中) - 已修正位置與層級 */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-black/90 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-2xl transition-all hover:scale-105 border border-white/10">
+       {/* 開發者模式與工具列 (置中顯示於頂部) */}
+       <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-black/90 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-2xl transition-all hover:scale-105 border border-white/10">
           <div className="flex items-center gap-2">
             <UserCog className="w-4 h-4 text-gray-400" />
             <span className="text-gray-400 font-bold hidden sm:inline">開發者:</span>
           </div>
-          
           <div className="flex bg-gray-700/50 rounded-full p-1">
             <button onClick={() => { setUserRole('teacher'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'teacher' ? 'bg-indigo-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>老師</button>
             <button onClick={() => { setUserRole('student'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'student' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>學生</button>
           </div>
 
-          {/* 🔥 新增：編輯模式切換按鈕 (只有老師身分顯示) */}
+          {/* 🔥 5. 老師專屬工具 (AI 匯入 + 編輯) */}
           {userRole === 'teacher' && (
             <>
               <div className="w-px h-4 bg-gray-600 mx-1"></div>
+              
+              {/* AI 匯入按鈕 */}
               <button 
-                onClick={() => setIsEditMode(!isEditMode)}
+                onClick={handleImportContent}
+                className="px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg"
+                title="模擬：從 RAG 系統匯入新教材"
+              >
+                <Sparkles className="w-3 h-3" />
+                AI 匯入
+              </button>
+
+              <div className="w-px h-4 bg-gray-600 mx-1"></div>
+
+              {/* 編輯模式切換按鈕 */}
+              <button 
+                onClick={() => {
+                    const nextMode = !isEditMode;
+                    setIsEditMode(nextMode);
+                    if (nextMode) setCurrentTool('cursor'); // 自動切回鼠標
+                }}
                 className={`px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1 ${
                    isEditMode 
                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 

@@ -198,7 +198,7 @@ export const getDefaultToolbarState = (role: UserRole): string[] => {
   ];
 
   if (role === 'teacher') {
-    return [...defaultTools, 'laser', 'timer', 'dashboard','ai_console','navy_grid'];
+    return [...defaultTools, 'laser', 'timer', 'dashboard','ai_console','nav_grid'];
   }
   
   if (role === 'student') {
