@@ -27,6 +27,8 @@ import { fetchAIImportedContent } from './utils/mockLLMService'; // 🔥 1. 確�
 // 引入型別定義
 import { type UserRole } from './config/toolConfig';
 
+import './index.css'
+
 const getTouchDistance = (touches: React.TouchList) => {
   return Math.hypot(
     touches[0].clientX - touches[1].clientX,

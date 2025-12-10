@@ -12,3 +12,40 @@
   --color-card-bg: #f3f4f6;
   --color-accent: #8b5cf6;
 }
+
+  .ProseMirror blockquote {
+    @apply border-l-4 border-gray-300 bg-gray-50 py-3 pl-4 pr-3 my-4 rounded-r text-gray-700 not-italic;
+  }
+
+  .ProseMirror blockquote p {
+    @apply m-0;
+  }
+
+  .ProseMirror code {
+    @apply bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[0.9em] font-medium font-mono;
+  }
+
+  .ProseMirror mark {
+    @apply bg-yellow-200 text-gray-900 px-1 rounded-sm;
+  }
+
+
+  .ProseMirror h1 {
+    @apply mt-8 mb-4 text-3xl font-bold text-gray-900;
+  }
+  .ProseMirror h2 {
+    @apply mt-6 mb-3 text-2xl font-bold text-gray-800 border-b pb-2 border-gray-200;
+  }
+  .ProseMirror h3 {
+    @apply mt-4 mb-2 text-xl font-bold text-gray-800;
+  }
+  .ProseMirror ul {
+    @apply list-disc list-outside ml-6 my-2 text-gray-700;
+  }
+  .ProseMirror ol {
+    @apply list-decimal list-outside ml-6 my-2 text-gray-700;
+  }
+  
+  .ProseMirror:focus {
+    @apply outline-none;
+  }
