@@ -10,7 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.7.4",
     "@tiptap/extension-highlight": "^3.13.0",
+    "@tiptap/extension-table": "^3.13.0",
+    "@tiptap/extension-table-cell": "^3.13.0",
+    "@tiptap/extension-table-header": "^3.13.0",
+    "@tiptap/extension-table-row": "^3.13.0",
     "@tiptap/extension-typography": "^3.13.0",
     "@tiptap/pm": "^3.13.0",
     "@tiptap/react": "^3.13.0",

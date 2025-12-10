@@ -541,6 +541,12 @@ const App = () => {
                        setSelectionMenuPos({ top: rect.bottom, left: rect.left + rect.width/2 });
                        setSelectedText(data.text);
                     }}
+                    fileMeta={{
+                        title: "Unit 3: Cellular Respiration", // 展示用英文或中文皆可
+                        version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)", // 編輯模式時顯示 Draft，超有感！
+                        lastModified: new Date().toLocaleDateString(),
+                        tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
+                    }}
                     clearSelection={() => {}}
                   />
                   
