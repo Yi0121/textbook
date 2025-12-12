@@ -27,6 +27,7 @@ export interface AppState {
   selectionBox: any;
   selectionMenuPos: any;
   laserPath: { x: number; y: number; timestamp: number }[];
+  isStudentStage: boolean;
 }
 
 // ==================== 2. Actions (定義所有可以做的動作) ====================
@@ -65,7 +66,8 @@ export type AppAction =
   | { type: 'SET_SELECTION_BOX'; payload: any }
   | { type: 'SET_SELECTION_MENU_POS'; payload: any }
   | { type: 'SET_LASER_PATH'; payload: { x: number; y: number; timestamp: number }[] }
-  | { type: 'ADD_LASER_POINT'; payload: { x: number; y: number; timestamp: number } };
+  | { type: 'ADD_LASER_POINT'; payload: { x: number; y: number; timestamp: number } }
+  | { type: 'TOGGLE_STUDENT_STAGE' };
 
 // ==================== 3. Initial State (初始值) ====================
 export const initialState: AppState = {
@@ -93,6 +95,7 @@ export const initialState: AppState = {
   selectionBox: null,
   selectionMenuPos: null,
   laserPath: [],
+  isStudentStage: false,
 };
 
 // ==================== 4. Reducer (大腦：處理狀態變更) ====================
@@ -136,6 +139,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_SELECTION_MENU_POS': return { ...state, selectionMenuPos: action.payload };
     case 'SET_LASER_PATH': return { ...state, laserPath: action.payload };
     case 'ADD_LASER_POINT': return { ...state, laserPath: [...state.laserPath, action.payload] };
+    case 'TOGGLE_STUDENT_STAGE': return { ...state, isStudentStage: !state.isStudentStage };
     default: return state;
   }
 }

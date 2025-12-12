@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Box, ChevronRight, Minus, Plus, ChevronLeft, GripVertical 
+  Box, ChevronRight, Minus, Plus, GripVertical,
+  Users, // 學生上台圖示
+  X
 } from 'lucide-react';
+
+// 引入 Context
+import { useAppContext } from '../../context/AppContext';
 
 // 引入設定檔
 import { 
   ALL_TOOLS, 
-  getDefaultToolbarState, 
   type ToolConfig, 
   type UserRole 
 } from '../../config/toolConfig';
@@ -30,226 +34,233 @@ interface FixedToolbarProps {
   onOpenDashboard: () => void;
   onToggleSpotlight?: () => void;
   onToggleLuckyDraw?: () => void;
-  onToggleAITutor?: () => void; // 這一個函數會負責打開側邊欄
+  onToggleAITutor?: () => void;
 }
 
+// 定義顏色盤
 const COLORS = {
   pen: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#000000'],
-  highlighter: ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8'],
-  text: ['#000000', '#64748b', '#ef4444', '#3b82f6']
+  highlighter: ['#fef08a', '#bbf7d0', '#bfdbfe', '#ddd6fe', '#fbcfe8']
 };
 
-const FixedToolbar: React.FC<FixedToolbarProps> = ({
+const FixedToolbar = ({ 
   userRole,
-  currentTool, setCurrentTool,
-  zoomLevel, setZoomLevel,
-  penColor, setPenColor, penSize, setPenSize,
-  ...actions // 其餘的 toggle functions
-}) => {
+  currentTool,
+  setCurrentTool,
+  zoomLevel,
+  setZoomLevel,
+  penColor,
+  setPenColor,
+  penSize,
+  setPenSize,
+  onToggleTimer,
+  onToggleGrid,
+  onOpenDashboard,
+  onToggleSpotlight,
+  onToggleLuckyDraw,
+  onToggleAITutor 
+}: FixedToolbarProps) => {
+    
+  // 取得全域狀態與 Dispatch
+  const { state, dispatch } = useAppContext(); 
 
-  const [visibleToolIds, setVisibleToolIds] = useState<string[]>([]);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [position, setPosition] = useState<'left' | 'center' | 'right'>('center');
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  // 初始化：根據角色載入工具
+  // 監聽工具改變，如果選到畫筆就自動顯示調色盤
   useEffect(() => {
-    setVisibleToolIds(getDefaultToolbarState(userRole));
-  }, [userRole]);
+    if (['pen', 'highlighter'].includes(currentTool)) {
+        setShowColorPicker(true);
+    } else {
+        setShowColorPicker(false);
+    }
+  }, [currentTool]);
 
-  // --- 核心修改：點擊處理 ---
+  // 處理工具點擊
   const handleToolClick = (tool: ToolConfig) => {
-    // 1. 切換模式類工具
+  // 1. 設定工具模式
     if (tool.actionType === 'set-tool' && tool.targetStateValue) {
       setCurrentTool(tool.targetStateValue);
-      
-      if (currentTool === tool.targetStateValue && tool.hasSubMenu) {
-        setActiveSubPanel(prev => prev === tool.id ? null : tool.id);
-      } else if (tool.hasSubMenu) {
-        setActiveSubPanel(null); 
-        if (tool.id === 'pen') { setPenColor('#ef4444'); setPenSize(4); }
-        if (tool.id === 'highlighter') { setPenColor('#fef08a'); setPenSize(20); }
-      } else {
-        setActiveSubPanel(null);
+
+      // 🔥🔥🔥 新增這段邏輯：切換工具時，自動切換回該工具的預設顏色 🔥🔥🔥
+      if (tool.targetStateValue === 'pen') {
+          // 如果切回畫筆，且目前的顏色是螢光筆的顏色，就強制設回紅色(或畫筆的第一個顏色)
+          if (COLORS.highlighter.includes(penColor)) {
+              setPenColor(COLORS.pen[0]); 
+          }
+      } 
+      else if (tool.targetStateValue === 'highlighter') {
+          // 如果切回螢光筆，且目前的顏色是畫筆的顏色，就強制設回黃色
+          if (COLORS.pen.includes(penColor)) {
+              setPenColor(COLORS.highlighter[0]);
+          }
       }
     }
-    
-    // 2. 開關類工具 (Toggle / Modal)
-    else {
-      switch (tool.id) {
-        case 'timer': actions.onToggleTimer(); break;
-        case 'nav_grid': actions.onToggleGrid(); break;
-        case 'dashboard': actions.onOpenDashboard(); break;
-        case 'spotlight': actions.onToggleSpotlight?.(); break;
-        case 'lucky_draw': actions.onToggleLuckyDraw?.(); break;
-        
-        // 👇 [修復點] 把這兩個 ID 都連動到 onToggleAITutor
-        case 'ai_tutor':    // 學生端按鈕 ID
-        case 'ai_console':  // 老師端按鈕 ID
-             actions.onToggleAITutor?.(); 
-             break;
-      }
-      
-      if (activeSubPanel === 'box') {
-        setActiveSubPanel(null);
-      }
+    else if (tool.actionType === 'toggle') {
+       switch(tool.id) {
+           case 'console': onOpenDashboard(); break;
+           case 'nav_grid': onToggleGrid(); break;
+           case 'timer': onToggleTimer(); break;
+           case 'spotlight': onToggleSpotlight && onToggleSpotlight(); break;
+           case 'lucky_draw': onToggleLuckyDraw && onToggleLuckyDraw(); break;
+           case 'ai_tutor': onToggleAITutor && onToggleAITutor(); break;
+       }
     }
   };
 
-  // --- 渲染子面板 ---
-  const renderSubPanel = () => {
-    if (!activeSubPanel) return null;
-
-    if (['pen', 'highlighter', 'text'].includes(activeSubPanel)) {
-       const colors = COLORS[activeSubPanel as keyof typeof COLORS] || [];
-       return (
-          <div className="flex flex-col gap-3 p-1 animate-in slide-in-from-bottom-2 duration-200">
-             <div className="flex gap-2 justify-between">
-                {colors.map(c => (
-                   <button key={c} onClick={() => setPenColor(c)} 
-                      className={`w-8 h-8 rounded-full border-2 transition-transform shadow-sm ${penColor === c ? 'border-indigo-500 scale-110 ring-2 ring-indigo-200' : 'border-white hover:scale-105'}`}
-                      style={{ backgroundColor: c }}
-                   />
-                ))}
-             </div>
-             {activeSubPanel !== 'text' && (
-                <div className="flex items-center gap-3 px-1 pt-1">
-                   <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                   <input type="range" min="2" max={activeSubPanel === 'highlighter' ? 40 : 20} 
-                      value={penSize} onChange={(e) => setPenSize(parseInt(e.target.value))} 
-                      className="flex-1 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500" 
-                   />
-                   <div className="w-4 h-4 rounded-full bg-gray-300 transition-all" style={{ transform: `scale(${penSize/10 + 0.5})` }} />
-                </div>
-             )}
-          </div>
-       );
-    }
-
-    if (activeSubPanel === 'box') {
-        const boxTools = ALL_TOOLS.filter(t => 
-           (t.role === 'all' || t.role === userRole) && 
-           !visibleToolIds.includes(t.id) && 
-           ['widget', 'system', 'ai'].includes(t.category) // 包含 ai 類別以免遺漏
-        );
-
-        return (
-            <div className="grid grid-cols-4 gap-2 min-w-[240px]">
-                {boxTools.length === 0 && <div className="col-span-4 text-center text-xs text-gray-400 py-2">沒有更多工具了</div>}
-                
-                {boxTools.map((tool) => (
-                    <button key={tool.id} onClick={() => handleToolClick(tool)} 
-                        className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-50 transition-colors group"
-                    >
-                        <div className={`p-2.5 rounded-xl ${tool.activeColorClass || 'bg-gray-100 text-gray-600'} group-hover:scale-110 transition-transform shadow-sm`}>
-                            <tool.icon className="w-5 h-5" />
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-500">{tool.label}</span>
-                    </button>
-                ))}
-            </div>
-        );
-    }
-    return null;
-  };
-
-  const getPositionClasses = () => {
-      const base = "fixed bottom-6 z-[60] transition-all duration-500 ease-spring";
-      if (position === 'center') return `${base} left-1/2 -translate-x-1/2 flex flex-col items-center`;
-      if (position === 'left') return `${base} left-6 flex flex-col items-start`;
-      if (position === 'right') return `${base} right-6 flex flex-col items-end`;
-      return base;
-  };
+  // 過濾要顯示在主工具列的工具 (核心工具 + 符合權限)
+  const mainTools = ALL_TOOLS.filter(t => t.isCore && (t.role === 'all' || t.role === userRole));
+  
+  // 過濾要在百寶箱顯示的工具 (非核心 + 符合權限 + 非 AI 類)
+  const widgetTools = ALL_TOOLS.filter(t => !t.isCore && t.role === userRole && t.category !== 'ai');
 
   return (
-    <div className={getPositionClasses()} onMouseDown={(e) => e.stopPropagation()}>
-      
-      {/* 子面板 */}
-      <div className={`
-        mb-3 bg-white/95 backdrop-blur-xl border border-white/60 shadow-xl rounded-2xl overflow-hidden
-        transition-all duration-300 origin-bottom
-        ${activeSubPanel ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none h-0'}
-      `}>
-         <div className="p-3 min-w-[200px]">
-            {renderSubPanel()}
-         </div>
-      </div>
+    // 🔥 關鍵修正：最外層加入 stopPropagation，防止點擊工具列時畫布也跟著畫畫
+    <div 
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'}`}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+    >
+       
+       {/* === 主工具列 === */}
+       <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-2 rounded-2xl flex items-center gap-2 ring-1 ring-black/5">
 
-      {/* 主工具列 */}
-      <div className={`
-         bg-white/90 backdrop-blur-lg shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/50
-         rounded-2xl transition-all duration-500 flex items-center
-         ${isExpanded ? 'p-1.5 gap-1' : 'w-14 h-14 justify-center cursor-pointer hover:scale-110 hover:shadow-2xl'}
-      `}>
-          {!isExpanded && (
-            <button onClick={() => setIsExpanded(true)} className="w-full h-full flex items-center justify-center text-indigo-600">
-                <Box className="w-6 h-6" />
-            </button>
-          )}
+          {/* 收合按鈕 */}
+          <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+             {isExpanded ? <GripVertical className="w-4 h-4" /> : <ChevronRight className="w-4 h-4"/>}
+          </button>
 
           {isExpanded && (
             <>
-                <button onClick={() => setPosition(p => p === 'center' ? 'left' : p === 'left' ? 'right' : 'center')} 
-                    className="w-6 h-10 flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing mr-1"
-                >
-                    <GripVertical className="w-4 h-4" />
-                </button>
+              {/* 核心工具按鈕 */}
+              {mainTools.map(tool => (
+                 <button
+                    key={tool.id}
+                    onClick={() => handleToolClick(tool)}
+                    className={`p-3 rounded-xl transition-all relative group
+                        ${tool.targetStateValue === currentTool
+                            ? (tool.activeColorClass || 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100')
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }
+                    `}
+                    title={tool.label}
+                 >
+                    <tool.icon className="w-5 h-5" />
+                 </button>
+              ))}
 
-                {visibleToolIds.map((toolId) => {
-                   const tool = ALL_TOOLS.find(t => t.id === toolId);
-                   if(!tool) return null;
+              <div className="w-px h-8 bg-gray-200 mx-1" />
 
-                   const isActive = (tool.actionType === 'set-tool' && currentTool === tool.targetStateValue) || 
-                                    (activeSubPanel === tool.id);
-
-                   return (
-                      <button 
-                        key={tool.id}
-                        onClick={() => handleToolClick(tool)}
-                        className={`
-                           relative group w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-200
-                           ${isActive 
-                              ? (tool.activeColorClass || 'bg-indigo-50 text-indigo-600 shadow-inner') 
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 hover:-translate-y-0.5'}
-                        `}
-                        title={tool.label}
-                      >
-                         <tool.icon 
-                            className="w-5 h-5 transition-colors" 
-                            style={{ 
-                               color: (isActive && ['pen', 'highlighter', 'text'].includes(tool.id)) ? penColor : 'currentColor' 
-                            }} 
-                         />
-                         {tool.hasSubMenu && (
-                            <div className={`absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${isActive ? 'bg-current opacity-50' : 'bg-gray-300'}`} />
-                         )}
-                      </button>
-                   );
-                })}
-
-                <div className="w-px h-6 bg-gray-200 mx-1" />
-
-                <div className="flex flex-col items-center gap-0.5 mx-1">
-                   <button onClick={() => setZoomLevel((p:number) => Math.min(3, p+0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600"><Plus className="w-3 h-3" /></button>
-                   <span className="text-[9px] font-bold text-gray-400 font-mono">{Math.round(zoomLevel * 100)}%</span>
-                   <button onClick={() => setZoomLevel((p:number) => Math.max(0.5, p-0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600"><Minus className="w-3 h-3" /></button>
+              {/* 縮放控制 */}
+               <div className="flex flex-col items-center gap-0.5 mx-1">
+                   <button onClick={() => setZoomLevel((p:any) => Math.min(3, p+0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Plus className="w-3 h-3" /></button>
+                   <span className="text-[9px] font-bold text-gray-400 font-mono select-none">{Math.round(zoomLevel * 100)}%</span>
+                   <button onClick={() => setZoomLevel((p:any) => Math.max(0.5, p-0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Minus className="w-3 h-3" /></button>
                 </div>
 
-                <div className="w-px h-6 bg-gray-200 mx-1" />
+              <div className="w-px h-8 bg-gray-200 mx-1" />
 
-                <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
-                    className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600' : 'text-gray-500 hover:bg-gray-100'}`}
+              {/* 🔥 學生上台模式按鈕 (只有老師看得到) */}
+              {userRole === 'teacher' && (
+                  <button
+                    onClick={() => dispatch({ type: 'TOGGLE_STUDENT_STAGE' })}
+                    className={`
+                        w-11 h-11 flex items-center justify-center rounded-xl transition-all relative group
+                        ${state.isStudentStage 
+                            ? 'bg-amber-100 text-amber-600 shadow-inner ring-1 ring-amber-200' 
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }
+                    `}
+                    title="切換學生上台模式"
+                  >
+                    <Users className="w-5 h-5" />
+                    
+                    {/* 狀態燈：開啟時閃爍 */}
+                    {state.isStudentStage && (
+                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                        </span>
+                    )}
+                    
+                    {/* Hover 提示 */}
+                    <span className="absolute -top-10 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                        {state.isStudentStage ? '學生作答中' : '學生上台'}
+                    </span>
+                  </button>
+              )}
+
+              {/* 分隔線 (只有老師需要，因為學生沒有上台按鈕) */}
+              {userRole === 'teacher' && <div className="w-px h-8 bg-gray-200 mx-1" />}
+
+              {/* 百寶箱按鈕 */}
+              <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
+                    className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600 shadow-sm ring-1 ring-purple-100' : 'text-gray-500 hover:bg-gray-100'}`}
                     title="百寶箱"
-                >
+              >
                     <Box className="w-5 h-5" />
-                </button>
-
-                <button onClick={() => setIsExpanded(false)} className="ml-1 w-8 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
+              </button>
             </>
           )}
-      </div>
+       </div>
+
+       {/* === 彈出面板：調色盤 === */}
+       {isExpanded && showColorPicker && ['pen', 'highlighter'].includes(currentTool) && (
+          <div 
+             className="absolute bottom-20 left-12 bg-white p-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3 animate-in slide-in-from-bottom-2 z-10"
+             // 🔥 這裡也要加，以防萬一
+             onMouseDown={(e) => e.stopPropagation()}
+          >
+             
+             {/* 顏色選擇 */}
+             <div className="flex gap-2">
+                {(currentTool === 'pen' ? COLORS.pen : COLORS.highlighter).map(c => (
+                    <button
+                        key={c}
+                        onClick={() => setPenColor(c)}
+                        className={`w-6 h-6 rounded-full border border-gray-200 transition-transform ${penColor === c ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : 'hover:scale-110'}`}
+                        style={{ backgroundColor: c }}
+                    />
+                ))}
+             </div>
+             
+             <div className="w-px h-6 bg-gray-200" />
+             
+             {/* 筆刷大小 */}
+             <div className="flex items-center gap-1">
+                 <button onClick={() => setPenSize(Math.max(2, penSize - 2))} className="p-1 hover:bg-gray-100 rounded"><div className="w-1 h-1 bg-gray-800 rounded-full" /></button>
+                 <button onClick={() => setPenSize(Math.min(20, penSize + 2))} className="p-1 hover:bg-gray-100 rounded"><div className="w-2.5 h-2.5 bg-gray-800 rounded-full" /></button>
+             </div>
+          </div>
+       )}
+
+       {/* === 彈出面板：百寶箱 === */}
+       {isExpanded && activeSubPanel === 'box' && (
+           <div 
+               className="absolute bottom-20 right-0 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 w-64 animate-in slide-in-from-bottom-2 ring-1 ring-black/5 z-10"
+               // 🔥 這裡也要加
+               onMouseDown={(e) => e.stopPropagation()}
+           >
+               <div className="flex justify-between items-center mb-3">
+                   <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">課堂工具</h4>
+                   <button onClick={() => setActiveSubPanel(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+               </div>
+               
+               <div className="grid grid-cols-3 gap-2">
+                  {widgetTools.map(tool => (
+                      <button
+                        key={tool.id}
+                        onClick={() => { handleToolClick(tool); setActiveSubPanel(null); }}
+                        className="flex flex-col items-center justify-center p-3 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 text-gray-600 gap-2 transition-colors border border-transparent hover:border-indigo-100"
+                      >
+                         <tool.icon className="w-6 h-6" />
+                         <span className="text-[10px] font-medium">{tool.label}</span>
+                      </button>
+                  ))}
+               </div>
+           </div>
+       )}
     </div>
   );
 };

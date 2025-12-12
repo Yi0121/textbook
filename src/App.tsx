@@ -54,6 +54,30 @@ const App = () => {
   // 這裡我們不再用 useState 宣告一堆變數，而是從 Context 領取
 
   const { state, dispatch } = useAppContext(); // 取得全域 state (用來讀取顏色、雷射筆路徑等)
+
+  
+  const prevStrokeCountRef = useRef(0);
+  // 🔥 2. 修改原本的 useEffect
+  useEffect(() => {
+      // 只有當「現在的筆跡數量」 > 「原本的數量」時，代表是新增，才印 Log
+      if (state.strokes.length > prevStrokeCountRef.current) {
+          const lastStroke = state.strokes[state.strokes.length - 1];
+          
+          console.log('%c 🎨 新增筆跡 (New Stroke)', 'background: #22c55e; color: #fff; padding: 2px 4px; border-radius: 4px;');
+          console.log('作者 (Author):', lastStroke.author);
+          console.log('工具 (Tool):', lastStroke.tool);
+          console.log('詳細資料:', lastStroke);
+          console.log('--------------------------------');
+      }
+      // 如果數量變少 (例如橡皮擦)，我們就不印 Log，但還是要更新計數器
+      else if (state.strokes.length < prevStrokeCountRef.current) {
+          console.log('%c 🧹 橡皮擦已刪除筆跡', 'background: #cbd5e1; color: #334155; padding: 2px 4px; border-radius: 4px;');
+      }
+
+      // 更新計數器，供下次比對
+      prevStrokeCountRef.current = state.strokes.length;
+
+  }, [state.strokes]);
   
   // 這些 Helper Hooks 幫我們簡化了程式碼
   const [userRole, setUserRole] = useUserRole();
