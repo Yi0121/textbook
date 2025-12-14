@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
-import { useAppContext, useCanvasData, useUIState } from '../context/AppContext';
+import { useEditor } from '../context/EditorContext';
+import { useUI } from '../context/UIContext';
 import { distanceBetween } from '../utils/geometry';
 
 interface UseCanvasInteractionProps {
@@ -21,12 +22,11 @@ export function useCanvasInteraction({
   setSelectionBox,
   setSelectionMenuPos,
 }: UseCanvasInteractionProps) {
-    
-  const { state, dispatch } = useAppContext();
-  const canvas = useCanvasData();
-  const ui = useUIState(); 
 
-  const { currentTool, penColor, penSize, isEditMode } = state;
+  const { state: editorState, dispatch: editorDispatch } = useEditor();
+  const ui = useUI();
+
+  const { currentTool, penColor, penSize, isEditMode } = editorState;
 
   const isDrawing = useRef(false);
   const isPanning = useRef(false);
@@ -41,16 +41,16 @@ export function useCanvasInteraction({
 
   // 雷射筆自動消失邏輯
   useEffect(() => {
-      if (state.laserPath.length === 0) return;
+      if (editorState.laserPath.length === 0) return;
       const timer = setInterval(() => {
           const now = Date.now();
-          const newPath = state.laserPath.filter(p => now - p.timestamp < 1000);
-          if (newPath.length !== state.laserPath.length) {
-              dispatch({ type: 'SET_LASER_PATH', payload: newPath });
+          const newPath = editorState.laserPath.filter(p => now - p.timestamp < 1000);
+          if (newPath.length !== editorState.laserPath.length) {
+              editorDispatch({ type: 'SET_LASER_PATH', payload: newPath });
           }
       }, 30);
       return () => clearInterval(timer);
-  }, [state.laserPath, dispatch]);
+  }, [editorState.laserPath, editorDispatch]);
 
   const getCanvasCoordinates = useCallback((e: React.MouseEvent | MouseEvent) => {
       if (!canvasRef.current) return { x: 0, y: 0 };
@@ -74,8 +74,11 @@ export function useCanvasInteraction({
     const { x, y } = getCanvasCoordinates(e);
 
     if (currentTool === 'text') {
-        canvas.addTextObject({ id: Date.now(), x, y, text: "輸入筆記...", color: penColor, fontSize: 24 });
-        dispatch({ type: 'SET_CURRENT_TOOL', payload: 'cursor' });
+        editorDispatch({
+            type: 'ADD_TEXT_OBJECT',
+            payload: { id: Date.now(), x, y, text: "輸入筆記...", color: penColor, fontSize: 24 }
+        });
+        editorDispatch({ type: 'SET_CURRENT_TOOL', payload: 'cursor' });
         return;
     }
 
@@ -110,18 +113,18 @@ export function useCanvasInteraction({
     currentMousePos.current = { x, y };
 
     if (currentTool === 'laser' && e.buttons === 1) {
-        dispatch({ type: 'ADD_LASER_POINT', payload: { x, y, timestamp: Date.now() } });
+        editorDispatch({ type: 'ADD_LASER_POINT', payload: { x, y, timestamp: Date.now() } });
         return;
     }
 
     if (currentTool === 'eraser' && e.buttons === 1) {
         const eraseRadius = 20 / viewport.scale;
-        const newStrokes = canvas.strokes.filter(s => {
+        const newStrokes = editorState.strokes.filter(s => {
              if (!s.rawPoints) return true;
              return !s.rawPoints.some((p:any) => distanceBetween(p, {x, y}) < eraseRadius);
         });
-        if (newStrokes.length !== canvas.strokes.length) {
-            canvas.setStrokes(newStrokes);
+        if (newStrokes.length !== editorState.strokes.length) {
+            editorDispatch({ type: 'SET_STROKES', payload: newStrokes });
         }
         return;
     }
@@ -185,16 +188,19 @@ export function useCanvasInteraction({
     if (RECORDABLE_TOOLS.includes(currentTool) && currentPointsRef.current.length > 0) {
         const finalPath = currentPointsRef.current.join(' ');
         const rawPoints = [...rawPointsRef.current];
-        const author = state.isStudentStage ? 'student' : state.userRole;
+        const author = editorState.isStudentStage ? 'student' : editorState.userRole;
 
-        canvas.addStroke({ 
-            id: Date.now(),
-            path: finalPath, 
-            color: penColor, 
-            size: penSize, 
-            tool: currentTool, 
-            rawPoints,
-            author: author 
+        editorDispatch({
+            type: 'ADD_STROKE',
+            payload: {
+                id: Date.now(),
+                path: finalPath,
+                color: penColor,
+                size: penSize,
+                tool: currentTool,
+                rawPoints,
+                author: author
+            }
         });
         
         currentPointsRef.current = [];
@@ -214,7 +220,7 @@ export function useCanvasInteraction({
           if (e.key === 'Escape') {
               setSelectionBox(null);
               setSelectionMenuPos(null);
-              dispatch({ type: 'SET_CURRENT_TOOL', payload: 'cursor' });
+              editorDispatch({ type: 'SET_CURRENT_TOOL', payload: 'cursor' });
               ui.setShowNavGrid(false);
           }
       };
@@ -227,7 +233,7 @@ export function useCanvasInteraction({
           window.removeEventListener('keydown', handleKeyDown);
           window.removeEventListener('keyup', handleKeyUp);
       };
-  }, [dispatch, ui.setShowNavGrid, setSelectionBox, setSelectionMenuPos]);
+  }, [editorDispatch, ui.setShowNavGrid, setSelectionBox, setSelectionMenuPos]);
 
   return {
       handleMouseDown,

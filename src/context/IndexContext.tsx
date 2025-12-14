@@ -3,23 +3,28 @@
 // 功能：統一匯出所有 Context
 // ========================================
 import { type ReactNode } from 'react';
-import { CanvasProvider } from './CanvasContext';
+import { EditorProvider } from './EditorContext';
+import { ContentProvider } from './ContentContext';
 import { UIProvider } from './UIContext';
-import { ToolProvider } from './ToolContext';
+import { CollaborationProvider } from './CollaborationContext';
 
-export * from './CanvasContext';
+// 匯出所有 Context
+export * from './EditorContext';
+export * from './ContentContext';
 export * from './UIContext';
-export * from './ToolContext';
+export * from './CollaborationContext';
 
 // 組合所有 Provider
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ToolProvider>
-      <UIProvider>
-        <CanvasProvider>
-          {children}
-        </CanvasProvider>
-      </UIProvider>
-    </ToolProvider>
+    <EditorProvider>
+      <ContentProvider>
+        <UIProvider>
+          <CollaborationProvider>
+            {children}
+          </CollaborationProvider>
+        </UIProvider>
+      </ContentProvider>
+    </EditorProvider>
   );
 }

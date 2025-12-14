@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 // 引入 Context
-import { useAppContext } from '../../context/AppContext';
+import { useEditor } from '../../context/EditorContext';
 
 // 引入設定檔
 import { 
@@ -35,6 +35,7 @@ interface FixedToolbarProps {
   onToggleSpotlight?: () => void;
   onToggleLuckyDraw?: () => void;
   onToggleAITutor?: () => void;
+  onToggleWhiteboard?: () => void;
 }
 
 // 定義顏色盤
@@ -43,7 +44,7 @@ const COLORS = {
   highlighter: ['#fef08a', '#bbf7d0', '#bfdbfe', '#ddd6fe', '#fbcfe8']
 };
 
-const FixedToolbar = ({ 
+const FixedToolbar = ({
   userRole,
   currentTool,
   setCurrentTool,
@@ -58,11 +59,12 @@ const FixedToolbar = ({
   onOpenDashboard,
   onToggleSpotlight,
   onToggleLuckyDraw,
-  onToggleAITutor 
+  onToggleAITutor,
+  onToggleWhiteboard
 }: FixedToolbarProps) => {
     
   // 取得全域狀態與 Dispatch
-  const { state, dispatch } = useAppContext(); 
+  const { state: editorState, dispatch: editorDispatch } = useEditor(); 
 
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -105,6 +107,7 @@ const FixedToolbar = ({
            case 'spotlight': onToggleSpotlight && onToggleSpotlight(); break;
            case 'lucky_draw': onToggleLuckyDraw && onToggleLuckyDraw(); break;
            case 'ai_tutor': onToggleAITutor && onToggleAITutor(); break;
+           case 'whiteboard': onToggleWhiteboard && onToggleWhiteboard(); break;
        }
     }
   };
@@ -117,14 +120,15 @@ const FixedToolbar = ({
 
   return (
     // 🔥 關鍵修正：最外層加入 stopPropagation，防止點擊工具列時畫布也跟著畫畫
-    <div 
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'}`}
+    // 🎯 響應式優化：小螢幕時調整位置和大小
+    <div
+        className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'} max-w-[95vw]`}
         onMouseDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
     >
        
        {/* === 主工具列 === */}
-       <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-2 rounded-2xl flex items-center gap-2 ring-1 ring-black/5">
+       <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-1.5 md:p-2 rounded-2xl flex items-center gap-1 md:gap-2 ring-1 ring-black/5 overflow-x-auto scrollbar-hide">
 
           {/* 收合按鈕 */}
           <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -133,12 +137,12 @@ const FixedToolbar = ({
 
           {isExpanded && (
             <>
-              {/* 核心工具按鈕 */}
+              {/* 核心工具按鈕 - 響應式大小 */}
               {mainTools.map(tool => (
                  <button
                     key={tool.id}
                     onClick={() => handleToolClick(tool)}
-                    className={`p-3 rounded-xl transition-all relative group
+                    className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all relative group shrink-0
                         ${tool.targetStateValue === currentTool
                             ? (tool.activeColorClass || 'bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-indigo-100')
                             : 'text-gray-500 hover:bg-gray-100'
@@ -146,14 +150,14 @@ const FixedToolbar = ({
                     `}
                     title={tool.label}
                  >
-                    <tool.icon className="w-5 h-5" />
+                    <tool.icon className="w-4 h-4 md:w-5 md:h-5" />
                  </button>
               ))}
 
               <div className="w-px h-8 bg-gray-200 mx-1" />
 
-              {/* 縮放控制 */}
-               <div className="flex flex-col items-center gap-0.5 mx-1">
+              {/* 縮放控制 - 小螢幕時隱藏文字 */}
+               <div className="hidden sm:flex flex-col items-center gap-0.5 mx-1 shrink-0">
                    <button onClick={() => setZoomLevel((p:any) => Math.min(3, p+0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Plus className="w-3 h-3" /></button>
                    <span className="text-[9px] font-bold text-gray-400 font-mono select-none">{Math.round(zoomLevel * 100)}%</span>
                    <button onClick={() => setZoomLevel((p:any) => Math.max(0.5, p-0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Minus className="w-3 h-3" /></button>
@@ -161,14 +165,14 @@ const FixedToolbar = ({
 
               <div className="w-px h-8 bg-gray-200 mx-1" />
 
-              {/* 🔥 學生上台模式按鈕 (只有老師看得到) */}
+              {/* 🔥 學生上台模式按鈕 (只有老師看得到) - 響應式 */}
               {userRole === 'teacher' && (
                   <button
-                    onClick={() => dispatch({ type: 'TOGGLE_STUDENT_STAGE' })}
+                    onClick={() => editorDispatch({ type: 'TOGGLE_STUDENT_STAGE' })}
                     className={`
-                        w-11 h-11 flex items-center justify-center rounded-xl transition-all relative group
-                        ${state.isStudentStage 
-                            ? 'bg-amber-100 text-amber-600 shadow-inner ring-1 ring-amber-200' 
+                        w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all relative group shrink-0
+                        ${editorState.isStudentStage
+                            ? 'bg-amber-100 text-amber-600 shadow-inner ring-1 ring-amber-200'
                             : 'text-gray-500 hover:bg-gray-100'
                         }
                     `}
@@ -177,7 +181,7 @@ const FixedToolbar = ({
                     <Users className="w-5 h-5" />
                     
                     {/* 狀態燈：開啟時閃爍 */}
-                    {state.isStudentStage && (
+                    {editorState.isStudentStage && (
                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
@@ -186,7 +190,7 @@ const FixedToolbar = ({
                     
                     {/* Hover 提示 */}
                     <span className="absolute -top-10 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                        {state.isStudentStage ? '學生作答中' : '學生上台'}
+                        {editorState.isStudentStage ? '學生作答中' : '學生上台'}
                     </span>
                   </button>
               )}
@@ -194,12 +198,12 @@ const FixedToolbar = ({
               {/* 分隔線 (只有老師需要，因為學生沒有上台按鈕) */}
               {userRole === 'teacher' && <div className="w-px h-8 bg-gray-200 mx-1" />}
 
-              {/* 百寶箱按鈕 */}
+              {/* 百寶箱按鈕 - 響應式 */}
               <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
-                    className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600 shadow-sm ring-1 ring-purple-100' : 'text-gray-500 hover:bg-gray-100'}`}
+                    className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all shrink-0 ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600 shadow-sm ring-1 ring-purple-100' : 'text-gray-500 hover:bg-gray-100'}`}
                     title="百寶箱"
               >
-                    <Box className="w-5 h-5" />
+                    <Box className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </>
           )}

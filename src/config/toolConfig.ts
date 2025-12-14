@@ -1,7 +1,7 @@
-import { 
-  MousePointer2, Hand, PenTool, Highlighter, Type, Eraser, 
-  Zap, Timer, Grid2X2, LayoutDashboard, Dices, 
-  Focus, Blinds, Sparkles, Scan, Bot
+import {
+  MousePointer2, Hand, PenTool, Highlighter, Type, Eraser,
+  Zap, Timer, Grid2X2, LayoutDashboard, Dices,
+  Focus, Blinds, Sparkles, Scan, Bot, Users
 } from 'lucide-react';
 
 // --- 定義型別 ---
@@ -184,6 +184,18 @@ export const ALL_TOOLS: ToolConfig[] = [
     category: 'ai',
     actionType: 'toggle',
     activeColorClass: 'bg-purple-50 text-purple-600'
+  },
+
+  // === 5. 協作工具 ===
+  {
+    id: 'whiteboard',
+    label: '電子白板',
+    icon: Users,
+    role: 'teacher',
+    isCore: false,
+    category: 'widget',
+    actionType: 'toggle',
+    activeColorClass: 'bg-indigo-50 text-indigo-600'
   }
 
 ];

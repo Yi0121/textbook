@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  X, BookOpen, GraduationCap, Lightbulb, MessageCircle, 
-  BarChart3, ListChecks, UploadCloud, ShieldAlert, Send, 
+import {
+  X, BookOpen, GraduationCap, Lightbulb, MessageCircle,
+  BarChart3, ListChecks, UploadCloud, ShieldAlert, Send,
   Paperclip, Bot, User, FileText, CheckCircle, Trash2, History
 } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
+import MarkdownMessage from '../ui/MarkdownMessage';
 
 interface RightSidePanelProps {
   isOpen: boolean;
@@ -56,7 +57,11 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
     setMessages(p => [...p, { role: 'user', text: input }]);
     setInput('');
     setTimeout(() => {
-      setMessages(p => [...p, { role: 'ai', text: '收到，這是一個很好的問題！讓我們來看看教材...' }]);
+      // 模擬 AI 回應，包含 Markdown 格式
+      const aiResponse = userRole === 'teacher'
+        ? `好的！針對這個問題，我為您整理了以下教學重點：\n\n**重點摘要：**\n- 粒線體是細胞的能量工廠\n- 透過\`有氧呼吸\`產生 ATP\n\n建議您可以搭配 [3D 模型](https://example.com) 展示給學生看。`
+        : `收到！讓我為你解釋：\n\n**粒線體** (Mitochondria) 的主要功能包括：\n\n1. **產生 ATP** - 細胞的能量貨幣\n2. **有氧呼吸** - 分解葡萄糖產生能量\n3. **調節細胞代謝**\n\n\`\`\`\n葡萄糖 + O₂ → ATP + CO₂ + H₂O\n\`\`\`\n\n需要更多說明嗎？`;
+      setMessages(p => [...p, { role: 'ai', text: aiResponse }]);
     }, 1000);
   };
 
@@ -118,7 +123,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
     </div>
   );
 
-  // 2. Chat Tab: 對話視窗
+  // 2. Chat Tab: 對話視窗 - 使用 Markdown 渲染
   const renderChatTab = () => (
     <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -127,9 +132,11 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-gray-200' : (userRole === 'teacher' ? 'bg-orange-100 text-orange-600' : 'bg-indigo-100 text-indigo-600')}`}>
                         {msg.role === 'user' ? <User className="w-4 h-4 text-gray-500" /> : <Bot className="w-4 h-4" />}
                     </div>
-                    <div className={`p-3 rounded-2xl max-w-[85%] text-sm leading-relaxed ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-tr-none' : 'bg-gray-100 text-gray-700 rounded-tl-none'}`}>
-                        {msg.text}
-                    </div>
+                    <MarkdownMessage
+                        content={msg.text}
+                        role={msg.role}
+                        userRole={userRole}
+                    />
                 </div>
             ))}
             <div ref={messagesEndRef} />
@@ -211,7 +218,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
       <div className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
       
       <div className={`
-        fixed top-0 right-0 h-full w-[400px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out border-l border-gray-100 flex flex-col
+        fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out border-l border-gray-100 flex flex-col
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
       `}>
         {/* Header */}
