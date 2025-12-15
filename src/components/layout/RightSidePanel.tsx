@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   X, BookOpen, GraduationCap, Lightbulb, MessageCircle,
   BarChart3, ListChecks, UploadCloud, ShieldAlert, Send,
-  Paperclip, Bot, User, FileText, CheckCircle, Trash2, History
+  Paperclip, Bot, User, FileText, Trash2
 } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
 import MarkdownMessage from '../ui/MarkdownMessage';
@@ -135,7 +135,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
                     <MarkdownMessage
                         content={msg.text}
                         role={msg.role}
-                        userRole={userRole}
+                        userRole={userRole === 'all' ? 'student' : userRole}
                     />
                 </div>
             ))}

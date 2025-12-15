@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { LayoutDashboard, Sparkles, UserCog } from 'lucide-react';
+import { LayoutDashboard, Sparkles } from 'lucide-react';
 
 // --- Components Imports (元件引入保持不變) ---
 import TopNavigation from './components/layout/TopNavigation';
@@ -134,7 +134,6 @@ const App = () => {
   const interaction = useCanvasInteraction({
       viewport,
       setViewport,
-      containerRef,
       canvasRef,
       previewPathRef,
       setSelectionBox,
@@ -398,11 +397,16 @@ const App = () => {
   return (
     <div className="h-screen w-screen bg-slate-50 dark:bg-gray-900 overflow-hidden flex flex-col select-none overscroll-none transition-colors">
       
-      {/* 導覽列：透過 UI Hook 控制開關 */}
+      {/* 導覽列：透過 UI Hook 控制開關 + 開發者切換 */}
       <TopNavigation
         isSidebarOpen={ui.isSidebarOpen || ui.isQuizPanelOpen}
         toggleSidebar={() => {ui.setSidebarOpen(!ui.isSidebarOpen); ui.setQuizPanelOpen(!ui.isQuizPanelOpen)}}
         onShowShortcuts={() => setShowShortcutsHelp(true)}
+        userRole={userRole}
+        setUserRole={setUserRole}
+        isEditMode={isEditMode}
+        setIsEditMode={setIsEditMode}
+        onImportContent={handleImportContent}
       />
       
       {/* AI 思考中動畫 */}
@@ -527,25 +531,6 @@ const App = () => {
         />
       </div>
 
-      {/* 開發者切換按鈕 (簡化顯示) */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-black/90 px-4 py-2 rounded-full text-white text-xs backdrop-blur-md shadow-2xl transition-all hover:scale-105 border border-white/10">
-          <div className="flex items-center gap-2">
-            <UserCog className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-400 font-bold hidden sm:inline">開發者:</span>
-          </div>
-          <div className="flex bg-gray-700/50 rounded-full p-1">
-            <button onClick={() => { setUserRole('teacher'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'teacher' ? 'bg-indigo-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>老師</button>
-            <button onClick={() => { setUserRole('student'); setIsEditMode(false); }} className={`px-3 py-1 rounded-full transition-all duration-300 font-medium ${userRole === 'student' ? 'bg-purple-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>學生</button>
-          </div>
-          {userRole === 'teacher' && (
-            <>
-              <div className="w-px h-4 bg-gray-600 mx-1"></div>
-              <button onClick={handleImportContent} className="px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg"><Sparkles className="w-3 h-3" /> AI 匯入</button>
-              <div className="w-px h-4 bg-gray-600 mx-1"></div>
-              <button onClick={() => { const next = !isEditMode; setIsEditMode(next); if (next) setCurrentTool('cursor'); }} className={`px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1 ${isEditMode ? 'bg-emerald-500 text-white shadow-lg' : 'bg-gray-700 text-gray-300'}`}>{isEditMode ? '💾 完成' : '✏️ 編輯'}</button>
-            </>
-          )}
-      </div>
 
       {/* 各種彈窗與 Widgets：全部改用 ui.xxx 來控制 */}
       <LuckyDraw isOpen={ui.isLuckyDrawOpen} onClose={() => ui.setLuckyDrawOpen(false)} />

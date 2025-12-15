@@ -6,7 +6,6 @@ import { distanceBetween } from '../utils/geometry';
 interface UseCanvasInteractionProps {
   viewport: { x: number; y: number; scale: number };
   setViewport: React.Dispatch<React.SetStateAction<{ x: number; y: number; scale: number }>>;
-  containerRef: React.RefObject<HTMLDivElement | null>;
   canvasRef: React.RefObject<HTMLDivElement | null>;
   previewPathRef: React.RefObject<SVGPathElement | null>;
   setSelectionBox: (box: any) => void;
@@ -16,7 +15,6 @@ interface UseCanvasInteractionProps {
 export function useCanvasInteraction({
   viewport,
   setViewport,
-  containerRef,
   canvasRef,
   previewPathRef,
   setSelectionBox,

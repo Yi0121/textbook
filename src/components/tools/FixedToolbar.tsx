@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { 
+import { useState, useEffect } from 'react';
+import {
   Box, ChevronRight, Minus, Plus, GripVertical,
-  Users, // 學生上台圖示
-  X
+  X, MoveLeft, MoveRight
 } from 'lucide-react';
 
 // 引入 Context
-import { useEditor } from '../../context/EditorContext';
+import { useUI } from '../../context/UIContext';
 
 // 引入設定檔
 import { 
@@ -62,9 +61,9 @@ const FixedToolbar = ({
   onToggleAITutor,
   onToggleWhiteboard
 }: FixedToolbarProps) => {
-    
-  // 取得全域狀態與 Dispatch
-  const { state: editorState, dispatch: editorDispatch } = useEditor(); 
+
+  // 取得 UI 狀態
+  const ui = useUI();
 
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -89,9 +88,9 @@ const FixedToolbar = ({
       if (tool.targetStateValue === 'pen') {
           // 如果切回畫筆，且目前的顏色是螢光筆的顏色，就強制設回紅色(或畫筆的第一個顏色)
           if (COLORS.highlighter.includes(penColor)) {
-              setPenColor(COLORS.pen[0]); 
+              setPenColor(COLORS.pen[0]);
           }
-      } 
+      }
       else if (tool.targetStateValue === 'highlighter') {
           // 如果切回螢光筆，且目前的顏色是畫筆的顏色，就強制設回黃色
           if (COLORS.pen.includes(penColor)) {
@@ -101,7 +100,8 @@ const FixedToolbar = ({
     }
     else if (tool.actionType === 'toggle') {
        switch(tool.id) {
-           case 'console': onOpenDashboard(); break;
+           case 'dashboard': onOpenDashboard(); break; // 修正: 學習數據對應到儀表板
+           case 'ai_console': onToggleAITutor && onToggleAITutor(); break; // 修正：AI中控台對應到側邊欄
            case 'nav_grid': onToggleGrid(); break;
            case 'timer': onToggleTimer(); break;
            case 'spotlight': onToggleSpotlight && onToggleSpotlight(); break;
@@ -114,15 +114,22 @@ const FixedToolbar = ({
 
   // 過濾要顯示在主工具列的工具 (核心工具 + 符合權限)
   const mainTools = ALL_TOOLS.filter(t => t.isCore && (t.role === 'all' || t.role === userRole));
-  
+
   // 過濾要在百寶箱顯示的工具 (非核心 + 符合權限 + 非 AI 類)
   const widgetTools = ALL_TOOLS.filter(t => !t.isCore && t.role === userRole && t.category !== 'ai');
+
+  // 計算工具列位置
+  const getPositionClass = () => {
+    if (ui.toolbarPosition === 'left') return 'left-4 md:left-6';
+    if (ui.toolbarPosition === 'right') return 'right-4 md:right-6';
+    return 'left-1/2 -translate-x-1/2';
+  };
 
   return (
     // 🔥 關鍵修正：最外層加入 stopPropagation，防止點擊工具列時畫布也跟著畫畫
     // 🎯 響應式優化：小螢幕時調整位置和大小
     <div
-        className={`fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'} max-w-[95vw]`}
+        className={`fixed bottom-4 md:bottom-6 ${getPositionClass()} transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'} max-w-[95vw]`}
         onMouseDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
     >
@@ -130,10 +137,55 @@ const FixedToolbar = ({
        {/* === 主工具列 === */}
        <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-1.5 md:p-2 rounded-2xl flex items-center gap-1 md:gap-2 ring-1 ring-black/5 overflow-x-auto scrollbar-hide">
 
-          {/* 收合按鈕 */}
-          <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-             {isExpanded ? <GripVertical className="w-4 h-4" /> : <ChevronRight className="w-4 h-4"/>}
-          </button>
+          {/* 收合與位置控制 */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              title={isExpanded ? '收合工具列' : '展開工具列'}
+            >
+              {isExpanded ? <GripVertical className="w-4 h-4" /> : <ChevronRight className="w-4 h-4"/>}
+            </button>
+
+            {/* 位置切換按鈕 */}
+            {isExpanded && (
+              <div className="flex items-center gap-0.5 border-l border-gray-200 pl-1 ml-1">
+                <button
+                  onClick={() => ui.setToolbarPosition('left')}
+                  className={`p-1 rounded transition-colors ${
+                    ui.toolbarPosition === 'left'
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title="移到左側"
+                >
+                  <MoveLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => ui.setToolbarPosition('center')}
+                  className={`p-1 rounded transition-colors ${
+                    ui.toolbarPosition === 'center'
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title="置中"
+                >
+                  <GripVertical className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => ui.setToolbarPosition('right')}
+                  className={`p-1 rounded transition-colors ${
+                    ui.toolbarPosition === 'right'
+                      ? 'bg-indigo-50 text-indigo-600'
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title="移到右側"
+                >
+                  <MoveRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
 
           {isExpanded && (
             <>
@@ -164,39 +216,6 @@ const FixedToolbar = ({
                 </div>
 
               <div className="w-px h-8 bg-gray-200 mx-1" />
-
-              {/* 🔥 學生上台模式按鈕 (只有老師看得到) - 響應式 */}
-              {userRole === 'teacher' && (
-                  <button
-                    onClick={() => editorDispatch({ type: 'TOGGLE_STUDENT_STAGE' })}
-                    className={`
-                        w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all relative group shrink-0
-                        ${editorState.isStudentStage
-                            ? 'bg-amber-100 text-amber-600 shadow-inner ring-1 ring-amber-200'
-                            : 'text-gray-500 hover:bg-gray-100'
-                        }
-                    `}
-                    title="切換學生上台模式"
-                  >
-                    <Users className="w-5 h-5" />
-                    
-                    {/* 狀態燈：開啟時閃爍 */}
-                    {editorState.isStudentStage && (
-                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                        </span>
-                    )}
-                    
-                    {/* Hover 提示 */}
-                    <span className="absolute -top-10 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                        {editorState.isStudentStage ? '學生作答中' : '學生上台'}
-                    </span>
-                  </button>
-              )}
-
-              {/* 分隔線 (只有老師需要，因為學生沒有上台按鈕) */}
-              {userRole === 'teacher' && <div className="w-px h-8 bg-gray-200 mx-1" />}
 
               {/* 百寶箱按鈕 - 響應式 */}
               <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}

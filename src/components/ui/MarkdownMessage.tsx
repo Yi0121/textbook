@@ -9,7 +9,7 @@ interface MarkdownMessageProps {
   userRole?: 'teacher' | 'student';
 }
 
-const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, role, userRole = 'student' }) => {
+const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, role }) => {
   return (
     <div
       className={`
@@ -32,21 +32,22 @@ const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, role, userRo
         remarkPlugins={[remarkGfm]}
         components={{
           // 自定義渲染規則
-          code: ({ node, inline, className, children, ...props }) => {
-            const match = /language-(\w+)/.exec(className || '');
-            return !inline ? (
+          code: (props) => {
+            const { className, children } = props;
+            const isInline = !className || !className.startsWith('language-');
+            return !isInline ? (
               <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto">
-                <code className={className} {...props}>
+                <code className={className}>
                   {children}
                 </code>
               </pre>
             ) : (
-              <code className={`${role === 'ai' ? 'bg-indigo-100 text-indigo-700' : 'bg-white/20 text-white'} px-1.5 py-0.5 rounded text-sm font-mono`} {...props}>
+              <code className={`${role === 'ai' ? 'bg-indigo-100 text-indigo-700' : 'bg-white/20 text-white'} px-1.5 py-0.5 rounded text-sm font-mono`}>
                 {children}
               </code>
             );
           },
-          a: ({ node, children, ...props }) => (
+          a: ({ children, ...props }) => (
             <a
               {...props}
               target="_blank"
@@ -56,19 +57,19 @@ const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, role, userRo
               {children}
             </a>
           ),
-          table: ({ node, children, ...props }) => (
+          table: ({ children, ...props }) => (
             <div className="overflow-x-auto my-4">
               <table className="min-w-full border-collapse" {...props}>
                 {children}
               </table>
             </div>
           ),
-          th: ({ node, children, ...props }) => (
+          th: ({ children, ...props }) => (
             <th className="bg-gray-100 border border-gray-300 p-2 text-left font-bold" {...props}>
               {children}
             </th>
           ),
-          td: ({ node, children, ...props }) => (
+          td: ({ children, ...props }) => (
             <td className="border border-gray-300 p-2" {...props}>
               {children}
             </td>

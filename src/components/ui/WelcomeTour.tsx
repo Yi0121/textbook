@@ -1,5 +1,5 @@
 // components/ui/WelcomeTour.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Check, Sparkles, PenTool, MessageCircle, BookOpen } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
 

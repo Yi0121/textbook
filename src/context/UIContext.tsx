@@ -13,6 +13,7 @@ interface UIState {
   showNavGrid: boolean;
   isLuckyDrawOpen: boolean;
   widgetMode: 'none' | 'spotlight' | 'curtain';
+  toolbarPosition: 'center' | 'left' | 'right';
 }
 
 interface UIActions {
@@ -24,6 +25,7 @@ interface UIActions {
   setShowNavGrid: (v: boolean) => void;
   setLuckyDrawOpen: (v: boolean) => void;
   setWidgetMode: (v: 'none' | 'spotlight' | 'curtain') => void;
+  setToolbarPosition: (v: 'center' | 'left' | 'right') => void;
 }
 
 const UIContext = createContext<(UIState & UIActions) | undefined>(undefined);
@@ -37,6 +39,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [showNavGrid, setShowNavGrid] = useState(false);
   const [isLuckyDrawOpen, setLuckyDrawOpen] = useState(false);
   const [widgetMode, setWidgetMode] = useState<'none' | 'spotlight' | 'curtain'>('none');
+  const [toolbarPosition, setToolbarPosition] = useState<'center' | 'left' | 'right'>('center');
 
   return (
     <UIContext.Provider
@@ -49,6 +52,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
         showNavGrid,
         isLuckyDrawOpen,
         widgetMode,
+        toolbarPosition,
         setSidebarOpen,
         setQuizPanelOpen,
         setSidebarInitialTab,
@@ -57,6 +61,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
         setShowNavGrid,
         setLuckyDrawOpen,
         setWidgetMode,
+        setToolbarPosition,
       }}
     >
       {children}

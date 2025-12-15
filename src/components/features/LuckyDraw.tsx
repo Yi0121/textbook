@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Dices, RotateCcw, Settings2 } from 'lucide-react';
+import { X, Dices, RotateCcw } from 'lucide-react';
 
 interface LuckyDrawProps {
   isOpen: boolean;
@@ -14,7 +14,7 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [history, setHistory] = useState<number[]>([]); // 紀錄抽過的號碼 (避免重複)
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Logic ---
   const startRoll = () => {

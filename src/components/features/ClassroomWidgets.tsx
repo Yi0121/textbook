@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GripHorizontal, X, Power } from 'lucide-react';
+import { Power } from 'lucide-react';
 
 interface ClassroomWidgetsProps {
   mode: 'none' | 'spotlight' | 'curtain';

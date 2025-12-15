@@ -1,7 +1,7 @@
 import {
   MousePointer2, Hand, PenTool, Highlighter, Type, Eraser,
   Zap, Timer, Grid2X2, LayoutDashboard, Dices,
-  Focus, Blinds, Sparkles, Scan, Bot, Users
+  Focus, Sparkles, Scan, Bot, Users
 } from 'lucide-react';
 
 // --- 定義型別 ---
@@ -132,7 +132,7 @@ export const ALL_TOOLS: ToolConfig[] = [
     role: 'teacher',
     isCore: false,
     category: 'system',
-    actionType: 'modal'
+    actionType: 'toggle'  // 修正: 從 modal 改為 toggle
   },
   {
     id: 'ai_console',
