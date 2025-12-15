@@ -1,6 +1,25 @@
 // context/ContentContext.tsx
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
 
+// ==================== TextbookContent 類型 ====================
+export interface TextbookPage {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  title: string;
+  content: string;
+  chapter: number;
+  imageUrl?: string;
+}
+
+export interface TextbookContent {
+  title: string;
+  author: string;
+  pages: TextbookPage[];
+}
+
 // ==================== 內容狀態 ====================
 export interface ContentState {
   // 教科書內容

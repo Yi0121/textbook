@@ -23,6 +23,7 @@ import KeyboardShortcutsHelp from './components/ui/KeyboardShortcutsHelp';
 import WelcomeTour from './components/ui/WelcomeTour';
 import SkeletonCanvas from './components/ui/SkeletonCanvas';
 import Whiteboard from './components/collaboration/Whiteboard';
+import EPUBImporter from './components/features/EPUBImporter';
 
 // Utils
 import { fetchAIImportedContent } from './utils/mockLLMService';
@@ -119,6 +120,9 @@ const App = () => {
     setShowWelcomeTour(false);
   };
 
+  // 🔥 EPUB 匯入器狀態
+  const [showEPUBImporter, setShowEPUBImporter] = React.useState(false);
+
   // ==================== 2. DOM 參照 (Refs) ====================
   // 我們需要這些 Ref 來抓取 HTML 元素的位置，或者直接操作 DOM (如 SVG 路徑)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -174,12 +178,32 @@ const App = () => {
 
   // --- AI 功能函式 ---
   const handleImportContent = async () => {
-    contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
-    const newContent = await fetchAIImportedContent();
-    contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: newContent });
-    contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
+    // 顯示選項：從 API 或本地上傳
+    const useEPUB = confirm('是否要匯入 EPUB 教科書？\n\n確定 = EPUB 格式\n取消 = 一般 AI 匯入');
+
+    if (useEPUB) {
+      setShowEPUBImporter(true);
+    } else {
+      contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
+      const newContent = await fetchAIImportedContent();
+      contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: newContent });
+      contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
+      setIsEditMode(true);
+      setCurrentTool('cursor');
+    }
+  };
+
+  // EPUB 匯入處理
+  const handleEPUBImport = (content: any) => {
+    contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: content });
     setIsEditMode(true);
     setCurrentTool('cursor');
+
+    // 重置視角到第一頁
+    if (content.pages && content.pages.length > 0) {
+      const firstPage = content.pages[0];
+      setViewport({ x: -firstPage.x, y: -firstPage.y, scale: 1 });
+    }
   };
 
   const simulateAIProcess = (callback: () => void) => {
@@ -583,6 +607,13 @@ const App = () => {
       {collabState.currentWhiteboardId && (
         <Whiteboard onClose={handleCloseWhiteboard} />
       )}
+
+      {/* EPUB 匯入器 */}
+      <EPUBImporter
+        isOpen={showEPUBImporter}
+        onClose={() => setShowEPUBImporter(false)}
+        onImport={handleEPUBImport}
+      />
     </div>
   );
 };
