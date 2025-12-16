@@ -1,73 +1,115 @@
-# React + TypeScript + Vite
+# Interactive Textbook Editor 互動式教科書編輯器
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一個現代化的互動式教科書編輯平台，結合 AI 輔助功能、協作白板與豐富的課堂工具，專為教師與學生打造。
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-Rolldown-646CFF?logo=vite)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwindcss)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ 功能特色
 
-## React Compiler
+### 📚 教科書編輯
+- **EPUB 匯入**：直接匯入 EPUB 格式教科書，自動解析章節結構
+- **富文本編輯**：基於 Tiptap 的所見即所得編輯器
+- **畫布繪圖**：支援畫筆、螢光筆、橡皮擦等繪圖工具
+- **心智圖**：拖曳式心智圖元件，整理知識結構
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🤖 AI 輔助功能
+- **AI 解釋**：選取文字後自動生成白話文解析
+- **心智圖生成**：AI 自動整理關聯節點
+- **隨堂測驗**：針對段落自動出題
+- **備課引導**：教學重點與延伸閱讀建議
 
-## Expanding the ESLint configuration
+### 👥 協作功能
+- **電子白板**：即時協作白板
+- **角色切換**：教師/學生雙模式
+- **課堂工具**：計時器、抽籤、儀表板
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 快速開始
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 安裝依賴
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 開發模式
+```bash
+npm run dev
 ```
+
+### 建置專案
+```bash
+npm run build
+```
+
+### 程式碼檢查
+```bash
+npm run lint
+```
+
+---
+
+## 📁 專案結構
+
+```
+src/
+├── components/           # React 元件
+│   ├── canvas/          # 畫布相關 (TextbookEditor, DrawingLayer, ...)
+│   ├── collaboration/   # 協作功能 (Whiteboard)
+│   ├── features/        # 功能模組 (Dashboard, EPUBImporter, ...)
+│   ├── layout/          # 佈局 (TopNavigation, RightSidePanel)
+│   ├── panels/          # 側邊面板 (ChatPanel, ContextAnalysisPanel, ...)
+│   ├── tools/           # 工具列 (FixedToolbar)
+│   └── ui/              # 通用 UI (Modal, ThemeToggle, ...)
+├── context/             # React Context 狀態管理
+│   ├── EditorContext    # 編輯器狀態 (工具、筆跡、選取)
+│   ├── ContentContext   # 內容狀態 (章節、EPUB)
+│   ├── UIContext        # UI 狀態 (側邊欄、彈窗)
+│   └── CollaborationContext # 協作狀態 (白板、參與者)
+├── hooks/               # 自訂 Hooks
+│   ├── useAIActions     # AI 功能操作
+│   ├── useCanvasInteraction # 畫布互動邏輯
+│   ├── useKeyboardShortcuts # 快捷鍵管理
+│   └── useSelectionActions  # 選取狀態操作
+├── services/            # 服務層
+│   └── ai/              # AI 相關服務
+├── types/               # TypeScript 型別定義
+└── utils/               # 工具函式
+```
+
+---
+
+## ⌨️ 快捷鍵
+
+| 快捷鍵 | 功能 |
+|--------|------|
+| `V` | 選取工具 |
+| `P` | 畫筆工具 |
+| `H` | 螢光筆工具 |
+| `E` | 橡皮擦工具 |
+| `T` | 文字工具 |
+| `G` | 開啟章節導航 |
+| `Ctrl + E` | 切換編輯模式 (教師) |
+| `Ctrl + K` | 開啟 AI 對話 |
+| `Ctrl + 0` | 重置縮放 |
+| `?` | 顯示快捷鍵說明 |
+
+---
+
+## 🛠️ 技術棧
+
+- **Frontend**: React 19, TypeScript 5.9
+- **Build Tool**: Vite (Rolldown)
+- **Styling**: TailwindCSS 3.4
+- **Rich Text Editor**: Tiptap
+- **Icons**: Lucide React
+- **EPUB Parsing**: epubjs
+
+---
+
+## 📄 授權
+
+本專案僅供學習與教育用途。

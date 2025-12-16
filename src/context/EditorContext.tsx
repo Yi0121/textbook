@@ -1,6 +1,7 @@
 // context/EditorContext.tsx
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
 import { type UserRole } from '../config/toolConfig';
+import type { Stroke, MindMapData, AIMemo, TextObject, SelectionBox, Point } from '../types';
 
 // ==================== 編輯器狀態 ====================
 export interface EditorState {
@@ -14,15 +15,15 @@ export interface EditorState {
   penSize: number;
 
   // 畫布數據
-  strokes: any[];
-  mindMaps: any[];
-  aiMemos: any[];
-  textObjects: any[];
-  laserPath: { x: number; y: number; timestamp: number }[];
+  strokes: Stroke[];
+  mindMaps: MindMapData[];
+  aiMemos: AIMemo[];
+  textObjects: TextObject[];
+  laserPath: Point[];
 
   // 選取狀態
-  selectionBox: any;
-  selectionMenuPos: any;
+  selectionBox: SelectionBox | null;
+  selectionMenuPos: { x: number; y: number } | null;
   selectedText: string;
 
   // 特殊模式
@@ -36,22 +37,22 @@ export type EditorAction =
   | { type: 'SET_CURRENT_TOOL'; payload: string }
   | { type: 'SET_PEN_COLOR'; payload: string }
   | { type: 'SET_PEN_SIZE'; payload: number }
-  | { type: 'ADD_STROKE'; payload: any }
-  | { type: 'SET_STROKES'; payload: any[] }
-  | { type: 'ADD_MIND_MAP'; payload: any }
+  | { type: 'ADD_STROKE'; payload: Stroke }
+  | { type: 'SET_STROKES'; payload: Stroke[] }
+  | { type: 'ADD_MIND_MAP'; payload: MindMapData }
   | { type: 'UPDATE_MIND_MAP'; payload: { id: number; dx: number; dy: number } }
   | { type: 'DELETE_MIND_MAP'; payload: number }
-  | { type: 'ADD_AI_MEMO'; payload: any }
+  | { type: 'ADD_AI_MEMO'; payload: AIMemo }
   | { type: 'UPDATE_AI_MEMO'; payload: { id: number; dx: number; dy: number } }
   | { type: 'DELETE_AI_MEMO'; payload: number }
-  | { type: 'ADD_TEXT_OBJECT'; payload: any }
-  | { type: 'UPDATE_TEXT_OBJECT'; payload: { id: number; data: any } }
+  | { type: 'ADD_TEXT_OBJECT'; payload: TextObject }
+  | { type: 'UPDATE_TEXT_OBJECT'; payload: { id: number; data: Partial<TextObject> } }
   | { type: 'DELETE_TEXT_OBJECT'; payload: number }
-  | { type: 'SET_SELECTION_BOX'; payload: any }
-  | { type: 'SET_SELECTION_MENU_POS'; payload: any }
+  | { type: 'SET_SELECTION_BOX'; payload: SelectionBox | null }
+  | { type: 'SET_SELECTION_MENU_POS'; payload: { x: number; y: number } | null }
   | { type: 'SET_SELECTED_TEXT'; payload: string }
-  | { type: 'SET_LASER_PATH'; payload: { x: number; y: number; timestamp: number }[] }
-  | { type: 'ADD_LASER_POINT'; payload: { x: number; y: number; timestamp: number } }
+  | { type: 'SET_LASER_PATH'; payload: Point[] }
+  | { type: 'ADD_LASER_POINT'; payload: Point }
   | { type: 'TOGGLE_STUDENT_STAGE' };
 
 // ==================== Initial State ====================

@@ -85,8 +85,8 @@ export interface TextObject {
   x: number;
   y: number;
   text: string;
-  fontSize?: number;
-  color?: string;
+  fontSize: number;
+  color: string;
 }
 
 // ==================== Tiptap 內容類型 ====================

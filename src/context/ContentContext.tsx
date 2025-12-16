@@ -1,5 +1,6 @@
 // context/ContentContext.tsx
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
+import type { TiptapContent, EPUBMetadata, EPUBChapter } from '../types';
 
 // ==================== TextbookContent 類型 ====================
 export interface TextbookPage {
@@ -23,26 +24,11 @@ export interface TextbookContent {
 // ==================== 內容狀態 ====================
 export interface ContentState {
   // 教科書內容
-  textbookContent: any; // Tiptap 的 JSON 格式
+  textbookContent: TiptapContent | undefined;
 
   // EPUB 相關
-  epubMetadata: {
-    title: string;
-    author: string;
-    publisher: string;
-    isbn?: string;
-    version: string;
-    lastModified: string;
-    tags: string[];
-  } | null;
-
-  epubChapters: Array<{
-    id: string;
-    title: string;
-    content: any; // Tiptap JSON
-    order: number;
-  }>;
-
+  epubMetadata: EPUBMetadata | null;
+  epubChapters: EPUBChapter[];
   currentChapterId: string | null;
 
   // AI 狀態
@@ -55,15 +41,15 @@ export interface ContentState {
 
 // ==================== Actions ====================
 export type ContentAction =
-  | { type: 'SET_TEXTBOOK_CONTENT'; payload: any }
-  | { type: 'SET_EPUB_METADATA'; payload: ContentState['epubMetadata'] }
-  | { type: 'SET_EPUB_CHAPTERS'; payload: ContentState['epubChapters'] }
-  | { type: 'ADD_EPUB_CHAPTER'; payload: ContentState['epubChapters'][0] }
-  | { type: 'UPDATE_CHAPTER_CONTENT'; payload: { chapterId: string; content: any } }
+  | { type: 'SET_TEXTBOOK_CONTENT'; payload: TiptapContent | undefined }
+  | { type: 'SET_EPUB_METADATA'; payload: EPUBMetadata | null }
+  | { type: 'SET_EPUB_CHAPTERS'; payload: EPUBChapter[] }
+  | { type: 'ADD_EPUB_CHAPTER'; payload: EPUBChapter }
+  | { type: 'UPDATE_CHAPTER_CONTENT'; payload: { chapterId: string; content: TiptapContent | string } }
   | { type: 'SET_CURRENT_CHAPTER'; payload: string }
   | { type: 'SET_AI_STATE'; payload: ContentState['aiState'] }
   | { type: 'SET_LOADING'; payload: { isLoading: boolean; message?: string } }
-  | { type: 'IMPORT_EPUB'; payload: { metadata: ContentState['epubMetadata']; chapters: ContentState['epubChapters'] } };
+  | { type: 'IMPORT_EPUB'; payload: { metadata: EPUBMetadata | null; chapters: EPUBChapter[] } };
 
 // ==================== Initial State ====================
 export const initialContentState: ContentState = {

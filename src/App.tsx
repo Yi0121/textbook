@@ -26,7 +26,7 @@ import Whiteboard from './components/collaboration/Whiteboard';
 import EPUBImporter from './components/features/EPUBImporter';
 
 // Utils
-import { fetchAIImportedContent } from './utils/mockLLMService';
+import { fetchAIImportedContent } from './services/ai/mockLLMService';
 
 // 🔥 1. 引入重構後的 Context Hooks
 import { useEditor } from './context/EditorContext';
@@ -44,10 +44,10 @@ import './index.css'
 
 // (NAV_ZONES 和 memo 保持不變)
 const NAV_ZONES = [
-    { id: 1, label: '課程大綱', description: '本章節學習重點與目標', x: 0, y: 0, color: 'bg-blue-500' },
-    { id: 2, label: '核心觀念', description: '粒線體與細胞呼吸作用', x: 1200, y: 0, color: 'bg-green-500' },
-    { id: 3, label: '實驗數據', description: 'ATP 生成效率分析圖表', x: 0, y: 800, color: 'bg-orange-500' },
-    { id: 4, label: '課後練習', description: '隨堂測驗與重點複習', x: 1200, y: 800, color: 'bg-purple-500' },
+  { id: 1, label: '課程大綱', description: '本章節學習重點與目標', x: 0, y: 0, color: 'bg-blue-500' },
+  { id: 2, label: '核心觀念', description: '粒線體與細胞呼吸作用', x: 1200, y: 0, color: 'bg-green-500' },
+  { id: 3, label: '實驗數據', description: 'ATP 生成效率分析圖表', x: 0, y: 800, color: 'bg-orange-500' },
+  { id: 4, label: '課後練習', description: '隨堂測驗與重點複習', x: 1200, y: 800, color: 'bg-purple-500' },
 ];
 
 const MemoizedTextbook = React.memo(TextbookEditor);
@@ -66,23 +66,23 @@ const App = () => {
   const prevStrokeCountRef = useRef(0);
   // 🔥 2. 修改原本的 useEffect
   useEffect(() => {
-      // 只有當「現在的筆跡數量」 > 「原本的數量」時，代表是新增，才印 Log
-      if (editorState.strokes.length > prevStrokeCountRef.current) {
-          const lastStroke = editorState.strokes[editorState.strokes.length - 1];
+    // 只有當「現在的筆跡數量」 > 「原本的數量」時，代表是新增，才印 Log
+    if (editorState.strokes.length > prevStrokeCountRef.current) {
+      const lastStroke = editorState.strokes[editorState.strokes.length - 1];
 
-          console.log('%c 🎨 新增筆跡 (New Stroke)', 'background: #22c55e; color: #fff; padding: 2px 4px; border-radius: 4px;');
-          console.log('作者 (Author):', lastStroke.author);
-          console.log('工具 (Tool):', lastStroke.tool);
-          console.log('詳細資料:', lastStroke);
-          console.log('--------------------------------');
-      }
-      // 如果數量變少 (例如橡皮擦)，我們就不印 Log，但還是要更新計數器
-      else if (editorState.strokes.length < prevStrokeCountRef.current) {
-          console.log('%c 🧹 橡皮擦已刪除筆跡', 'background: #cbd5e1; color: #334155; padding: 2px 4px; border-radius: 4px;');
-      }
+      console.log('%c 🎨 新增筆跡 (New Stroke)', 'background: #22c55e; color: #fff; padding: 2px 4px; border-radius: 4px;');
+      console.log('作者 (Author):', lastStroke.author);
+      console.log('工具 (Tool):', lastStroke.tool);
+      console.log('詳細資料:', lastStroke);
+      console.log('--------------------------------');
+    }
+    // 如果數量變少 (例如橡皮擦)，我們就不印 Log，但還是要更新計數器
+    else if (editorState.strokes.length < prevStrokeCountRef.current) {
+      console.log('%c 🧹 橡皮擦已刪除筆跡', 'background: #cbd5e1; color: #334155; padding: 2px 4px; border-radius: 4px;');
+    }
 
-      // 更新計數器，供下次比對
-      prevStrokeCountRef.current = editorState.strokes.length;
+    // 更新計數器，供下次比對
+    prevStrokeCountRef.current = editorState.strokes.length;
 
   }, [editorState.strokes]);
 
@@ -140,14 +140,14 @@ const App = () => {
   // 我們把上面那些 Ref 和 State 設定函式，打包傳給 `useCanvasInteraction`。
   // 它會回傳我們需要的事件處理器 (handleMouseDown 等等)。
   // 這樣 App.tsx 就不用管「座標怎麼算」、「滑鼠左鍵還是右鍵」這些細節了。
-  
+
   const interaction = useCanvasInteraction({
-      viewport,
-      setViewport,
-      canvasRef,
-      previewPathRef,
-      setSelectionBox,
-      setSelectionMenuPos
+    viewport,
+    setViewport,
+    canvasRef,
+    previewPathRef,
+    setSelectionBox,
+    setSelectionMenuPos
   });
 
   // 🔥 使用提取的 AI Actions Hook
@@ -167,21 +167,21 @@ const App = () => {
 
   // 處理滾輪縮放 (這部分邏輯比較單純，保留在此即可)
   useEffect(() => {
-      const container = containerRef.current;
-      if (!container) return;
-      const onWheel = (e: WheelEvent) => {
-          if (e.ctrlKey || e.metaKey) {
-              e.preventDefault();
-              setViewport(prev => {
-                  const zoomSensitivity = 0.002;
-                  const delta = -e.deltaY * zoomSensitivity;
-                  const newScale = Math.min(Math.max(0.5, prev.scale + delta), 3);
-                  return { ...prev, scale: newScale };
-              });
-          }
-      };
-      container.addEventListener('wheel', onWheel, { passive: false });
-      return () => container.removeEventListener('wheel', onWheel);
+    const container = containerRef.current;
+    if (!container) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setViewport(prev => {
+          const zoomSensitivity = 0.002;
+          const delta = -e.deltaY * zoomSensitivity;
+          const newScale = Math.min(Math.max(0.5, prev.scale + delta), 3);
+          return { ...prev, scale: newScale };
+        });
+      }
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
 
@@ -213,8 +213,8 @@ const App = () => {
 
   // --- 導航功能 ---
   const handleQuickNav = (targetX: number, targetY: number) => {
-      setViewport({ x: -targetX, y: -targetY, scale: 1.0 });
-      ui.setShowNavGrid(false);
+    setViewport({ x: -targetX, y: -targetY, scale: 1.0 });
+    ui.setShowNavGrid(false);
   };
 
   const handleOpenWhiteboard = () => {
@@ -341,11 +341,11 @@ const App = () => {
   // ==================== 5. 畫面渲染 (Render) ====================
   return (
     <div className="h-screen w-screen bg-slate-50 dark:bg-gray-900 overflow-hidden flex flex-col select-none overscroll-none transition-colors">
-      
+
       {/* 導覽列：透過 UI Hook 控制開關 + 開發者切換 */}
       <TopNavigation
         isSidebarOpen={ui.isSidebarOpen || ui.isQuizPanelOpen}
-        toggleSidebar={() => {ui.setSidebarOpen(!ui.isSidebarOpen); ui.setQuizPanelOpen(!ui.isQuizPanelOpen)}}
+        toggleSidebar={() => { ui.setSidebarOpen(!ui.isSidebarOpen); ui.setQuizPanelOpen(!ui.isQuizPanelOpen) }}
         onShowShortcuts={() => setShowShortcutsHelp(true)}
         userRole={userRole}
         setUserRole={setUserRole}
@@ -353,15 +353,15 @@ const App = () => {
         setIsEditMode={setIsEditMode}
         onImportContent={handleImportContent}
       />
-      
+
       {/* AI 思考中動畫 */}
       {contentState.aiState === 'thinking' && (
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-300">
-              <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-indigo-200 flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
-                  <span className="text-indigo-700 font-medium text-sm">AI 正在分析教材與筆跡...</span>
-              </div>
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-indigo-200 flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
+            <span className="text-indigo-700 font-medium text-sm">AI 正在分析教材與筆跡...</span>
           </div>
+        </div>
       )}
 
       {/* 🔥 主要畫布容器 
@@ -373,23 +373,23 @@ const App = () => {
         className="flex-1 relative overflow-hidden bg-slate-100 dark:bg-gray-800 touch-none transition-colors"
         onMouseDown={interaction.handleMouseDown}
         onMouseMove={interaction.handleMouseMove}
-        onMouseUp={interaction.handleMouseUp} 
+        onMouseUp={interaction.handleMouseUp}
         onMouseLeave={interaction.handleMouseUp}
-        style={{ 
-            // 游標樣式判斷：直接讀取 interaction 的狀態
-            cursor: interaction.isPanning.current || interaction.isSpacePressed.current 
-              ? 'grabbing' 
-              : currentTool === 'cursor' ? 'default' : 'crosshair' 
+        style={{
+          // 游標樣式判斷：直接讀取 interaction 的狀態
+          cursor: interaction.isPanning.current || interaction.isSpacePressed.current
+            ? 'grabbing'
+            : currentTool === 'cursor' ? 'default' : 'crosshair'
         }}
       >
         {/* 背景網格 */}
         <div
-            className="absolute inset-0 pointer-events-none opacity-50"
-            style={{
-                backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
-                backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`,
-                backgroundPosition: `${viewport.x}px ${viewport.y}px`
-            }}
+          className="absolute inset-0 pointer-events-none opacity-50"
+          style={{
+            backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+            backgroundSize: `${20 * viewport.scale}px ${20 * viewport.scale}px`,
+            backgroundPosition: `${viewport.x}px ${viewport.y}px`
+          }}
         />
 
         {/* 可縮放區域 */}
@@ -403,69 +403,68 @@ const App = () => {
           >
             <div className="relative bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 rounded-2xl select-text" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
 
-                  {/* 教科書內容 */}
-                  <MemoizedTextbook
-                    initialContent={currentContent}
-                    isEditable={isEditMode && userRole === 'teacher'}
-                    currentTool={currentTool}
-                    onTextSelected={(data: any) => setSelectedText(data.text)}
-                    fileMeta={{
-                        title: "Unit 3: Cellular Respiration",
-                        version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)",
-                        lastModified: new Date().toLocaleDateString(),
-                        tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
-                    }}
-                    clearSelection={() => {}}
-                  />
+              {/* 教科書內容 */}
+              <MemoizedTextbook
+                initialContent={currentContent}
+                isEditable={isEditMode && userRole === 'teacher'}
+                currentTool={currentTool}
+                onTextSelected={(data: any) => setSelectedText(data.text)}
+                fileMeta={{
+                  title: "Unit 3: Cellular Respiration",
+                  version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)",
+                  lastModified: new Date().toLocaleDateString(),
+                  tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
+                }}
+                clearSelection={() => { }}
+              />
 
-                  {/* 繪圖層 */}
-                  <DrawingLayer
-                    ref={previewPathRef}
-                    active={true}
-                    strokes={editorState.strokes}
-                    penColor={editorState.penColor}
-                    penSize={editorState.penSize}
-                    currentTool={currentTool}
-                    selectionBox={selectionBox}
-                    laserPath={editorState.laserPath}
-                  />
+              {/* 繪圖層 */}
+              <DrawingLayer
+                ref={previewPathRef}
+                active={true}
+                strokes={editorState.strokes}
+                penColor={editorState.penColor}
+                penSize={editorState.penSize}
+                currentTool={currentTool}
+                selectionBox={selectionBox}
+                laserPath={editorState.laserPath}
+              />
 
-                  {/* 物件層 (心智圖、便利貼、文字) */}
-                  <div className={`absolute inset-0 z-10 ${
-                      (['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode)
-                        ? 'pointer-events-none'
-                        : ''
-                  }`}>
-                      {editorState.mindMaps.map(map => (
-                          <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
-                             onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
-                             onDelete={(id) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
-                          />
-                      ))}
-                      {editorState.aiMemos.map(memo => (
-                          <AIMemoCard key={memo.id} data={memo} scale={viewport.scale}
-                             onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
-                             onDelete={() => editorDispatch({ type: 'DELETE_AI_MEMO', payload: memo.id })}
-                          />
-                      ))}
-                      {editorState.textObjects.map(text => (
-                          <DraggableText key={text.id} data={text} scale={viewport.scale}
-                             onUpdate={(id, d) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
-                             onDelete={(id) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
-                          />
-                      ))}
-                  </div>
+              {/* 物件層 (心智圖、便利貼、文字) */}
+              <div className={`absolute inset-0 z-10 ${(['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode)
+                  ? 'pointer-events-none'
+                  : ''
+                }`}>
+                {editorState.mindMaps.map(map => (
+                  <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
+                    onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
+                    onDelete={(id) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
+                  />
+                ))}
+                {editorState.aiMemos.map(memo => (
+                  <AIMemoCard key={memo.id} data={memo} scale={viewport.scale}
+                    onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
+                    onDelete={() => editorDispatch({ type: 'DELETE_AI_MEMO', payload: memo.id })}
+                  />
+                ))}
+                {editorState.textObjects.map(text => (
+                  <DraggableText key={text.id} data={text} scale={viewport.scale}
+                    onUpdate={(id, d) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
+                    onDelete={(id) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* 底部工具列 - 🔥 Props 從 16 個簡化到 5 個 */}
         <FixedToolbar
-            userRole={userRole}
-            zoomLevel={viewport.scale}
-            setZoomLevel={(s) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
-            onToggleAITutor={aiActions.handleToggleAITutor}
-            onToggleWhiteboard={handleOpenWhiteboard}
+          userRole={userRole}
+          zoomLevel={viewport.scale}
+          setZoomLevel={(s) => setViewport(prev => ({ ...prev, scale: typeof s === 'function' ? s(prev.scale) : s }))}
+          onToggleAITutor={aiActions.handleToggleAITutor}
+          onToggleWhiteboard={handleOpenWhiteboard}
         />
       </div>
 
@@ -473,39 +472,39 @@ const App = () => {
       {/* 各種彈窗與 Widgets：全部改用 ui.xxx 來控制 */}
       <LuckyDraw isOpen={ui.isLuckyDrawOpen} onClose={() => ui.setLuckyDrawOpen(false)} />
       <ClassroomWidgets mode={ui.widgetMode} onClose={() => ui.setWidgetMode('none')} />
-      <NavigationOverlay 
+      <NavigationOverlay
         isOpen={ui.showNavGrid} onClose={() => ui.setShowNavGrid(false)}
         zones={NAV_ZONES} onNavigate={handleQuickNav}
       />
       <FullScreenTimer isOpen={ui.isTimerOpen} onClose={() => ui.setTimerOpen(false)} />
 
       <SelectionFloatingMenu
-          position={selectionMenuPos}
-          onClose={() => aiActions.clearSelection()}
-          userRole={userRole}
-          onExplain={aiActions.handleAIExplain}
-          onMindMap={aiActions.handleAIMindMap}
-          onGenerateQuiz={aiActions.handleGenerateQuiz}
-          onLessonPlan={aiActions.handleLessonPlan}
+        position={selectionMenuPos}
+        onClose={() => aiActions.clearSelection()}
+        userRole={userRole}
+        onExplain={aiActions.handleAIExplain}
+        onMindMap={aiActions.handleAIMindMap}
+        onGenerateQuiz={aiActions.handleGenerateQuiz}
+        onLessonPlan={aiActions.handleLessonPlan}
       />
-      
-      <RightSidePanel 
-          isOpen={ui.isQuizPanelOpen} 
-          onClose={() => {ui.setQuizPanelOpen(false); ui.setSidebarOpen(false)}} 
-          selectedText={selectedText} 
-          userRole={userRole} 
-          initialTab={ui.sidebarInitialTab} 
+
+      <RightSidePanel
+        isOpen={ui.isQuizPanelOpen}
+        onClose={() => { ui.setQuizPanelOpen(false); ui.setSidebarOpen(false) }}
+        selectedText={selectedText}
+        userRole={userRole}
+        initialTab={ui.sidebarInitialTab}
       />
-      
+
       <Modal isOpen={ui.isDashboardOpen} onClose={() => ui.setDashboardOpen(false)} title="學習數據儀表板" icon={<LayoutDashboard className="w-5 h-5" />} fullWidth>
-          <DashboardContent />
+        <DashboardContent />
       </Modal>
 
       {/* 鍵盤快捷鍵幫助 */}
       <KeyboardShortcutsHelp
-          isOpen={showShortcutsHelp}
-          onClose={() => setShowShortcutsHelp(false)}
-          shortcuts={shortcuts}
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+        shortcuts={shortcuts}
       />
 
       {/* Onboarding 引導流程 */}
