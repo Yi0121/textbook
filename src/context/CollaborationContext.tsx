@@ -47,13 +47,27 @@ export type CollaborationAction =
   | { type: 'SET_COLLABORATION_MODE'; payload: CollaborationState['collaborationMode'] }
   | { type: 'SET_CURRENT_USER'; payload: string };
 
+// ==================== Helper Functions ====================
+const STORAGE_KEY = 'textbook-user-id';
+
+function getOrCreateUserId(): string {
+  if (typeof window === 'undefined') {
+    return 'user-' + Math.random().toString(36).substr(2, 9);
+  }
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) return stored;
+  const newId = 'user-' + crypto.randomUUID();
+  localStorage.setItem(STORAGE_KEY, newId);
+  return newId;
+}
+
 // ==================== Initial State ====================
 export const initialCollaborationState: CollaborationState = {
   whiteboards: [],
   currentWhiteboardId: null,
   participants: [],
   collaborationMode: 'none',
-  currentUserId: 'user-' + Math.random().toString(36).substr(2, 9),
+  currentUserId: getOrCreateUserId(),
 };
 
 // ==================== Reducer ====================

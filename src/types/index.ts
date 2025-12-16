@@ -1,18 +1,42 @@
 // src/types/index.ts
 
+// ==================== 基礎類型 ====================
+
 export interface Point {
   x: number;
   y: number;
   timestamp?: number;
 }
 
+export interface Viewport {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export interface SelectionBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// ==================== 繪圖類型 ====================
+
+export type DrawingTool = 'cursor' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'laser';
+
 export interface Stroke {
+  id?: string;
   path: string;
   color: string;
   size: number;
-  tool: string;
+  tool: DrawingTool | string;
   rawPoints?: Point[];
+  author?: string;
+  timestamp?: number;
 }
+
+// ==================== 心智圖類型 ====================
 
 export interface MindMapNode {
   id: string;
@@ -37,17 +61,87 @@ export interface MindMapData {
   edges: MindMapEdge[];
 }
 
-export interface MemoData {
+// ==================== AI 便利貼類型 ====================
+
+export type AIMemoType = 'explain' | 'quiz' | 'plan' | 'summary';
+
+export interface AIMemo {
   id: number;
   x: number;
   y: number;
   keyword: string;
   content: string;
+  type?: AIMemoType;
+  createdAt?: Date;
 }
 
-export interface SelectionBox {
+// 舊的 MemoData 別名（向後兼容）
+export type MemoData = AIMemo;
+
+// ==================== 文字物件類型 ====================
+
+export interface TextObject {
+  id: number;
   x: number;
   y: number;
-  width: number;
-  height: number;
+  text: string;
+  fontSize?: number;
+  color?: string;
+}
+
+// ==================== Tiptap 內容類型 ====================
+
+export interface TiptapNode {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: TiptapNode[];
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  text?: string;
+}
+
+export interface TiptapContent {
+  type: 'doc';
+  content: TiptapNode[];
+}
+
+// ==================== EPUB 類型 ====================
+
+export interface EPUBMetadata {
+  title: string;
+  author: string;
+  publisher: string;
+  isbn?: string;
+  version: string;
+  lastModified: string;
+  tags: string[];
+}
+
+export interface EPUBChapter {
+  id: string;
+  title: string;
+  content: TiptapContent | string;
+  order: number;
+}
+
+// ==================== 協作類型 ====================
+
+export interface Participant {
+  id: string;
+  name: string;
+  role: 'teacher' | 'student';
+  cursorPosition?: Point;
+  isActive: boolean;
+}
+
+export interface WhiteboardStroke extends Stroke {
+  participantId: string;
+}
+
+// ==================== 檔案元資料類型 ====================
+
+export interface FileMeta {
+  title: string;
+  version: string;
+  lastModified: string;
+  tags: string[];
 }

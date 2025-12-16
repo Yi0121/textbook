@@ -4,35 +4,22 @@ import {
   X, MoveLeft, MoveRight
 } from 'lucide-react';
 
-// 引入 Context
+// 引入 Context 和 Hook
 import { useUI } from '../../context/UIContext';
+import { useEditor } from '../../context/EditorContext';
 
 // 引入設定檔
-import { 
-  ALL_TOOLS, 
-  type ToolConfig, 
-  type UserRole 
+import {
+  ALL_TOOLS,
+  type ToolConfig,
+  type UserRole
 } from '../../config/toolConfig';
 
+// 🔥 簡化後的 Props - 從 16 個減少到 4 個
 interface FixedToolbarProps {
   userRole: UserRole;
-  currentTool: string;
-  setCurrentTool: (tool: string) => void;
-  
-  // 狀態
   zoomLevel: number;
-  setZoomLevel: (level: any) => void;
-  penColor: string;
-  setPenColor: (color: string) => void;
-  penSize: number;
-  setPenSize: (size: number) => void;
-
-  // Toggle 回呼函數
-  onToggleTimer: () => void;
-  onToggleGrid: () => void;
-  onOpenDashboard: () => void;
-  onToggleSpotlight?: () => void;
-  onToggleLuckyDraw?: () => void;
+  setZoomLevel: (level: number | ((prev: number) => number)) => void;
   onToggleAITutor?: () => void;
   onToggleWhiteboard?: () => void;
 }
@@ -45,26 +32,25 @@ const COLORS = {
 
 const FixedToolbar = ({
   userRole,
-  currentTool,
-  setCurrentTool,
   zoomLevel,
   setZoomLevel,
-  penColor,
-  setPenColor,
-  penSize,
-  setPenSize,
-  onToggleTimer,
-  onToggleGrid,
-  onOpenDashboard,
-  onToggleSpotlight,
-  onToggleLuckyDraw,
   onToggleAITutor,
   onToggleWhiteboard
 }: FixedToolbarProps) => {
 
-  // 取得 UI 狀態
+  // 🔥 直接從 Context 取得狀態，不再透過 Props
   const ui = useUI();
+  const { state: editorState, dispatch: editorDispatch } = useEditor();
 
+  // 從 Context 取得工具和畫筆狀態
+  const currentTool = editorState.currentTool;
+  const setCurrentTool = (tool: string) => editorDispatch({ type: 'SET_CURRENT_TOOL', payload: tool });
+  const penColor = editorState.penColor;
+  const setPenColor = (color: string) => editorDispatch({ type: 'SET_PEN_COLOR', payload: color });
+  const penSize = editorState.penSize;
+  const setPenSize = (size: number) => editorDispatch({ type: 'SET_PEN_SIZE', payload: size });
+
+  // 本地 UI 狀態
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -80,34 +66,33 @@ const FixedToolbar = ({
 
   // 處理工具點擊
   const handleToolClick = (tool: ToolConfig) => {
-  // 1. 設定工具模式
+    // 1. 設定工具模式
     if (tool.actionType === 'set-tool' && tool.targetStateValue) {
       setCurrentTool(tool.targetStateValue);
 
-      // 🔥🔥🔥 新增這段邏輯：切換工具時，自動切換回該工具的預設顏色 🔥🔥🔥
+      // 切換工具時，自動切換回該工具的預設顏色
       if (tool.targetStateValue === 'pen') {
-          // 如果切回畫筆，且目前的顏色是螢光筆的顏色，就強制設回紅色(或畫筆的第一個顏色)
           if (COLORS.highlighter.includes(penColor)) {
               setPenColor(COLORS.pen[0]);
           }
       }
       else if (tool.targetStateValue === 'highlighter') {
-          // 如果切回螢光筆，且目前的顏色是畫筆的顏色，就強制設回黃色
           if (COLORS.pen.includes(penColor)) {
               setPenColor(COLORS.highlighter[0]);
           }
       }
     }
     else if (tool.actionType === 'toggle') {
+       // 🔥 直接使用 UIContext，不再透過 Props
        switch(tool.id) {
-           case 'dashboard': onOpenDashboard(); break; // 修正: 學習數據對應到儀表板
-           case 'ai_console': onToggleAITutor && onToggleAITutor(); break; // 修正：AI中控台對應到側邊欄
-           case 'nav_grid': onToggleGrid(); break;
-           case 'timer': onToggleTimer(); break;
-           case 'spotlight': onToggleSpotlight && onToggleSpotlight(); break;
-           case 'lucky_draw': onToggleLuckyDraw && onToggleLuckyDraw(); break;
-           case 'ai_tutor': onToggleAITutor && onToggleAITutor(); break;
-           case 'whiteboard': onToggleWhiteboard && onToggleWhiteboard(); break;
+           case 'dashboard': ui.setDashboardOpen(true); break;
+           case 'ai_console': onToggleAITutor?.(); break;
+           case 'nav_grid': ui.setShowNavGrid(true); break;
+           case 'timer': ui.setTimerOpen(true); break;
+           case 'spotlight': ui.setWidgetMode(ui.widgetMode === 'spotlight' ? 'none' : 'spotlight'); break;
+           case 'lucky_draw': ui.setLuckyDrawOpen(true); break;
+           case 'ai_tutor': onToggleAITutor?.(); break;
+           case 'whiteboard': onToggleWhiteboard?.(); break;
        }
     }
   };
@@ -126,14 +111,12 @@ const FixedToolbar = ({
   };
 
   return (
-    // 🔥 關鍵修正：最外層加入 stopPropagation，防止點擊工具列時畫布也跟著畫畫
-    // 🎯 響應式優化：小螢幕時調整位置和大小
     <div
         className={`fixed bottom-4 md:bottom-6 ${getPositionClass()} transition-all duration-300 z-[100] ${isExpanded ? 'w-auto' : 'w-auto'} max-w-[95vw]`}
         onMouseDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
     >
-       
+
        {/* === 主工具列 === */}
        <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-1.5 md:p-2 rounded-2xl flex items-center gap-1 md:gap-2 ring-1 ring-black/5 overflow-x-auto scrollbar-hide">
 
@@ -189,7 +172,7 @@ const FixedToolbar = ({
 
           {isExpanded && (
             <>
-              {/* 核心工具按鈕 - 響應式大小 */}
+              {/* 核心工具按鈕 */}
               {mainTools.map(tool => (
                  <button
                     key={tool.id}
@@ -208,16 +191,16 @@ const FixedToolbar = ({
 
               <div className="w-px h-8 bg-gray-200 mx-1" />
 
-              {/* 縮放控制 - 小螢幕時隱藏文字 */}
+              {/* 縮放控制 */}
                <div className="hidden sm:flex flex-col items-center gap-0.5 mx-1 shrink-0">
-                   <button onClick={() => setZoomLevel((p:any) => Math.min(3, p+0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Plus className="w-3 h-3" /></button>
+                   <button onClick={() => setZoomLevel(p => Math.min(3, p + 0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Plus className="w-3 h-3" /></button>
                    <span className="text-[9px] font-bold text-gray-400 font-mono select-none">{Math.round(zoomLevel * 100)}%</span>
-                   <button onClick={() => setZoomLevel((p:any) => Math.max(0.5, p-0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Minus className="w-3 h-3" /></button>
+                   <button onClick={() => setZoomLevel(p => Math.max(0.5, p - 0.1))} className="p-0.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded"><Minus className="w-3 h-3" /></button>
                 </div>
 
               <div className="w-px h-8 bg-gray-200 mx-1" />
 
-              {/* 百寶箱按鈕 - 響應式 */}
+              {/* 百寶箱按鈕 */}
               <button onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
                     className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all shrink-0 ${activeSubPanel === 'box' ? 'bg-purple-50 text-purple-600 shadow-sm ring-1 ring-purple-100' : 'text-gray-500 hover:bg-gray-100'}`}
                     title="百寶箱"
@@ -230,12 +213,11 @@ const FixedToolbar = ({
 
        {/* === 彈出面板：調色盤 === */}
        {isExpanded && showColorPicker && ['pen', 'highlighter'].includes(currentTool) && (
-          <div 
+          <div
              className="absolute bottom-20 left-12 bg-white p-3 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3 animate-in slide-in-from-bottom-2 z-10"
-             // 🔥 這裡也要加，以防萬一
              onMouseDown={(e) => e.stopPropagation()}
           >
-             
+
              {/* 顏色選擇 */}
              <div className="flex gap-2">
                 {(currentTool === 'pen' ? COLORS.pen : COLORS.highlighter).map(c => (
@@ -247,9 +229,9 @@ const FixedToolbar = ({
                     />
                 ))}
              </div>
-             
+
              <div className="w-px h-6 bg-gray-200" />
-             
+
              {/* 筆刷大小 */}
              <div className="flex items-center gap-1">
                  <button onClick={() => setPenSize(Math.max(2, penSize - 2))} className="p-1 hover:bg-gray-100 rounded"><div className="w-1 h-1 bg-gray-800 rounded-full" /></button>
@@ -260,16 +242,15 @@ const FixedToolbar = ({
 
        {/* === 彈出面板：百寶箱 === */}
        {isExpanded && activeSubPanel === 'box' && (
-           <div 
+           <div
                className="absolute bottom-20 right-0 bg-white/95 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 w-64 animate-in slide-in-from-bottom-2 ring-1 ring-black/5 z-10"
-               // 🔥 這裡也要加
                onMouseDown={(e) => e.stopPropagation()}
            >
                <div className="flex justify-between items-center mb-3">
                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">課堂工具</h4>
                    <button onClick={() => setActiveSubPanel(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                </div>
-               
+
                <div className="grid grid-cols-3 gap-2">
                   {widgetTools.map(tool => (
                       <button

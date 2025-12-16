@@ -19,11 +19,10 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 
 // Icons
-import { 
-  Bold, Italic, Sparkles, Highlighter, 
-  Heading1, Heading2, List, ListOrdered, Quote,
-  Undo, Redo 
-} from 'lucide-react';
+import { Bold, Italic, Sparkles, Highlighter } from 'lucide-react';
+
+// 分拆的工具欄組件
+import EditorToolbar from './EditorToolbar';
 
 // 定義 Props，包含新增的檔案資訊 (fileMeta)
 interface TextbookEditorProps {
@@ -32,7 +31,6 @@ interface TextbookEditorProps {
   clearSelection: () => void;
   currentTool: string;
   initialContent?: any;
-  // 🔥 新增：檔案資訊欄位
   fileMeta?: {
     title: string;
     version: string;
@@ -40,46 +38,6 @@ interface TextbookEditorProps {
     tags: string[];
   };
 }
-
-// 固定式工具列 (顯示於編輯模式頂部)
-const EditorToolbar = ({ editor }: { editor: any }) => {
-  if (!editor) return null;
-
-  const Button = ({ onClick, isActive, icon: Icon, title }: any) => (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`p-1.5 rounded transition-colors ${
-        isActive 
-          ? 'bg-indigo-100 text-indigo-700' 
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-      }`}
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  );
-
-  return (
-    <div 
-      onMouseDown={(e) => e.stopPropagation()} 
-      className="flex items-center gap-1 p-2 mb-4 border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm sticky top-0 z-10 rounded-t-lg"
-    >
-      <Button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} icon={Heading1} title="大標題" />
-      <Button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} icon={Heading2} title="次標題" />
-      <div className="w-px h-4 bg-slate-300 mx-1" />
-      <Button onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} icon={Bold} title="粗體" />
-      <Button onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} icon={Italic} title="斜體" />
-      <Button onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive('highlight')} icon={Highlighter} title="螢光筆" />
-      <div className="w-px h-4 bg-slate-300 mx-1" />
-      <Button onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} icon={List} title="項目符號" />
-      <Button onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} icon={ListOrdered} title="編號列表" />
-      <Button onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} icon={Quote} title="引用" />
-      <div className="flex-1" />
-      <Button onClick={() => editor.chain().focus().undo().run()} icon={Undo} title="復原" />
-      <Button onClick={() => editor.chain().focus().redo().run()} icon={Redo} title="重做" />
-    </div>
-  );
-};
 
 // 預設內容
 const DEFAULT_CONTENT = `

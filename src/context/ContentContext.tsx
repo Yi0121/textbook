@@ -120,7 +120,7 @@ export function contentReducer(state: ContentState, action: ContentAction): Cont
         epubMetadata: action.payload.metadata,
         epubChapters: action.payload.chapters,
         currentChapterId: action.payload.chapters[0]?.id || null,
-        textbookContent: action.payload.chapters[0]?.content,
+        // 注意：不再設置 textbookContent，改用 useCurrentChapterContent() 衍生
       };
 
     default:
@@ -154,11 +154,22 @@ export function useContent() {
 // ==================== Helper Hooks ====================
 
 /**
- * 取得當前章節內容
+ * 取得當前章節
  */
 export function useCurrentChapter() {
   const { state } = useContent();
   return state.epubChapters.find(ch => ch.id === state.currentChapterId);
+}
+
+/**
+ * 取得當前章節內容（衍生狀態，避免冗餘）
+ * 優先使用 EPUB 章節內容，否則回退到 textbookContent
+ */
+export function useCurrentChapterContent() {
+  const { state } = useContent();
+  const currentChapter = state.epubChapters.find(ch => ch.id === state.currentChapterId);
+  // 如果有 EPUB 章節，使用章節內容；否則使用 textbookContent
+  return currentChapter?.content ?? state.textbookContent;
 }
 
 /**
@@ -171,7 +182,6 @@ export function useChapterNavigation() {
     const chapter = state.epubChapters.find(ch => ch.id === chapterId);
     if (chapter) {
       dispatch({ type: 'SET_CURRENT_CHAPTER', payload: chapterId });
-      dispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: chapter.content });
     }
   };
 

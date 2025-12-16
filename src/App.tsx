@@ -30,13 +30,15 @@ import { fetchAIImportedContent } from './utils/mockLLMService';
 
 // 🔥 1. 引入重構後的 Context Hooks
 import { useEditor } from './context/EditorContext';
-import { useContent } from './context/ContentContext';
+import { useContent, useCurrentChapterContent } from './context/ContentContext';
 import { useUI } from './context/UIContext';
 import { useCollaboration, useWhiteboardActions } from './context/CollaborationContext';
 
 // 這是上一大步建立的「互動邏輯」檔案
 import { useCanvasInteraction } from './hooks/useCanvasInteraction';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useAIActions } from './hooks/useAIActions';
+import { useSelectionActions } from './hooks/useSelectionActions';
 
 import './index.css'
 
@@ -55,6 +57,7 @@ const App = () => {
   // 🔥 使用重構後的 Context
   const { state: editorState, dispatch: editorDispatch } = useEditor();
   const { state: contentState, dispatch: contentDispatch } = useContent();
+  const currentContent = useCurrentChapterContent(); // 衍生內容，優先使用章節內容
   const ui = useUI();
   const { state: collabState } = useCollaboration();
   const whiteboardActions = useWhiteboardActions();
@@ -91,15 +94,18 @@ const App = () => {
   const currentTool = editorState.currentTool;
   const setCurrentTool = (tool: string) => editorDispatch({ type: 'SET_CURRENT_TOOL', payload: tool });
 
-  // ⚠️ 為什麼這些還留在這裡？
-  // Viewport (視角) 和 SelectionBox (選取框) 屬於「高頻率變動」且「只跟目前畫面有關」的狀態。
-  // 雖然可以放 Context，但為了效能和簡單化，暫時保留在 App 層級也是常見做法。
+  // Viewport 屬於高頻率變動的狀態，保留在 App 層級
   const [viewport, setViewport] = React.useState({ x: 0, y: 0, scale: 1 });
-  const [selectionBox, setSelectionBox] = React.useState<any>(null);
-  const [selectionMenuPos, setSelectionMenuPos] = React.useState<any>(null);
 
-  // 這個只是範例文字，可以暫時保留
-  const [selectedText, setSelectedText] = React.useState('粒線體結構與功能');
+  // 🔥 使用 useSelectionActions hook 統一管理選取狀態
+  const {
+    selectionBox,
+    selectionMenuPos,
+    selectedText,
+    updateSelectionBox: setSelectionBox,
+    updateMenuPosition: setSelectionMenuPos,
+    setSelectedText
+  } = useSelectionActions();
 
   // 🔥 鍵盤快捷鍵幫助面板狀態
   const [showShortcutsHelp, setShowShortcutsHelp] = React.useState(false);
@@ -144,6 +150,9 @@ const App = () => {
       setSelectionMenuPos
   });
 
+  // 🔥 使用提取的 AI Actions Hook
+  const aiActions = useAIActions({ viewport });
+
   // ==================== 4. 副作用與其他邏輯 (Effects) ====================
 
   // 模擬初始載入
@@ -176,9 +185,8 @@ const App = () => {
   }, []);
 
 
-  // --- AI 功能函式 ---
+  // --- 內容匯入功能 ---
   const handleImportContent = async () => {
-    // 顯示選項：從 API 或本地上傳
     const useEPUB = confirm('是否要匯入 EPUB 教科書？\n\n確定 = EPUB 格式\n取消 = 一般 AI 匯入');
 
     if (useEPUB) {
@@ -193,104 +201,17 @@ const App = () => {
     }
   };
 
-  // EPUB 匯入處理
   const handleEPUBImport = (content: any) => {
     contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: content });
     setIsEditMode(true);
     setCurrentTool('cursor');
-
-    // 重置視角到第一頁
     if (content.pages && content.pages.length > 0) {
       const firstPage = content.pages[0];
       setViewport({ x: -firstPage.x, y: -firstPage.y, scale: 1 });
     }
   };
 
-  const simulateAIProcess = (callback: () => void) => {
-      setSelectionMenuPos(null);
-      setSelectionBox(null);
-      contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
-      setTimeout(() => {
-          contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
-          callback();
-      }, 1500);
-  };
-
-  const getSpawnPosition = () => {
-      // 簡單的計算生成位置，避免重疊
-      return { 
-          x: (-viewport.x + window.innerWidth/2) / viewport.scale, 
-          y: (-viewport.y + window.innerHeight/2) / viewport.scale 
-      };
-  };
-
-  const handleToggleAITutor = () => {
-      ui.setSidebarInitialTab('chat');
-      if (ui.isQuizPanelOpen) {
-          ui.setQuizPanelOpen(!ui.isQuizPanelOpen);
-          ui.setSidebarOpen(!ui.isSidebarOpen);
-      } else {
-          ui.setQuizPanelOpen(true);
-          ui.setSidebarOpen(true);
-      }
-  };
-
-  const handleAIExplain = () => {
-    const pos = getSpawnPosition();
-    simulateAIProcess(() => editorDispatch({
-      type: 'ADD_AI_MEMO',
-      payload: {
-        id: Date.now(), x: pos.x, y: pos.y, keyword: "重點摘要",
-        content: "AI 分析：這段文字描述了粒線體(Mitochondria)作為細胞能量工廠的角色。"
-      }
-    }));
-  };
-
-  const handleAIMindMap = () => {
-      const pos = getSpawnPosition();
-      simulateAIProcess(() => editorDispatch({
-        type: 'ADD_MIND_MAP',
-        payload: {
-          id: Date.now(), x: pos.x, y: pos.y,
-          nodes: [
-              { id: 'root', offsetX: 0, offsetY: 0, label: '粒線體', type: 'root' },
-              { id: '1', offsetX: 150, offsetY: -50, label: '結構', type: 'child' },
-              { id: '2', offsetX: 150, offsetY: 50, label: '功能', type: 'child' }
-          ],
-          edges: [ { source: 'root', target: '1' }, { source: 'root', target: '2' } ]
-        }
-      }));
-  };
-
-  const handleGenerateQuiz = () => {
-    setSelectionBox(null);
-    setSelectionMenuPos(null);
-    contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
-    setTimeout(() => {
-        contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
-        ui.setSidebarInitialTab('context');
-        ui.setQuizPanelOpen(true);
-        ui.setSidebarOpen(true);
-    }, 1000);
-  };
-
-  const handleLessonPlan = () => {
-    const pos = getSpawnPosition();
-    setSelectionBox(null);
-    setSelectionMenuPos(null);
-    contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
-    setTimeout(() => {
-        contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
-        editorDispatch({
-          type: 'ADD_AI_MEMO',
-          payload: {
-            id: Date.now(), x: pos.x, y: pos.y, keyword: "教學建議",
-            content: "💡 教學引導：建議此處搭配 3D 模型展示 ATP 合成酶的旋轉機制。"
-          }
-        });
-    }, 1000);
-  };
-
+  // --- 導航功能 ---
   const handleQuickNav = (targetX: number, targetY: number) => {
       setViewport({ x: -targetX, y: -targetY, scale: 1.0 });
       ui.setShowNavGrid(false);
@@ -385,7 +306,7 @@ const App = () => {
       key: 'k',
       ctrl: true,
       description: '開啟 AI 對話',
-      action: () => handleToggleAITutor()
+      action: () => aiActions.handleToggleAITutor()
     },
     // 幫助
     {
@@ -408,7 +329,7 @@ const App = () => {
         }
       }
     }
-  ], [userRole, isEditMode, setIsEditMode, setCurrentTool, ui, showShortcutsHelp, handleToggleAITutor]);
+  ], [userRole, isEditMode, setIsEditMode, setCurrentTool, ui, showShortcutsHelp, aiActions]);
 
   // 啟用快捷鍵
   useKeyboardShortcuts({
@@ -484,7 +405,7 @@ const App = () => {
 
                   {/* 教科書內容 */}
                   <MemoizedTextbook
-                    initialContent={contentState.textbookContent}
+                    initialContent={currentContent}
                     isEditable={isEditMode && userRole === 'teacher'}
                     currentTool={currentTool}
                     onTextSelected={(data: any) => setSelectedText(data.text)}
@@ -538,19 +459,12 @@ const App = () => {
           </div>
         )}
 
-        {/* 底部工具列 */}
+        {/* 底部工具列 - 🔥 Props 從 16 個簡化到 5 個 */}
         <FixedToolbar
             userRole={userRole}
-            currentTool={currentTool} setCurrentTool={setCurrentTool}
-            zoomLevel={viewport.scale} setZoomLevel={(s: any) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
-            penColor={editorState.penColor} setPenColor={(c) => editorDispatch({type: 'SET_PEN_COLOR', payload: c})}
-            penSize={editorState.penSize} setPenSize={(s) => editorDispatch({type: 'SET_PEN_SIZE', payload: s})}
-            onToggleTimer={() => ui.setTimerOpen(true)}
-            onToggleGrid={() => ui.setShowNavGrid(true)}
-            onOpenDashboard={() => ui.setDashboardOpen(true)}
-            onToggleSpotlight={() => ui.setWidgetMode(ui.widgetMode === 'spotlight' ? 'none' : 'spotlight')}
-            onToggleLuckyDraw={() => ui.setLuckyDrawOpen(true)}
-            onToggleAITutor={handleToggleAITutor}
+            zoomLevel={viewport.scale}
+            setZoomLevel={(s) => setViewport(prev => ({...prev, scale: typeof s === 'function' ? s(prev.scale) : s}))}
+            onToggleAITutor={aiActions.handleToggleAITutor}
             onToggleWhiteboard={handleOpenWhiteboard}
         />
       </div>
@@ -565,14 +479,14 @@ const App = () => {
       />
       <FullScreenTimer isOpen={ui.isTimerOpen} onClose={() => ui.setTimerOpen(false)} />
 
-      <SelectionFloatingMenu 
-          position={selectionMenuPos} 
-          onClose={() => { setSelectionBox(null); setSelectionMenuPos(null); }}
-          userRole={userRole}           
-          onExplain={handleAIExplain}   
-          onMindMap={handleAIMindMap}   
-          onGenerateQuiz={handleGenerateQuiz} 
-          onLessonPlan={handleLessonPlan}     
+      <SelectionFloatingMenu
+          position={selectionMenuPos}
+          onClose={() => aiActions.clearSelection()}
+          userRole={userRole}
+          onExplain={aiActions.handleAIExplain}
+          onMindMap={aiActions.handleAIMindMap}
+          onGenerateQuiz={aiActions.handleGenerateQuiz}
+          onLessonPlan={aiActions.handleLessonPlan}
       />
       
       <RightSidePanel 
