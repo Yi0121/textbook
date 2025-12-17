@@ -25,31 +25,26 @@ import SkeletonCanvas from './components/ui/SkeletonCanvas';
 import Whiteboard from './components/collaboration/Whiteboard';
 import EPUBImporter from './components/features/EPUBImporter';
 
-// Utils
-import { fetchAIImportedContent } from './services/ai/mockLLMService';
-
 // 🔥 1. 引入重構後的 Context Hooks
 import { useEditor } from './context/EditorContext';
 import { useContent, useCurrentChapterContent } from './context/ContentContext';
 import { useUI } from './context/UIContext';
-import { useCollaboration, useWhiteboardActions } from './context/CollaborationContext';
 
-// 這是上一大步建立的「互動邏輯」檔案
+// 🔥 2. 引入重構後的 Custom Hooks
 import { useCanvasInteraction } from './hooks/useCanvasInteraction';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAIActions } from './hooks/useAIActions';
 import { useSelectionActions } from './hooks/useSelectionActions';
 import { useAppShortcuts } from './hooks/useAppShortcuts';
+import { useViewportZoom } from './hooks/useViewportZoom';
+import { useContentImport } from './hooks/useContentImport';
+import { useWhiteboardControl } from './hooks/useWhiteboardControl';
+import { useOnboarding } from './hooks/useOnboarding';
 
 import './index.css'
 
-// (NAV_ZONES 和 memo 保持不變)
-const NAV_ZONES = [
-  { id: 1, label: '課程大綱', description: '本章節學習重點與目標', x: 0, y: 0, color: 'bg-blue-500' },
-  { id: 2, label: '核心觀念', description: '粒線體與細胞呼吸作用', x: 1200, y: 0, color: 'bg-green-500' },
-  { id: 3, label: '實驗數據', description: 'ATP 生成效率分析圖表', x: 0, y: 800, color: 'bg-orange-500' },
-  { id: 4, label: '課後練習', description: '隨堂測驗與重點複習', x: 1200, y: 800, color: 'bg-purple-500' },
-];
+// 🔥 3. 引入集中管理的常數
+import { NAV_ZONES } from './config/constants';
 
 const MemoizedTextbook = React.memo(TextbookEditor);
 
@@ -60,8 +55,6 @@ const App = () => {
   const { state: contentState, dispatch: contentDispatch } = useContent();
   const currentContent = useCurrentChapterContent(); // 衍生內容，優先使用章節內容
   const ui = useUI();
-  const { state: collabState } = useCollaboration();
-  const whiteboardActions = useWhiteboardActions();
 
 
   const prevStrokeCountRef = useRef(0);
@@ -111,24 +104,14 @@ const App = () => {
   // 🔥 鍵盤快捷鍵幫助面板狀態
   const [showShortcutsHelp, setShowShortcutsHelp] = React.useState(false);
 
-  // 🔥 Onboarding 引導狀態 - 使用 localStorage 記住是否已完成
-  const [showWelcomeTour, setShowWelcomeTour] = React.useState(() => {
-    const hasCompletedTour = localStorage.getItem('hasCompletedTour');
-    return hasCompletedTour !== 'true';
-  });
-
-  const handleCompleteTour = () => {
-    localStorage.setItem('hasCompletedTour', 'true');
-    setShowWelcomeTour(false);
-  };
-
-  const handleSkipTour = () => {
-    localStorage.setItem('hasCompletedTour', 'true');
-    setShowWelcomeTour(false);
-  };
+  // 🔥 使用提取的 useOnboarding hook
+  const { showWelcomeTour, handleCompleteTour, handleSkipTour } = useOnboarding();
 
   // 🔥 EPUB 匯入器狀態
   const [showEPUBImporter, setShowEPUBImporter] = React.useState(false);
+
+  // 🔥 使用提取的 useWhiteboardControl hook
+  const { handleOpenWhiteboard, handleCloseWhiteboard, currentWhiteboardId } = useWhiteboardControl();
 
   // ==================== 2. DOM 參照 (Refs) ====================
   // 我們需要這些 Ref 來抓取 HTML 元素的位置，或者直接操作 DOM (如 SVG 路徑)
@@ -166,51 +149,14 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [contentDispatch]);
 
-  // 處理滾輪縮放 (這部分邏輯比較單純，保留在此即可)
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        setViewport(prev => {
-          const zoomSensitivity = 0.002;
-          const delta = -e.deltaY * zoomSensitivity;
-          const newScale = Math.min(Math.max(0.5, prev.scale + delta), 3);
-          return { ...prev, scale: newScale };
-        });
-      }
-    };
-    container.addEventListener('wheel', onWheel, { passive: false });
-    return () => container.removeEventListener('wheel', onWheel);
-  }, []);
+  // 🔥 使用提取的 useViewportZoom hook
+  useViewportZoom({ containerRef, setViewport });
 
-
-  // --- 內容匯入功能 ---
-  const handleImportContent = async () => {
-    const useEPUB = confirm('是否要匯入 EPUB 教科書？\n\n確定 = EPUB 格式\n取消 = 一般 AI 匯入');
-
-    if (useEPUB) {
-      setShowEPUBImporter(true);
-    } else {
-      contentDispatch({ type: 'SET_AI_STATE', payload: 'thinking' });
-      const newContent = await fetchAIImportedContent();
-      contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: newContent });
-      contentDispatch({ type: 'SET_AI_STATE', payload: 'idle' });
-      setIsEditMode(true);
-      setCurrentTool('cursor');
-    }
-  };
-
-  const handleEPUBImport = (content: any) => {
-    contentDispatch({ type: 'SET_TEXTBOOK_CONTENT', payload: content });
-    setIsEditMode(true);
-    setCurrentTool('cursor');
-    if (content.pages && content.pages.length > 0) {
-      const firstPage = content.pages[0];
-      setViewport({ x: -firstPage.x, y: -firstPage.y, scale: 1 });
-    }
-  };
+  // 🔥 使用提取的 useContentImport hook
+  const { handleImportContent, handleEPUBImport } = useContentImport({
+    setViewport,
+    setShowEPUBImporter,
+  });
 
   // --- 導航功能 ---
   const handleQuickNav = (targetX: number, targetY: number) => {
@@ -218,22 +164,7 @@ const App = () => {
     ui.setShowNavGrid(false);
   };
 
-  const handleOpenWhiteboard = () => {
-    // 如果沒有白板，創建一個新的
-    if (collabState.whiteboards.length === 0) {
-      whiteboardActions.createWhiteboard('協作白板', collabState.currentUserId);
-    } else if (collabState.currentWhiteboardId === null) {
-      // 如果有白板但沒打開，打開第一個
-      whiteboardActions.openWhiteboard(collabState.whiteboards[0].id);
-    } else {
-      // 如果已經有打開的白板，重新打開
-      whiteboardActions.openWhiteboard(collabState.currentWhiteboardId);
-    }
-  };
-
-  const handleCloseWhiteboard = () => {
-    whiteboardActions.closeWhiteboard();
-  };
+  // handleOpenWhiteboard 和 handleCloseWhiteboard 已移至 useWhiteboardControl hook
 
   // ==================== 6. 鍵盤快捷鍵設定 ====================
   // 🔥 使用提取的 useAppShortcuts hook
@@ -350,8 +281,8 @@ const App = () => {
 
               {/* 物件層 (心智圖、便利貼、文字) */}
               <div className={`absolute inset-0 z-10 ${(['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode)
-                  ? 'pointer-events-none'
-                  : ''
+                ? 'pointer-events-none'
+                : ''
                 }`}>
                 {editorState.mindMaps.map(map => (
                   <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
@@ -435,7 +366,7 @@ const App = () => {
       )}
 
       {/* 電子白板 */}
-      {collabState.currentWhiteboardId && (
+      {currentWhiteboardId && (
         <Whiteboard onClose={handleCloseWhiteboard} />
       )}
 
