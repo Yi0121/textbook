@@ -42,7 +42,7 @@ export function useCanvasInteraction({
       if (editorState.laserPath.length === 0) return;
       const timer = setInterval(() => {
           const now = Date.now();
-          const newPath = editorState.laserPath.filter(p => now - p.timestamp < 1000);
+          const newPath = editorState.laserPath.filter(p => p.timestamp !== undefined && now - p.timestamp < 1000);
           if (newPath.length !== editorState.laserPath.length) {
               editorDispatch({ type: 'SET_LASER_PATH', payload: newPath });
           }
@@ -191,7 +191,7 @@ export function useCanvasInteraction({
         editorDispatch({
             type: 'ADD_STROKE',
             payload: {
-                id: Date.now(),
+                id: String(Date.now()),
                 path: finalPath,
                 color: penColor,
                 size: penSize,

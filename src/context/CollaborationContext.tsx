@@ -1,5 +1,6 @@
 // context/CollaborationContext.tsx
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
+import type { WhiteboardStroke } from '../types';
 
 // ==================== 協作狀態 ====================
 export interface WhiteboardData {
@@ -7,8 +8,8 @@ export interface WhiteboardData {
   title: string;
   createdBy: string;
   createdAt: number;
-  strokes: any[]; // 白板上的筆觸
-  participants: string[]; // 參與者列表
+  strokes: WhiteboardStroke[];
+  participants: string[];
   isActive: boolean;
 }
 
@@ -39,7 +40,7 @@ export type CollaborationAction =
   | { type: 'OPEN_WHITEBOARD'; payload: string }
   | { type: 'CLOSE_WHITEBOARD' }
   | { type: 'DELETE_WHITEBOARD'; payload: string }
-  | { type: 'ADD_WHITEBOARD_STROKE'; payload: { whiteboardId: string; stroke: any } }
+  | { type: 'ADD_WHITEBOARD_STROKE'; payload: { whiteboardId: string; stroke: WhiteboardStroke } }
   | { type: 'CLEAR_WHITEBOARD'; payload: string }
   | { type: 'ADD_PARTICIPANT'; payload: CollaborationState['participants'][0] }
   | { type: 'REMOVE_PARTICIPANT'; payload: string }
@@ -52,7 +53,7 @@ const STORAGE_KEY = 'textbook-user-id';
 
 function getOrCreateUserId(): string {
   if (typeof window === 'undefined') {
-    return 'user-' + Math.random().toString(36).substr(2, 9);
+    return 'user-' + Math.random().toString(36).substring(2, 11);
   }
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) return stored;
@@ -225,7 +226,7 @@ export function useWhiteboardActions() {
     dispatch({ type: 'CLEAR_WHITEBOARD', payload: id });
   };
 
-  const addStroke = (whiteboardId: string, stroke: any) => {
+  const addStroke = (whiteboardId: string, stroke: WhiteboardStroke) => {
     dispatch({ type: 'ADD_WHITEBOARD_STROKE', payload: { whiteboardId, stroke } });
   };
 
