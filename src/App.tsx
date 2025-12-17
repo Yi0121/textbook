@@ -39,6 +39,7 @@ import { useCanvasInteraction } from './hooks/useCanvasInteraction';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAIActions } from './hooks/useAIActions';
 import { useSelectionActions } from './hooks/useSelectionActions';
+import { useAppShortcuts } from './hooks/useAppShortcuts';
 
 import './index.css'
 
@@ -235,101 +236,18 @@ const App = () => {
   };
 
   // ==================== 6. 鍵盤快捷鍵設定 ====================
-  const shortcuts = React.useMemo(() => [
-    // 編輯模式
-    {
-      key: 'e',
-      ctrl: true,
-      description: '切換編輯模式',
-      action: () => {
-        if (userRole === 'teacher') {
-          const next = !isEditMode;
-          setIsEditMode(next);
-          if (next) setCurrentTool('cursor');
-        }
-      },
-      role: 'teacher' as const
-    },
-    // 工具切換
-    {
-      key: 'v',
-      description: '選取工具',
-      action: () => setCurrentTool('cursor')
-    },
-    {
-      key: 'p',
-      description: '畫筆工具',
-      action: () => setCurrentTool('pen')
-    },
-    {
-      key: 'h',
-      description: '螢光筆工具',
-      action: () => setCurrentTool('highlighter')
-    },
-    {
-      key: 'e',
-      description: '橡皮擦工具',
-      action: () => setCurrentTool('eraser')
-    },
-    {
-      key: 't',
-      description: '文字工具',
-      action: () => setCurrentTool('text')
-    },
-    // 導航
-    {
-      key: 'g',
-      description: '開啟章節導航',
-      action: () => ui.setShowNavGrid(true),
-      role: 'teacher' as const
-    },
-    {
-      key: '0',
-      ctrl: true,
-      description: '重置縮放',
-      action: () => setViewport(prev => ({ ...prev, scale: 1 }))
-    },
-    {
-      key: '=',
-      ctrl: true,
-      description: '放大',
-      action: () => setViewport(prev => ({ ...prev, scale: Math.min(3, prev.scale + 0.1) }))
-    },
-    {
-      key: '-',
-      ctrl: true,
-      description: '縮小',
-      action: () => setViewport(prev => ({ ...prev, scale: Math.max(0.5, prev.scale - 0.1) }))
-    },
-    // AI 功能
-    {
-      key: 'k',
-      ctrl: true,
-      description: '開啟 AI 對話',
-      action: () => aiActions.handleToggleAITutor()
-    },
-    // 幫助
-    {
-      key: '?',
-      description: '顯示快捷鍵說明',
-      action: () => setShowShortcutsHelp(true)
-    },
-    {
-      key: 'Escape',
-      description: '關閉彈窗',
-      action: () => {
-        if (showShortcutsHelp) setShowShortcutsHelp(false);
-        else if (ui.isDashboardOpen) ui.setDashboardOpen(false);
-        else if (ui.isTimerOpen) ui.setTimerOpen(false);
-        else if (ui.showNavGrid) ui.setShowNavGrid(false);
-        else if (ui.isLuckyDrawOpen) ui.setLuckyDrawOpen(false);
-        else if (ui.isSidebarOpen || ui.isQuizPanelOpen) {
-          ui.setSidebarOpen(false);
-          ui.setQuizPanelOpen(false);
-        }
-      }
-    }
-  ], [userRole, isEditMode, setIsEditMode, setCurrentTool, ui, showShortcutsHelp, aiActions]);
+  // 🔥 使用提取的 useAppShortcuts hook
+  const shortcuts = useAppShortcuts({
+    userRole,
+    isEditMode,
+    showShortcutsHelp,
+    setIsEditMode,
+    setCurrentTool,
+    setViewport,
+    setShowShortcutsHelp,
+    ui,
+    aiActions,
+  });
 
   // 啟用快捷鍵
   useKeyboardShortcuts({
