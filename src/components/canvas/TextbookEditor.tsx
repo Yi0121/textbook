@@ -22,7 +22,7 @@ import TableRow from '@tiptap/extension-table-row'
 import { Bold, Italic, Sparkles, Highlighter } from 'lucide-react';
 
 // 分拆的工具欄組件
-import EditorToolbar from './EditorToolbar';
+import EditorToolbar from '../tools/EditorToolbar';
 
 // Types
 import type { TiptapContent, FileMeta } from '../../types';

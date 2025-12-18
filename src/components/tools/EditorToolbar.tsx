@@ -1,4 +1,4 @@
-// components/canvas/EditorToolbar.tsx
+// components/tools/EditorToolbar.tsx
 import React from 'react';
 import type { Editor } from '@tiptap/react';
 import {

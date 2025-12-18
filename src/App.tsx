@@ -3,10 +3,10 @@ import { LayoutDashboard, Sparkles } from 'lucide-react';
 
 // --- Components Imports (元件引入保持不變) ---
 import TopNavigation from './components/layout/TopNavigation';
-import FixedToolbar from './components/tools/FixedToolbar';
+import FixedToolbar from './components/tools/Toolbar';
 import RightSidePanel from './components/layout/RightSidePanel';
 import Modal from './components/ui/Modal';
-import SelectionFloatingMenu from './components/ui/SelectionFloatingMenu';
+import SelectionFloatingMenu from './components/canvas/SelectionFloatingMenu';
 
 // Canvas Components
 import TextbookEditor from './components/canvas/TextbookEditor';

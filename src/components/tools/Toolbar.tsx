@@ -19,7 +19,7 @@ import {
   ColorPicker,
   WidgetBox,
   COLORS
-} from './toolbar';
+} from './toolbar/index';
 
 // 🔥 簡化後的 Props - 從 16 個減少到 4 個
 interface FixedToolbarProps {
