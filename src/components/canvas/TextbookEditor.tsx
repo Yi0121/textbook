@@ -12,6 +12,9 @@ import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
+import Link from '@tiptap/extension-link';
+import Youtube from '@tiptap/extension-youtube';
+import Image from '@tiptap/extension-image';
 
 import { Table } from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
@@ -71,6 +74,34 @@ const TextbookEditor: React.FC<TextbookEditorProps> = ({
       TableRow,
       Highlight,
       Typography,
+      // 🔥 連結擴展
+      Link.configure({
+        openOnClick: false, // 編輯模式下點擊不開啟連結
+        autolink: true, // 自動偵測 URL
+        linkOnPaste: true, // 貼上時自動轉為連結
+        HTMLAttributes: {
+          class: 'text-indigo-600 underline hover:text-indigo-800 cursor-pointer',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
+      // 🔥 YouTube 影片擴展
+      Youtube.configure({
+        width: 640,
+        height: 360,
+        nocookie: true, // 使用隱私模式
+        HTMLAttributes: {
+          class: 'rounded-lg shadow-lg my-4 mx-auto',
+        },
+      }),
+      // 🔥 圖片擴展
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'rounded-lg shadow-md my-4 max-w-full',
+        },
+      }),
       BubbleMenuExtension, // 🔥 務必註冊這個 Extension
     ],
     content: initialContent || DEFAULT_CONTENT,

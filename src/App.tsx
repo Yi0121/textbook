@@ -24,6 +24,8 @@ import WelcomeTour from './components/ui/WelcomeTour';
 import SkeletonCanvas from './components/ui/SkeletonCanvas';
 import Whiteboard from './components/collaboration/Whiteboard';
 import EPUBImporter from './components/features/EPUBImporter';
+import ChapterNavigator, { ChapterNavigatorTrigger, PageNavigationButtons } from './components/features/ChapterNavigator';
+import ModeIndicator from './components/ui/ModeIndicator';
 
 // 🔥 1. 引入重構後的 Context Hooks
 import { useEditor } from './context/EditorContext';
@@ -109,6 +111,9 @@ const App = () => {
 
   // 🔥 EPUB 匯入器狀態
   const [showEPUBImporter, setShowEPUBImporter] = React.useState(false);
+
+  // 🔥 章節導航器狀態
+  const [showChapterNav, setShowChapterNav] = React.useState(false);
 
   // 🔥 使用提取的 useWhiteboardControl hook
   const { handleOpenWhiteboard, handleCloseWhiteboard, currentWhiteboardId } = useWhiteboardControl();
@@ -315,6 +320,13 @@ const App = () => {
           onToggleAITutor={aiActions.handleToggleAITutor}
           onToggleWhiteboard={handleOpenWhiteboard}
         />
+
+        {/* 🔥 模式指示器 */}
+        <ModeIndicator
+          isEditMode={isEditMode}
+          currentTool={currentTool}
+          userRole={userRole}
+        />
       </div>
 
 
@@ -375,6 +387,14 @@ const App = () => {
         isOpen={showEPUBImporter}
         onClose={() => setShowEPUBImporter(false)}
         onImport={handleEPUBImport}
+      />
+
+      {/* 🔥 章節導航器 */}
+      <PageNavigationButtons />
+      <ChapterNavigatorTrigger onClick={() => setShowChapterNav(true)} />
+      <ChapterNavigator
+        isOpen={showChapterNav}
+        onClose={() => setShowChapterNav(false)}
       />
     </div>
   );
