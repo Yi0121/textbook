@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useContent, type TextbookContent } from '../context/ContentContext';
 import { useEditor } from '../context/EditorContext';
 import { fetchAIImportedContent } from '../services/ai/mockLLMService';
-import type { Viewport, TiptapContent } from '../types';
+import type { Viewport, TiptapContent, EPUBMetadata, EPUBChapter } from '../types';
 
 interface UseContentImportProps {
     setViewport: React.Dispatch<React.SetStateAction<Viewport>>;
@@ -50,18 +50,49 @@ export function useContentImport({
         }
     }, [contentDispatch, setShowEPUBImporter, setIsEditMode, setCurrentTool]);
 
+    /**
+     * 處理 EPUB 匯入
+     * TextbookContent 有 pages 陣列，需要轉換為 EPUBChapter 格式
+     */
     const handleEPUBImport = useCallback((content: TextbookContent) => {
-        // TextbookContent has pages array with x, y coordinates
+        console.log('📖 正在匯入 EPUB 內容:', content);
+
+        // 將 TextbookContent pages 轉換為 EPUBChapter 格式
+        const chapters: EPUBChapter[] = content.pages.map((page, index) => ({
+            id: page.id,
+            title: page.title,
+            content: page.content, // HTML 字串
+            order: index,
+        }));
+
+        // 建立 metadata
+        const metadata: EPUBMetadata = {
+            title: content.title,
+            author: content.author,
+        };
+
+        // 使用 IMPORT_EPUB action 將資料設定到 ContentContext
+        contentDispatch({
+            type: 'IMPORT_EPUB',
+            payload: {
+                metadata,
+                chapters,
+            },
+        });
+
+        console.log(`✅ EPUB 匯入完成：${metadata.title}，${chapters.length} 個章節`);
+
+        // 設定編輯模式與工具
         setIsEditMode(true);
         setCurrentTool('cursor');
-        if (content.pages && content.pages.length > 0) {
-            const firstPage = content.pages[0];
-            setViewport({ x: -firstPage.x, y: -firstPage.y, scale: 1 });
-        }
-    }, [setViewport, setIsEditMode, setCurrentTool]);
+
+        // 重置視口位置
+        setViewport({ x: 0, y: 0, scale: 1 });
+    }, [contentDispatch, setViewport, setIsEditMode, setCurrentTool]);
 
     return {
         handleImportContent,
         handleEPUBImport,
     };
 }
+
