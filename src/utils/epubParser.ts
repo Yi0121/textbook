@@ -2,21 +2,10 @@
 import ePub from 'epubjs';
 import type { Book } from 'epubjs';
 import type { TextbookContent } from '../context/ContentContext';
+import type { EPUBMetadata, EPUBChapter } from '../types';
 
-export interface EPUBChapter {
-  id: string;
-  title: string;
-  content: string;
-  order: number;
-}
-
-export interface EPUBMetadata {
-  title: string;
-  author: string;
-  publisher?: string;
-  description?: string;
-  cover?: string;
-}
+// 重新匯出類型供外部使用
+export type { EPUBMetadata, EPUBChapter };
 
 /**
  * 解析 EPUB 檔案並提取章節內容
@@ -57,31 +46,53 @@ export async function parseEPUB(file: File | string): Promise<{
       console.warn('無法載入封面圖片:', e);
     }
 
-    // 提取所有章節
+    // 提取所有章節 - 使用正確的非同步方式
     const chapters: EPUBChapter[] = [];
     const spine = book.spine;
 
-    // 使用 spine.each 來遍歷所有章節
-    let chapterIndex = 0;
-    await spine.each(async (spineItem: any) => {
-      const i = chapterIndex++;
-      if (!spineItem) return;
+    // 取得 spine items 陣列
+    const spineItems: any[] = [];
+    spine.each((item: any) => {
+      spineItems.push(item);
+    });
+
+    // 依序處理每個章節（使用 for...of 確保非同步正確執行）
+    for (let i = 0; i < spineItems.length; i++) {
+      const spineItem = spineItems[i];
+      if (!spineItem) continue;
 
       try {
         // 載入章節內容
         await spineItem.load(book.load.bind(book));
         const doc = spineItem.document;
 
-        if (!doc) return;
+        if (!doc) {
+          console.warn(`章節 ${i} 無法取得 document`);
+          continue;
+        }
 
         // 提取文字內容
         const body = doc.body || doc.documentElement;
-        const textContent = body.textContent || '';
+
+        // 處理圖片：目前先保留原始路徑
+        // TODO: 後續可以改用 book.archive.request 來載入圖片並轉為 Data URI
+        const images = body.querySelectorAll('img');
+        for (const img of images) {
+          try {
+            const src = img.getAttribute('src');
+            if (src && !src.startsWith('data:') && !src.startsWith('http')) {
+              // 暫時移除無法載入的相對路徑圖片
+              console.warn(`圖片路徑尚未處理: ${src}`);
+            }
+          } catch (imgError) {
+            console.warn('處理圖片時發生錯誤:', imgError);
+          }
+        }
 
         // 從文檔中提取 HTML 內容（保留基本格式）
-        const htmlContent = body.innerHTML || textContent;
+        const htmlContent = body.innerHTML || body.textContent || '';
 
-        // 嘗試從 TOC 獲取章節標題
+        // 嘗試從 TOC 獲取章節標題，或從內容中提取
         let chapterTitle = `第 ${i + 1} 章`;
 
         // 嘗試從內容中提取標題
@@ -99,11 +110,14 @@ export async function parseEPUB(file: File | string): Promise<{
 
         // 卸載以釋放記憶體
         spineItem.unload();
+
+        console.log(`✓ 成功載入章節 ${i + 1}: ${chapterTitle}`);
       } catch (error) {
         console.error(`載入章節 ${i} 時發生錯誤:`, error);
       }
-    });
+    }
 
+    console.log(`📚 EPUB 解析完成：${metadata.title}，共 ${chapters.length} 個章節`);
     return { metadata, chapters };
   } catch (error) {
     console.error('EPUB 解析失敗:', error);
@@ -125,7 +139,10 @@ export function convertEPUBToTextbookContent(
     width: 900,
     height: 1200,
     title: chapter.title,
-    content: cleanHTML(chapter.content),
+    // 處理 content 可能是字串或 TiptapContent 的情況
+    content: typeof chapter.content === 'string'
+      ? cleanHTML(chapter.content)
+      : JSON.stringify(chapter.content),
     chapter: Math.floor(index / 3) + 1, // 自動分章
     imageUrl: index === 0 ? metadata.cover : undefined,
   }));

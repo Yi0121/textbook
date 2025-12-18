@@ -109,11 +109,13 @@ export interface TiptapContent {
 export interface EPUBMetadata {
   title: string;
   author: string;
-  publisher: string;
+  publisher?: string;
+  description?: string;
+  cover?: string;
   isbn?: string;
-  version: string;
-  lastModified: string;
-  tags: string[];
+  version?: string;
+  lastModified?: string;
+  tags?: string[];
 }
 
 export interface EPUBChapter {
