@@ -1,21 +1,26 @@
 // components/collaboration/WhiteboardCanvas.tsx
 import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 
-interface Stroke {
+// 白板內部使用的筆觸介面，兼容 WhiteboardStroke
+interface WhiteboardCanvasStroke {
   color: string;
   size: number;
-  points: Array<{ x: number; y: number }>;
-  timestamp: number;
+  points?: Array<{ x: number; y: number }>;  // 用於即時繪製
+  path?: string;                              // SVG path 格式（兼容全局 Stroke）
+  rawPoints?: Array<{ x: number; y: number; timestamp?: number }>; // 兼容全局 Stroke
+  timestamp?: number;
   author?: string;
   authorRole?: string;
+  tool?: string;
+  participantId?: string;
 }
 
 interface WhiteboardCanvasProps {
-  strokes: Stroke[];
+  strokes: WhiteboardCanvasStroke[];
   currentColor: string;
   currentSize: number;
   isStudentStage: boolean;
-  onStrokeComplete: (stroke: Stroke) => void;
+  onStrokeComplete: (stroke: WhiteboardCanvasStroke) => void;
 }
 
 export interface WhiteboardCanvasRef {
@@ -26,7 +31,7 @@ export const WhiteboardCanvas = forwardRef<WhiteboardCanvasRef, WhiteboardCanvas
   ({ strokes, currentColor, currentSize, isStudentStage, onStrokeComplete }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const isDrawingRef = useRef(false);
-    const newStrokeRef = useRef<Stroke | null>(null);
+    const newStrokeRef = useRef<WhiteboardCanvasStroke | null>(null);
 
     useImperativeHandle(ref, () => ({
       toDataURL: () => canvasRef.current?.toDataURL(),
@@ -58,14 +63,18 @@ export const WhiteboardCanvas = forwardRef<WhiteboardCanvasRef, WhiteboardCanvas
         }
 
         ctx.beginPath();
-        stroke.points.forEach((point, index) => {
-          if (index === 0) {
-            ctx.moveTo(point.x, point.y);
-          } else {
-            ctx.lineTo(point.x, point.y);
-          }
-        });
-        ctx.stroke();
+        // 優先使用 points，若無則使用 rawPoints
+        const pointsToRender = stroke.points || stroke.rawPoints?.map(p => ({ x: p.x, y: p.y }));
+        if (pointsToRender && pointsToRender.length > 0) {
+          pointsToRender.forEach((point, index) => {
+            if (index === 0) {
+              ctx.moveTo(point.x, point.y);
+            } else {
+              ctx.lineTo(point.x, point.y);
+            }
+          });
+          ctx.stroke();
+        }
 
         // 重置透明度
         ctx.globalAlpha = 1.0;
@@ -117,7 +126,7 @@ export const WhiteboardCanvas = forwardRef<WhiteboardCanvasRef, WhiteboardCanvas
       ctx.stroke();
 
       // 記錄點
-      if (newStrokeRef.current) {
+      if (newStrokeRef.current?.points) {
         newStrokeRef.current.points.push({ x, y });
       }
     };

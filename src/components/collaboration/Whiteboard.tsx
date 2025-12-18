@@ -4,8 +4,10 @@ import { X, Trash2, Users, Download, UserCheck, Clock } from 'lucide-react';
 import { useCollaboration, useCurrentWhiteboard, useWhiteboardActions } from '../../context/CollaborationContext';
 import { useEditor } from '../../context/EditorContext';
 import { WhiteboardToolbar } from './WhiteboardToolbar';
-import { WhiteboardCanvas, WhiteboardCanvasRef } from './WhiteboardCanvas';
-import { StudentStagePanel, StudentStageRecord } from './StudentStagePanel';
+import { WhiteboardCanvas } from './WhiteboardCanvas';
+import type { WhiteboardCanvasRef } from './WhiteboardCanvas';
+import { StudentStagePanel } from './StudentStagePanel';
+import type { StudentStageRecord } from './StudentStagePanel';
 import { StudentNameInput } from './StudentNameInput';
 
 interface WhiteboardProps {
@@ -131,11 +133,10 @@ const Whiteboard: React.FC<WhiteboardProps> = ({ onClose }) => {
               <>
                 <button
                   onClick={() => setShowRecords(!showRecords)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm ${
-                    showRecords
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm ${showRecords
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}
                   title="查看共筆紀錄"
                 >
                   <Clock className="w-4 h-4" />
@@ -143,11 +144,10 @@ const Whiteboard: React.FC<WhiteboardProps> = ({ onClose }) => {
                 </button>
                 <button
                   onClick={() => editorDispatch({ type: 'TOGGLE_STUDENT_STAGE' })}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm ${
-                    editorState.isStudentStage
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm ${editorState.isStudentStage
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    }`}
                   title="切換學生上台模式"
                 >
                   <UserCheck className="w-4 h-4" />
