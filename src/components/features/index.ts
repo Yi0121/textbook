@@ -1,10 +1,11 @@
 // components/features/index.ts
 export { default as DashboardContent } from './Dashboard';
-export { default as ClassroomWidgets } from './ClassroomWidgets';
 export { default as EPUBImporter } from './EPUBImporter';
-export { default as LuckyDraw } from './LuckyDraw';
 
-// Dashboard sub-components - use explicit paths to avoid casing issues
+// Classroom tools
+export { ClassroomWidgets, LuckyDraw } from './classroom';
+
+// Dashboard sub-components
 export { OverviewTab } from './dashboard/OverviewTab';
 export { HomeworkTab } from './dashboard/HomeworkTab';
 export { CollaborationTab } from './dashboard/CollaborationTab';

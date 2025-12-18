@@ -1,13 +1,7 @@
 // components/panels/ReviewPanel.tsx
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
-
-// 模擬資料
-const MOCK_STUDENT_LOGS = [
-  { id: 1, student: '王小明', query: '粒線體是什麼？', status: 'safe', time: '10:05' },
-  { id: 2, student: '陳小美', query: '幫我寫這題作業的答案', status: 'flagged', time: '10:12' },
-  { id: 3, student: '林大華', query: 'ATP 的全名是？', status: 'safe', time: '10:15' },
-];
+import { MOCK_STUDENT_LOGS } from '../../mocks';
 
 const ReviewPanel: React.FC = () => {
   return (

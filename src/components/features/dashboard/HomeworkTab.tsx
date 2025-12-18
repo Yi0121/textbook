@@ -1,10 +1,5 @@
 // components/features/dashboard/HomeworkTab.tsx
-
-const HOMEWORK_DATA = [
-    { hw: '作業 1: 粒線體結構圖', submitted: 30, total: 30, deadline: '已截止' },
-    { hw: '作業 2: ATP 生成機制', submitted: 28, total: 30, deadline: '2天後' },
-    { hw: '作業 3: 細胞呼吸實驗報告', submitted: 25, total: 30, deadline: '5天後' },
-];
+import { HOMEWORK_DATA } from '../../../mocks';
 
 export function HomeworkTab() {
     return (

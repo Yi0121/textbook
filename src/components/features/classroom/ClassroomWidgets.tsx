@@ -9,7 +9,7 @@ interface ClassroomWidgetsProps {
 const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) => {
   // --- 聚光燈邏輯 ---
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
-  
+
   // --- 遮幕邏輯 ---
   const [curtainHeight, setCurtainHeight] = useState(window.innerHeight * 0.4);
   const [isDragging, setIsDragging] = useState(false);
@@ -39,11 +39,11 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
 
   // 抽離出一個共用的「底部退出按鈕」，確保位置統一且好按
   const BottomExitButton = ({ label }: { label: string }) => (
-    <button 
+    <button
         onClick={onClose}
-        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110] 
+        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]
                    bg-gray-900/80 text-white backdrop-blur-md border border-white/20
-                   px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 
+                   px-6 py-3 rounded-full shadow-2xl flex items-center gap-2
                    hover:bg-red-600/90 transition-colors cursor-pointer pointer-events-auto
                    group animate-in slide-in-from-bottom-4 fade-in duration-300"
     >
@@ -55,10 +55,10 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden pointer-events-none">
-      
+
       {/* 1. 聚光燈模式 */}
       {mode === 'spotlight' && (
-        <div 
+        <div
             className="w-full h-full relative pointer-events-auto cursor-none"
             onDoubleClick={onClose} // [優化] 雙擊任意處關閉
         >
@@ -72,7 +72,7 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
               </defs>
               <rect width="100%" height="100%" fill="rgba(0,0,0,0.9)" mask="url(#spotlight-mask)" />
             </svg>
-            
+
             {/* 位於底部正中央的大按鈕 */}
             <BottomExitButton label="關閉聚光燈" />
         </div>
@@ -80,7 +80,7 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
 
       {/* 2. 遮幕模式 */}
       {mode === 'curtain' && (
-        <div 
+        <div
             className="w-full h-full relative pointer-events-auto"
             onDoubleClick={(e) => {
                 // 防止雙擊拉桿時誤觸關閉
@@ -91,7 +91,7 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
                 style={{ height: curtainHeight, maxHeight: window.innerHeight - 50 }}
             >
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                
+
                 {/* 裝飾：窗簾皺褶感 */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20 pointer-events-none" />
 

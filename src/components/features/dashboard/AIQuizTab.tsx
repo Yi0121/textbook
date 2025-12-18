@@ -1,24 +1,7 @@
 // components/features/dashboard/AIQuizTab.tsx
 import { useState } from 'react';
 import { Sparkles, CheckCircle, RefreshCw } from 'lucide-react';
-
-const QUIZ_QUESTIONS = [
-    {
-        question: '粒線體內膜向內摺疊形成的結構稱為什麼？',
-        options: ['A. 嵴 (Cristae)', 'B. 基質 (Matrix)', 'C. 類囊體', 'D. 內質網'],
-        correctIndex: 0,
-    },
-    {
-        question: '下列何者是粒線體的主要功能？',
-        options: ['A. 光合作用', 'B. ATP 生成', 'C. 蛋白質合成', 'D. 脂質儲存'],
-        correctIndex: 1,
-    },
-    {
-        question: '關於粒線體DNA (mtDNA) 的描述，何者正確？',
-        options: ['A. 位於細胞核', 'B. 為線性結構', 'C. 可自我複製', 'D. 與父系遺傳相關'],
-        correctIndex: 2,
-    },
-];
+import { QUIZ_QUESTIONS } from '../../../mocks';
 
 export function AIQuizTab() {
     const [isGenerating, setIsGenerating] = useState(false);

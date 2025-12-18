@@ -21,11 +21,11 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
     if (isRolling) {
       // 停止滾動 (Stop)
       if (timerRef.current) clearInterval(timerRef.current);
-      
+
       // 產生最終結果 (排除已抽過的，如果老師希望不重複的話)
       // 這裡先做簡單版：純隨機，不排除重複 (若要排除重複邏輯會再複雜一點)
       const final = Math.floor(Math.random() * (max - min + 1)) + min;
-      
+
       setCurrentNumber(final);
       setIsRolling(false);
       setHistory(prev => [final, ...prev].slice(0, 5)); // 只留最近 5 筆
@@ -62,7 +62,7 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
 
       {/* 主視窗 */}
       <div className="relative bg-white w-80 rounded-3xl shadow-2xl border border-white/50 overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200">
-        
+
         {/* Header */}
         <div className="bg-purple-600 p-4 flex justify-between items-center text-white">
           <div className="flex items-center gap-2 font-bold text-lg">
@@ -83,7 +83,7 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
           `}>
             {currentNumber}
           </div>
-          
+
           {/* 狀態提示 */}
           <div className="text-xs font-bold text-purple-300 uppercase tracking-widest">
             {isRolling ? 'ROLLING...' : 'READY'}
@@ -92,21 +92,21 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
 
         {/* Controls */}
         <div className="p-4 bg-white space-y-4">
-            
+
             {/* 設定範圍 */}
             <div className="flex items-center justify-between gap-2 text-sm text-gray-500">
                 <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg">
                     <span>Min</span>
-                    <input 
-                        type="number" value={min} onChange={(e) => setMin(Number(e.target.value))} 
+                    <input
+                        type="number" value={min} onChange={(e) => setMin(Number(e.target.value))}
                         className="w-10 bg-transparent text-center font-bold text-gray-800 outline-none"
                     />
                 </div>
                 <div className="h-px w-4 bg-gray-300"></div>
                 <div className="flex items-center justify-between gap-2 bg-gray-100 px-3 py-1.5 rounded-lg">
                     <span>Max</span>
-                    <input 
-                        type="number" value={max} onChange={(e) => setMax(Number(e.target.value))} 
+                    <input
+                        type="number" value={max} onChange={(e) => setMax(Number(e.target.value))}
                         className="w-10 bg-transparent text-center font-bold text-gray-800 outline-none"
                     />
                 </div>
@@ -114,19 +114,19 @@ const LuckyDraw: React.FC<LuckyDrawProps> = ({ isOpen, onClose }) => {
 
             {/* 按鈕群 */}
             <div className="flex gap-2">
-                <button 
+                <button
                     onClick={startRoll}
                     className={`
                         flex-1 py-3 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2
-                        ${isRolling 
-                            ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200' 
+                        ${isRolling
+                            ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-200'
                             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-200'
                         }
                     `}
                 >
                     {isRolling ? '停止 (STOP)' : '開始抽籤 (GO)'}
                 </button>
-                
+
                 <button onClick={reset} className="p-3 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 active:scale-95" title="重置">
                     <RotateCcw className="w-5 h-5" />
                 </button>

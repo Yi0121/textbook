@@ -1,43 +1,12 @@
 // components/features/dashboard/OverviewTab.tsx
-import { CheckCircle, ClipboardCheck, Users, BookOpen, TrendingUp } from 'lucide-react';
-
-// 模擬數據
-const STATS_DATA = [
-    { label: '平均答對率', value: '87%', trend: '較上週 +5%', bgClass: 'bg-emerald-50', borderClass: 'border-emerald-100', textClass: 'text-emerald-600', labelClass: 'text-emerald-800', icon: CheckCircle },
-    { label: '作業繳交率', value: '93%', trend: '28/30 已繳交', bgClass: 'bg-blue-50', borderClass: 'border-blue-100', textClass: 'text-blue-600', labelClass: 'text-blue-800', icon: ClipboardCheck },
-    { label: '活躍學生', value: '26', trend: '本週上線人數', bgClass: 'bg-purple-50', borderClass: 'border-purple-100', textClass: 'text-purple-600', labelClass: 'text-purple-800', icon: Users },
-    { label: '平均學習時長', value: '42m', trend: '每日平均', bgClass: 'bg-orange-50', borderClass: 'border-orange-100', textClass: 'text-orange-600', labelClass: 'text-orange-800', icon: BookOpen },
-];
-
-const STUDENTS_DATA = [
-    { name: '王小明', homework: '5/5', score: 92, status: 'good' },
-    { name: '陳小美', homework: '5/5', score: 88, status: 'good' },
-    { name: '林大華', homework: '4/5', score: 76, status: 'warning' },
-    { name: '張小芳', homework: '3/5', score: 65, status: 'need-help' },
-    { name: '李志明', homework: '5/5', score: 95, status: 'good' },
-];
-
-const getStatusStyle = (status: string) => {
-    switch (status) {
-        case 'good': return 'bg-green-100 text-green-700';
-        case 'warning': return 'bg-orange-100 text-orange-700';
-        default: return 'bg-red-100 text-red-700';
-    }
-};
-
-const getStatusLabel = (status: string) => {
-    switch (status) {
-        case 'good': return '良好';
-        case 'warning': return '注意';
-        default: return '需協助';
-    }
-};
-
-const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-orange-600';
-    return 'text-red-600';
-};
+import { TrendingUp } from 'lucide-react';
+import {
+  STATS_DATA,
+  STUDENTS_DATA,
+  getStatusStyle,
+  getStatusLabel,
+  getScoreColor,
+} from '../../../mocks';
 
 export function OverviewTab() {
     return (
