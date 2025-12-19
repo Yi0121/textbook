@@ -7,12 +7,14 @@ import { EditorProvider } from './EditorContext';
 import { ContentProvider } from './ContentContext';
 import { UIProvider } from './UIContext';
 import { CollaborationProvider } from './CollaborationContext';
+import { LearningPathProvider } from './LearningPathContext';
 
 // 匯出所有 Context
 export * from './EditorContext';
 export * from './ContentContext';
 export * from './UIContext';
 export * from './CollaborationContext';
+export * from './LearningPathContext';
 
 // 組合所有 Provider
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -21,7 +23,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <ContentProvider>
         <UIProvider>
           <CollaborationProvider>
-            {children}
+            <LearningPathProvider>
+              {children}
+            </LearningPathProvider>
           </CollaborationProvider>
         </UIProvider>
       </ContentProvider>

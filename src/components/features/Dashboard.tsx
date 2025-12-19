@@ -1,12 +1,13 @@
 // components/features/Dashboard.tsx
 import { useState } from 'react';
-import { Sparkles, BarChart3, ClipboardCheck, Users } from 'lucide-react';
+import { Sparkles, BarChart3, ClipboardCheck, Users, GitBranch } from 'lucide-react';
 import { OverviewTab } from './dashboard/OverviewTab';
 import { HomeworkTab } from './dashboard/HomeworkTab';
 import { CollaborationTab } from './dashboard/CollaborationTab';
 import { AIQuizTab } from './dashboard/AIQuizTab';
+import { LearningPathTab } from './dashboard/LearningPathTab';
 
-type TabId = 'overview' | 'homework' | 'collaboration' | 'ai-quiz';
+type TabId = 'overview' | 'homework' | 'collaboration' | 'ai-quiz' | 'learning-path';
 
 interface TabConfig {
    id: TabId;
@@ -19,6 +20,7 @@ const TABS: TabConfig[] = [
    { id: 'homework', label: '作業繳交', icon: ClipboardCheck },
    { id: 'collaboration', label: '小組協作', icon: Users },
    { id: 'ai-quiz', label: 'AI 測驗生成', icon: Sparkles },
+   { id: 'learning-path', label: 'AI 學習路徑', icon: GitBranch },
 ];
 
 const DashboardContent = () => {
@@ -34,6 +36,8 @@ const DashboardContent = () => {
             return <CollaborationTab />;
          case 'ai-quiz':
             return <AIQuizTab />;
+         case 'learning-path':
+            return <LearningPathTab />;
          default:
             return null;
       }

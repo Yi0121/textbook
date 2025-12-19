@@ -175,3 +175,25 @@ export interface EPUBSource {
   pageIds: string[];
   basePosition: { x: number; y: number };
 }
+
+// ==================== 學習路徑類型 ====================
+
+export type {
+  LearningNodeType,
+  CompletionCriteriaType,
+  NodeStatus,
+  EdgeType,
+  ConditionOperator,
+  ConditionType,
+  QuestionDifficulty,
+  LearningPathNode,
+  LearningPathEdge,
+  AIRecommendation,
+  LearningProgress,
+  StudentLearningPath,
+  StudentAnswer,
+  WeakKnowledgeNode,
+  StudentLearningRecord,
+  KnowledgeNode,
+  NodeTemplate,
+} from './learning-path';

@@ -428,6 +428,7 @@ const App = () => {
         isOpen={showChapterNav}
         onClose={() => setShowChapterNav(false)}
       />
+
     </div>
   );
 };
