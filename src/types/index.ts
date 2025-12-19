@@ -147,3 +147,31 @@ export interface FileMeta {
   lastModified: string;
   tags: string[];
 }
+
+// ==================== Fabric.js 頁面類型 ====================
+
+/**
+ * Fabric.js 頁面 - 代表無限畫布上的一個頁面
+ */
+export interface FabricPage {
+  id: string;
+  x: number;           // 在無限畫布上的位置
+  y: number;
+  width: number;
+  height: number;
+  sourceId: string;    // EPUB 來源 ID (或 'manual' 表示手動建立)
+  title: string;
+  canvasJSON: string;  // Fabric.js 序列化內容
+  order: number;
+}
+
+/**
+ * EPUB 來源記錄 - 記錄每個匯入的 EPUB
+ */
+export interface EPUBSource {
+  id: string;
+  metadata: EPUBMetadata;
+  importedAt: number;
+  pageIds: string[];
+  basePosition: { x: number; y: number };
+}

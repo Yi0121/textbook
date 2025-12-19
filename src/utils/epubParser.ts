@@ -2,7 +2,7 @@
 import ePub from 'epubjs';
 import type { Book } from 'epubjs';
 import type { TextbookContent } from '../context/ContentContext';
-import type { EPUBMetadata, EPUBChapter } from '../types';
+import type { EPUBMetadata, EPUBChapter, FabricPage, EPUBSource } from '../types';
 
 // 重新匯出類型供外部使用
 export type { EPUBMetadata, EPUBChapter };
@@ -298,4 +298,250 @@ export async function fetchEPUBFromAPI(): Promise<TextbookContent> {
       },
     ],
   };
+}
+
+// ==================== Fabric.js 頁面轉換工具 ====================
+
+/**
+ * 頁面尺寸常數
+ */
+const PAGE_WIDTH = 900;
+const PAGE_HEIGHT = 1200;
+const PAGE_GAP_X = 100;  // 頁面水平間距
+const PAGE_GAP_Y = 100;  // 頁面垂直間距
+const PAGES_PER_ROW = 3; // 每行頁面數
+
+/**
+ * 計算新 EPUB 的放置位置 (放在現有內容的右側)
+ */
+export function calculateNextEPUBPosition(existingPages: FabricPage[]): { x: number; y: number } {
+  if (existingPages.length === 0) {
+    return { x: 100, y: 100 };
+  }
+
+  // 找到最右側的頁面
+  const maxX = Math.max(...existingPages.map(p => p.x + p.width));
+
+  // 新 EPUB 放在右側，留出間距
+  return {
+    x: maxX + PAGE_GAP_X * 3,
+    y: 100,
+  };
+}
+
+/**
+ * 將 HTML 內容轉換為 Fabric.js JSON 格式
+ * 這個函式會解析 HTML 並生成 Fabric.js 物件 (IText, Image 等)
+ */
+export function convertHTMLToFabricJSON(html: string, pageWidth: number = PAGE_WIDTH): string {
+  // 建立基本的 Fabric.js canvas JSON 結構
+  const fabricObjects: any[] = [];
+  let currentY = 40; // 從頂部開始，留出邊距
+  const leftMargin = 40;
+  const contentWidth = pageWidth - leftMargin * 2;
+
+  // 解析 HTML
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const body = doc.body;
+
+  // 遍歷所有子節點
+  const processNode = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim();
+      if (text) {
+        fabricObjects.push(createTextObject(text, leftMargin, currentY, contentWidth, 18, '#1e293b'));
+        currentY += 30;
+      }
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const element = node as Element;
+    const tagName = element.tagName.toLowerCase();
+    const textContent = element.textContent?.trim() || '';
+
+    switch (tagName) {
+      case 'h1':
+        fabricObjects.push(createTextObject(textContent, leftMargin, currentY, contentWidth, 32, '#0f172a', true));
+        currentY += 50;
+        break;
+
+      case 'h2':
+        fabricObjects.push(createTextObject(textContent, leftMargin, currentY, contentWidth, 24, '#1e293b', true));
+        currentY += 40;
+        break;
+
+      case 'h3':
+        fabricObjects.push(createTextObject(textContent, leftMargin, currentY, contentWidth, 20, '#334155', true));
+        currentY += 35;
+        break;
+
+      case 'p':
+        fabricObjects.push(createTextObject(textContent, leftMargin, currentY, contentWidth, 16, '#475569'));
+        currentY += Math.max(30, Math.ceil(textContent.length / 50) * 22);
+        break;
+
+      case 'ul':
+      case 'ol':
+        Array.from(element.children).forEach((li, index) => {
+          const bullet = tagName === 'ul' ? '•' : `${index + 1}.`;
+          const liText = `${bullet} ${li.textContent?.trim() || ''}`;
+          fabricObjects.push(createTextObject(liText, leftMargin + 20, currentY, contentWidth - 20, 16, '#475569'));
+          currentY += 28;
+        });
+        currentY += 10;
+        break;
+
+      case 'blockquote':
+        fabricObjects.push(createTextObject(`"${textContent}"`, leftMargin + 30, currentY, contentWidth - 60, 16, '#64748b', false, true));
+        currentY += Math.max(40, Math.ceil(textContent.length / 40) * 22);
+        break;
+
+      case 'img':
+        const src = element.getAttribute('src');
+        if (src) {
+          // 圖片物件 (暫時用佔位符表示)
+          fabricObjects.push({
+            type: 'rect',
+            left: leftMargin,
+            top: currentY,
+            width: contentWidth,
+            height: 200,
+            fill: '#f1f5f9',
+            stroke: '#cbd5e1',
+            strokeWidth: 1,
+            rx: 8,
+            ry: 8,
+          });
+          fabricObjects.push(createTextObject(`[圖片: ${src}]`, leftMargin + 10, currentY + 90, contentWidth - 20, 14, '#94a3b8'));
+          currentY += 220;
+        }
+        break;
+
+      case 'table':
+        // 簡化處理：將表格轉為文字
+        const rows = Array.from(element.querySelectorAll('tr'));
+        rows.forEach(row => {
+          const cells = Array.from(row.querySelectorAll('th, td'));
+          const rowText = cells.map(cell => cell.textContent?.trim()).join(' | ');
+          fabricObjects.push(createTextObject(rowText, leftMargin, currentY, contentWidth, 14, '#475569'));
+          currentY += 24;
+        });
+        currentY += 15;
+        break;
+
+      case 'code':
+        fabricObjects.push({
+          type: 'rect',
+          left: leftMargin,
+          top: currentY,
+          width: contentWidth,
+          height: 30,
+          fill: '#f8fafc',
+          stroke: '#e2e8f0',
+          strokeWidth: 1,
+          rx: 4,
+          ry: 4,
+        });
+        fabricObjects.push(createTextObject(textContent, leftMargin + 10, currentY + 8, contentWidth - 20, 14, '#334155'));
+        currentY += 45;
+        break;
+
+      case 'div':
+      case 'section':
+      case 'article':
+        // 遞迴處理容器元素
+        Array.from(element.childNodes).forEach(processNode);
+        break;
+
+      default:
+        // 其他元素當作普通文字處理
+        if (textContent) {
+          fabricObjects.push(createTextObject(textContent, leftMargin, currentY, contentWidth, 16, '#475569'));
+          currentY += Math.max(25, Math.ceil(textContent.length / 50) * 22);
+        }
+    }
+  };
+
+  Array.from(body.childNodes).forEach(processNode);
+
+  // 返回 Fabric.js JSON 格式
+  return JSON.stringify({
+    version: '6.0.0',
+    objects: fabricObjects,
+    background: '#ffffff',
+  });
+}
+
+/**
+ * 建立 Fabric.js IText 物件
+ */
+function createTextObject(
+  text: string,
+  left: number,
+  top: number,
+  maxWidth: number,
+  fontSize: number,
+  fill: string,
+  fontWeight: boolean = false,
+  italic: boolean = false
+): any {
+  return {
+    type: 'i-text',
+    left,
+    top,
+    text,
+    fontSize,
+    fontFamily: 'Noto Sans TC, system-ui, sans-serif',
+    fill,
+    fontWeight: fontWeight ? 'bold' : 'normal',
+    fontStyle: italic ? 'italic' : 'normal',
+    textAlign: 'left',
+    width: maxWidth,
+  };
+}
+
+/**
+ * 將 TextbookContent 轉換為 Fabric.js 頁面和 EPUB 來源記錄
+ */
+export function convertToFabricPages(
+  content: TextbookContent,
+  existingPages: FabricPage[]
+): { source: EPUBSource; pages: FabricPage[] } {
+  const epubId = `epub-${Date.now()}`;
+  const basePosition = calculateNextEPUBPosition(existingPages);
+
+  // 將每個章節轉換為 FabricPage
+  const pages: FabricPage[] = content.pages.map((page, index) => {
+    const col = index % PAGES_PER_ROW;
+    const row = Math.floor(index / PAGES_PER_ROW);
+
+    return {
+      id: `page-${epubId}-${index}`,
+      x: basePosition.x + col * (PAGE_WIDTH + PAGE_GAP_X),
+      y: basePosition.y + row * (PAGE_HEIGHT + PAGE_GAP_Y),
+      width: PAGE_WIDTH,
+      height: PAGE_HEIGHT,
+      sourceId: epubId,
+      title: page.title,
+      canvasJSON: convertHTMLToFabricJSON(page.content),
+      order: index,
+    };
+  });
+
+  // 建立 EPUB 來源記錄
+  const source: EPUBSource = {
+    id: epubId,
+    metadata: {
+      title: content.title,
+      author: content.author,
+    },
+    importedAt: Date.now(),
+    pageIds: pages.map(p => p.id),
+    basePosition,
+  };
+
+  return { source, pages };
 }

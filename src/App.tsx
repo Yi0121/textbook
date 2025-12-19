@@ -14,6 +14,8 @@ import DrawingLayer from './components/canvas/DrawingLayer';
 import DraggableMindMap from './components/canvas/DraggableMindMap';
 import AIMemoCard from './components/canvas/AIMemoCard';
 import DraggableText from './components/canvas/DraggableText';
+import FabricPageEditor from './components/canvas/FabricPageEditor';
+import PageContainer from './components/canvas/PageContainer';
 import DashboardContent from './components/features/Dashboard';
 import ClassroomWidgets from './components/features/classroom/ClassroomWidgets';
 import LuckyDraw from './components/features/classroom/LuckyDraw';
@@ -252,63 +254,93 @@ const App = () => {
           <SkeletonCanvas />
         ) : (
           <div
-            className="w-full h-full flex justify-center py-20 origin-top-left will-change-transform"
+            className="w-full h-full origin-top-left will-change-transform"
             style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
           >
-            <div className="relative bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 rounded-2xl select-text" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
+            {/* Fabric.js 頁面層 - 無限畫布上的多頁面 */}
+            {contentState.fabricPages.map(page => (
+              <PageContainer
+                key={page.id}
+                page={page}
+                isSelected={page.id === contentState.currentPageId}
+                scale={viewport.scale}
+                onSelect={(id) => contentDispatch({ type: 'SET_CURRENT_PAGE', payload: id })}
+                onMove={(id, x, y) => contentDispatch({ type: 'MOVE_FABRIC_PAGE', payload: { id, x, y } })}
+                onDelete={(id) => contentDispatch({ type: 'DELETE_FABRIC_PAGE', payload: id })}
+              >
+                <FabricPageEditor
+                  page={page}
+                  isSelected={page.id === contentState.currentPageId}
+                  scale={viewport.scale}
+                  isEditMode={isEditMode}
+                  currentTool={currentTool}
+                  penColor={editorState.penColor}
+                  penSize={editorState.penSize}
+                  onUpdate={(id, canvasJSON) => contentDispatch({ type: 'UPDATE_FABRIC_PAGE', payload: { id, changes: { canvasJSON } } })}
+                  onSelect={(id) => contentDispatch({ type: 'SET_CURRENT_PAGE', payload: id })}
+                />
+              </PageContainer>
+            ))}
 
-              {/* 教科書內容 */}
-              <MemoizedTextbook
-                initialContent={currentContent}
-                isEditable={isEditMode && userRole === 'teacher'}
-                currentTool={currentTool}
-                onTextSelected={(data: any) => setSelectedText(data.text)}
-                fileMeta={{
-                  title: "Unit 3: Cellular Respiration",
-                  version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)",
-                  lastModified: new Date().toLocaleDateString(),
-                  tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
-                }}
-                clearSelection={() => { }}
-              />
+            {/* 當沒有 Fabric 頁面時，顯示原本的 Tiptap 編輯器 */}
+            {contentState.fabricPages.length === 0 && (
+              <div className="flex justify-center py-20">
+                <div className="relative bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 rounded-2xl select-text" ref={canvasRef} style={{ width: 1000, minHeight: 1400 }}>
 
-              {/* 繪圖層 */}
-              <DrawingLayer
-                ref={previewPathRef}
-                active={true}
-                strokes={editorState.strokes}
-                penColor={editorState.penColor}
-                penSize={editorState.penSize}
-                currentTool={currentTool}
-                selectionBox={selectionBox}
-                laserPath={editorState.laserPath}
-              />
+                  {/* 教科書內容 */}
+                  <MemoizedTextbook
+                    initialContent={currentContent}
+                    isEditable={isEditMode && userRole === 'teacher'}
+                    currentTool={currentTool}
+                    onTextSelected={(data: any) => setSelectedText(data.text)}
+                    fileMeta={{
+                      title: "Unit 3: Cellular Respiration",
+                      version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)",
+                      lastModified: new Date().toLocaleDateString(),
+                      tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
+                    }}
+                    clearSelection={() => { }}
+                  />
 
-              {/* 物件層 (心智圖、便利貼、文字) */}
-              <div className={`absolute inset-0 z-10 ${(['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode)
-                ? 'pointer-events-none'
-                : ''
-                }`}>
-                {editorState.mindMaps.map(map => (
-                  <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
-                    onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
-                    onDelete={(id) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
+                  {/* 繪圖層 */}
+                  <DrawingLayer
+                    ref={previewPathRef}
+                    active={true}
+                    strokes={editorState.strokes}
+                    penColor={editorState.penColor}
+                    penSize={editorState.penSize}
+                    currentTool={currentTool}
+                    selectionBox={selectionBox}
+                    laserPath={editorState.laserPath}
                   />
-                ))}
-                {editorState.aiMemos.map(memo => (
-                  <AIMemoCard key={memo.id} data={memo} scale={viewport.scale}
-                    onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
-                    onDelete={() => editorDispatch({ type: 'DELETE_AI_MEMO', payload: memo.id })}
-                  />
-                ))}
-                {editorState.textObjects.map(text => (
-                  <DraggableText key={text.id} data={text} scale={viewport.scale}
-                    onUpdate={(id, d) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
-                    onDelete={(id) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
-                  />
-                ))}
+
+                  {/* 物件層 (心智圖、便利貼、文字) */}
+                  <div className={`absolute inset-0 z-10 ${(['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode)
+                    ? 'pointer-events-none'
+                    : ''
+                    }`}>
+                    {editorState.mindMaps.map(map => (
+                      <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
+                        onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
+                        onDelete={(id) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
+                      />
+                    ))}
+                    {editorState.aiMemos.map(memo => (
+                      <AIMemoCard key={memo.id} data={memo} scale={viewport.scale}
+                        onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
+                        onDelete={() => editorDispatch({ type: 'DELETE_AI_MEMO', payload: memo.id })}
+                      />
+                    ))}
+                    {editorState.textObjects.map(text => (
+                      <DraggableText key={text.id} data={text} scale={viewport.scale}
+                        onUpdate={(id, d) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
+                        onDelete={(id) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

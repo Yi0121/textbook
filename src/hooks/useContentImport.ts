@@ -3,7 +3,8 @@ import { useCallback } from 'react';
 import { useContent, type TextbookContent } from '../context/ContentContext';
 import { useEditor } from '../context/EditorContext';
 import { fetchAIImportedContent } from '../services/ai/mockLLMService';
-import type { Viewport, TiptapContent, EPUBMetadata, EPUBChapter } from '../types';
+import { convertToFabricPages } from '../utils/epubParser';
+import type { Viewport, TiptapContent } from '../types';
 
 interface UseContentImportProps {
     setViewport: React.Dispatch<React.SetStateAction<Viewport>>;
@@ -17,14 +18,14 @@ interface UseContentImportReturn {
 
 /**
  * 處理內容匯入功能
- * - 支援 EPUB 格式匯入
+ * - 支援 EPUB 格式匯入（使用 Fabric.js 頁面系統）
  * - 支援 AI 自動匯入
  */
 export function useContentImport({
     setViewport,
     setShowEPUBImporter,
 }: UseContentImportProps): UseContentImportReturn {
-    const { dispatch: contentDispatch } = useContent();
+    const { state: contentState, dispatch: contentDispatch } = useContent();
     const { dispatch: editorDispatch } = useEditor();
 
     const setIsEditMode = useCallback((value: boolean) => {
@@ -52,43 +53,37 @@ export function useContentImport({
 
     /**
      * 處理 EPUB 匯入
-     * TextbookContent 有 pages 陣列，需要轉換為 EPUBChapter 格式
+     * 使用 APPEND_EPUB action 將內容追加到無限畫布（不覆蓋現有內容）
      */
     const handleEPUBImport = useCallback((content: TextbookContent) => {
         console.log('📖 正在匯入 EPUB 內容:', content);
 
-        // 將 TextbookContent pages 轉換為 EPUBChapter 格式
-        const chapters: EPUBChapter[] = content.pages.map((page, index) => ({
-            id: page.id,
-            title: page.title,
-            content: page.content, // HTML 字串
-            order: index,
-        }));
+        // 將 TextbookContent 轉換為 Fabric.js 頁面格式
+        const { source, pages } = convertToFabricPages(content, contentState.fabricPages);
 
-        // 建立 metadata
-        const metadata: EPUBMetadata = {
-            title: content.title,
-            author: content.author,
-        };
-
-        // 使用 IMPORT_EPUB action 將資料設定到 ContentContext
+        // 使用 APPEND_EPUB action 追加頁面（不覆蓋）
         contentDispatch({
-            type: 'IMPORT_EPUB',
+            type: 'APPEND_EPUB',
             payload: {
-                metadata,
-                chapters,
+                source,
+                pages,
             },
         });
 
-        console.log(`✅ EPUB 匯入完成：${metadata.title}，${chapters.length} 個章節`);
+        console.log(`✅ EPUB 匯入完成：${source.metadata.title}，${pages.length} 個 Fabric 頁面`);
+        console.log(`📍 放置位置: x=${source.basePosition.x}, y=${source.basePosition.y}`);
 
         // 設定編輯模式與工具
         setIsEditMode(true);
         setCurrentTool('cursor');
 
-        // 重置視口位置
-        setViewport({ x: 0, y: 0, scale: 1 });
-    }, [contentDispatch, setViewport, setIsEditMode, setCurrentTool]);
+        // 將視口移動到新 EPUB 的位置
+        setViewport({
+            x: -source.basePosition.x + 100,
+            y: -source.basePosition.y + 100,
+            scale: 0.5, // 縮小視圖以便看到多個頁面
+        });
+    }, [contentState.fabricPages, contentDispatch, setViewport, setIsEditMode, setCurrentTool]);
 
     return {
         handleImportContent,
