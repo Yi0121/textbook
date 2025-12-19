@@ -75,16 +75,16 @@ const TextbookEditor: React.FC<TextbookEditorProps> = ({
       Highlight,
       Typography,
       // 🔥 連結擴展
-      Link.configure({
-        openOnClick: false, // 編輯模式下點擊不開啟連結
-        autolink: true, // 自動偵測 URL
-        linkOnPaste: true, // 貼上時自動轉為連結
-        HTMLAttributes: {
-          class: 'text-indigo-600 underline hover:text-indigo-800 cursor-pointer',
-          target: '_blank',
-          rel: 'noopener noreferrer',
-        },
-      }),
+      // Link.configure({
+      //   openOnClick: false,
+      //   autolink: true,
+      //   linkOnPaste: true,
+      //   HTMLAttributes: {
+      //     class: 'text-indigo-600 underline hover:text-indigo-800 cursor-pointer',
+      //     target: '_blank',
+      //     rel: 'noopener noreferrer',
+      //   },
+      // }),
       // 🔥 YouTube 影片擴展
       Youtube.configure({
         width: 640,

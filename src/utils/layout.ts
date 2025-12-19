@@ -2,8 +2,8 @@ import dagre from 'dagre';
 import { type Node, type Edge, Position } from '@xyflow/react';
 
 // Dagre 需要的節點尺寸（預設值，因為 React Flow 節點大小可能隨內容變動）
-const NODE_WIDTH = 250;
-const NODE_HEIGHT = 100;
+const NODE_WIDTH = 300; // 增加寬度避免擠壓
+const NODE_HEIGHT = 150; // 增加高度容納更多內容
 
 /**
  * 使用 Dagre 演算法自動計算節點位置
@@ -22,7 +22,11 @@ export const getLayoutedElements = (
     dagreGraph.setDefaultEdgeLabel(() => ({}));
 
     const isHorizontal = direction === 'LR';
-    dagreGraph.setGraph({ rankdir: direction });
+    dagreGraph.setGraph({
+        rankdir: direction,
+        nodesep: 100, // 增加節點水平間距
+        ranksep: 100  // 增加層級垂直間距
+    });
 
     // 1. 加入節點到 Dagre Graph
     nodes.forEach((node) => {

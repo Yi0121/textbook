@@ -8,6 +8,9 @@
  * - 優化：Event-Driven 狀態同步，避免 Dragging 效能問題
  */
 
+import { NodeDetailModal } from './NodeDetailModal';
+import type { LearningPathNode } from '../../../types';
+
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
@@ -28,14 +31,33 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Sparkles, Trash2, RotateCcw } from 'lucide-react';
 import { ChapterNode } from './nodes/ChapterNode';
+import { ExerciseNode } from './nodes/ExerciseNode';
+import { QuizNode } from './nodes/QuizNode';
+import { AITutorNode } from './nodes/AITutorNode';
+import { VideoNode } from './nodes/VideoNode';
+import { CollaborationNode } from './nodes/CollaborationNode';
 import { NodePalette } from './NodePalette';
 import { useLearningPath } from '../../../context/LearningPathContext';
 import { analyzeStudentAndGeneratePath } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
 
+import { OptionalEdge } from './edges/OptionalEdge';
+import { ConditionalEdge } from './edges/ConditionalEdge';
+
 // 註冊自定義節點類型
 const nodeTypes = {
   chapter: ChapterNode,
+  exercise: ExerciseNode,
+  quiz: QuizNode,
+  ai_tutor: AITutorNode,
+  video: VideoNode,
+  collaboration: CollaborationNode,
+};
+
+// 註冊自定義邊類型
+const edgeTypes = {
+  optional: OptionalEdge,
+  conditional: ConditionalEdge,
 };
 
 // 內部組件：封裝 React Flow 邏輯以便使用 useReactFlow hook
@@ -43,6 +65,56 @@ const FlowEditorInternal = () => {
   const { state, dispatch } = useLearningPath();
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 編輯 Modal 狀態 [NEW]
+  const [selectedNode, setSelectedNode] = React.useState<LearningPathNode | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  // 點擊節點開啟編輯 [NEW]
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNode(node as unknown as LearningPathNode);
+    setIsModalOpen(true);
+  }, []);
+
+  // 儲存節點變更 [NEW]
+  const handleSaveNode = (nodeId: string, updates: Partial<LearningPathNode['data']>) => {
+    if (!state.currentStudentId) return;
+
+    // 1. 更新 React Flow Local State
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return { ...node, data: { ...node.data, ...updates } };
+        }
+        return node;
+      })
+    );
+
+    // 2. 同步回 Context
+    dispatch({
+      type: 'UPDATE_NODE',
+      payload: {
+        studentId: state.currentStudentId,
+        nodeId,
+        changes: { data: updates as any }
+      }
+    });
+  };
+
+  // 刪除節點 [NEW]
+  const handleDeleteNode = (nodeId: string) => {
+    if (!state.currentStudentId) return;
+
+    // 1. 更新 UI
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+
+    // 2. 同步 Context
+    dispatch({
+      type: 'DELETE_NODE',
+      payload: { studentId: state.currentStudentId, nodeId }
+    });
+  };
 
   // 使用 Ref 追蹤當前學生 ID
   const currentStudentIdRef = useRef<string | null>(null);
@@ -56,7 +128,8 @@ const FlowEditorInternal = () => {
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // ==================== 狀態同步 ====================
+  // 追蹤最後一次同步的時間戳，避免重複更新
+  const lastSyncedRef = useRef<number>(0);
 
   // 當切換學生時，重置/載入狀態
   useEffect(() => {
@@ -65,6 +138,7 @@ const FlowEditorInternal = () => {
       setNodes([]);
       setEdges([]);
       currentStudentIdRef.current = null;
+      lastSyncedRef.current = 0;
       return;
     }
 
@@ -73,19 +147,17 @@ const FlowEditorInternal = () => {
       setNodes(currentPath.nodes);
       setEdges(currentPath.edges);
       currentStudentIdRef.current = state.currentStudentId;
+      lastSyncedRef.current = currentPath.lastModified;
       setTimeout(() => reactFlowInstance.fitView({ padding: 0.2 }), 100);
       return;
     }
 
     // 2. 外部更新（如 AI 生成）導致的變更：同步回 Local State
-    // 但要避免自己 Dragging 造成的 Context 更新觸發這裡 (雖然 DragStop 已經結束，所以其實沒問題)
-    // 這裡我們簡單判定：若內容數量不同，或 lastModified 更新，則同步
-    if (currentPath.lastModified > (currentPath.lastModified || 0)) { // 這裡其實可以用一個 local ref 存 lastSyncedTime
-      // 暫時直接同步，因為 DragStop 後 Context 更新，這裡同步回來其實是 Idempotent 的 (位置一樣)
-      // 除非有其他非同步操作。
-      // 為了確保 AI 生成的節點能顯示，我們讓它同步
+    // 若 Context 的最後修改時間比我們上次同步的時間新，則更新
+    if (currentPath.lastModified > lastSyncedRef.current) {
       setNodes(currentPath.nodes);
       setEdges(currentPath.edges);
+      lastSyncedRef.current = currentPath.lastModified;
     }
   }, [currentPath, state.currentStudentId, setNodes, setEdges, reactFlowInstance]);
 
@@ -224,7 +296,20 @@ const FlowEditorInternal = () => {
           payload: { studentId: state.currentStudentId!, nodeId: n.id, position: n.position }
         });
       });
+      // C. 立即更新 Local State 以確保 UI 即時反應 (不用等 Context Round-trip)
+      setNodes(layoutedNodes);
+      setEdges(newEdges); // 注意：這裡 edges 應該是用包含了新舊的 edges 還是? 
+      // analyzeStudentAndGeneratePath 回傳的是完整的 newEdges 嗎? 
+      // 不，是 "新的 edge"。
+      // 我們應該使用 layoutedEdges (如果包含全部) 或 [...edges, ...newEdges]
 
+      // 因為 getLayoutedElements 剛才傳入的是 [...nodes, ...newNodes] 和 [...edges, ...newEdges]
+      // 所以 layoutedEdges 應該包含全部邊
+      setEdges(layoutedEdges);
+
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      alert(`AI 生成失敗: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       dispatch({ type: 'SET_GENERATING', payload: false });
     }
@@ -240,68 +325,81 @@ const FlowEditorInternal = () => {
       {/* 右側畫布 */}
       <div className="flex-1 relative h-full bg-gray-50" ref={wrapperRef}>
         {currentPath ? (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChangeHandler}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeDragStop={onNodeDragStop}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            nodeTypes={nodeTypes}
-            minZoom={0.2}
-            maxZoom={2}
-          >
-            <Background color="#e5e7eb" gap={16} />
-            <Controls />
-            <MiniMap
-              nodeColor={(node) => node.data.status === 'completed' ? '#10b981' : '#e5e7eb'}
-              maskColor="rgba(0, 0, 0, 0.1)"
-            />
+          <>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChangeHandler}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeDragStop={onNodeDragStop}
+              onNodeClick={onNodeClick} // [NEW]
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              minZoom={0.2}
+              maxZoom={2}
+            >
+              <Background color="#e5e7eb" gap={16} />
+              <Controls />
+              <MiniMap
+                nodeColor={(node) => node.data.status === 'completed' ? '#10b981' : '#e5e7eb'}
+                maskColor="rgba(0, 0, 0, 0.1)"
+              />
 
-            {/* 工具列 */}
-            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-              <div className="bg-white p-2 rounded-lg shadow-md border border-gray-200 flex flex-col gap-1">
-                <span className="text-xs font-bold text-gray-500 px-2">ACTIONS</span>
+              {/* 工具列 */}
+              <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                <div className="bg-white p-2 rounded-lg shadow-md border border-gray-200 flex flex-col gap-1">
+                  <span className="text-xs font-bold text-gray-500 px-2">ACTIONS</span>
 
-                <button
-                  onClick={handleManualAI}
-                  disabled={state.isGenerating}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {state.isGenerating ? '生成中...' : 'AI 推薦路徑'}
-                </button>
+                  <button
+                    onClick={handleManualAI}
+                    disabled={state.isGenerating}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {state.isGenerating ? '生成中...' : 'AI 推薦路徑'}
+                  </button>
 
-                <button
-                  onClick={() => {
-                    const { nodes: lNodes, edges: lEdges } = getLayoutedElements(nodes, edges);
-                    setNodes(lNodes);
-                    setEdges(lEdges);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  自動排版
-                </button>
+                  <button
+                    onClick={() => {
+                      const { nodes: lNodes, edges: lEdges } = getLayoutedElements(nodes, edges);
+                      setNodes(lNodes);
+                      setEdges(lEdges);
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    自動排版
+                  </button>
 
-                <div className="h-px bg-gray-200 my-1" />
+                  <div className="h-px bg-gray-200 my-1" />
 
-                <button
-                  onClick={() => {
-                    setNodes([]);
-                    setEdges([]);
-                    // 同步清除 Context 邏輯待補
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-transparent rounded hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  清空畫布
-                </button>
+                  <button
+                    onClick={() => {
+                      setNodes([]);
+                      setEdges([]);
+                      // 同步清除 Context 邏輯待補
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-transparent rounded hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    清空畫布
+                  </button>
+                </div>
               </div>
-            </div>
-          </ReactFlow>
+            </ReactFlow>
+
+            {/* 節點編輯 Modal [NEW] */}
+            <NodeDetailModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              node={selectedNode}
+              onSave={handleSaveNode}
+              onDelete={handleDeleteNode}
+            />
+          </>
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="text-gray-400">請先選擇學生以開始編輯</p>

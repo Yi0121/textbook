@@ -46,9 +46,9 @@ export function LearningPathTab() {
   const students = Object.values(MOCK_STUDENT_RECORDS);
 
   return (
-    <div className="flex h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="flex h-full bg-white overflow-hidden">
       {/* 左側：學生列表 */}
-      <div className="w-64 border-r border-gray-200 flex flex-col bg-gray-50">
+      <div className="w-56 border-r border-gray-200 flex flex-col bg-gray-50 flex-shrink-0">
         <div className="p-4 border-b border-gray-200 bg-white">
           <h3 className="font-bold text-gray-800 flex items-center gap-2">
             <Users className="w-5 h-5 text-indigo-600" />
