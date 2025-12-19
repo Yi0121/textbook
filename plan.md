@@ -1,303 +1,591 @@
-# Interactive Textbook Editor - 系統架構優化計畫
+# AI 驅動學習流程編排系統 - 實作計劃
 
-## 現況總覽
+## 📊 實作進度總覽
 
-| 指標 | 數值 | 評估 |
-|------|------|------|
-| 總代碼行數 | ~2,313 行 | 中型專案 |
-| 組件數量 | 22 個 | 適中 |
-| Context 數量 | 4 個 | 適中 |
-| App.tsx 行數 | ~~621~~ → ~~535~~ → **451 行** | ✅ 目標達成 |
-| 架構評分 | ~~5.4/10~~ → ~~6.8/10~~ → **7.2/10** | 持續改善中 |
+**最後更新**：2025-12-19
 
----
+### 階段完成狀況
 
-## � 實施進度追蹤
+| Phase | 狀態 | 完成度 | 說明 |
+|-------|------|--------|------|
+| Phase 1 | ✅ 完成 | 100% | 基礎架構與 Mock 資料 |
+| Phase 2 | 🔄 進行中 | 40% | React Flow 整合 - 簡化版編輯器已完成 |
+| Phase 3 | ⏳ 待開始 | 0% | Dashboard 整合與 AI 推薦 |
+| Phase 4 | ⏳ 待開始 | 0% | 節點編輯與儲存 |
+| Phase 5 | ⏳ 待開始 | 0% | 進階功能與優化 |
 
-> [!NOTE]
-> 本節紀錄 plan.md 各項目的實際完成狀態（更新於 2024-12-16）
+### Phase 1 ✅ 完成檔案清單
 
-### 階段 1: 狀態管理統一
+1. ✅ `src/types/learning-path.ts` (282 行) - 完整型別系統
+2. ✅ `src/context/LearningPathContext.tsx` (479 行) - Context + Reducer (13 種 Actions)
+3. ✅ `src/services/ai/learningPathService.ts` (222 行) - AI Mock 服務
+4. ✅ `src/mocks/learningPathMocks.ts` (501 行) - 3 位學生 Mock 資料
+5. ✅ `src/types/index.ts` - 匯出新型別
+6. ✅ `src/context/IndexContext.tsx` - 整合 LearningPathProvider
+7. ✅ `src/components/features/learning-path/LearningPathTest.tsx` - 測試組件
+8. ✅ `src/App.tsx` - 整合測試組件
 
-| 項目 | 狀態 | 說明 |
-|------|:----:|------|
-| 1.1 統一選取狀態 | ✅ 完成 | 已透過 `useSelectionActions` hook 統一管理 `selectionBox`, `selectionMenuPos`, `selectedText`，App.tsx 不再有本地重複狀態 |
-| 1.2 消除內容冗餘 | ✅ 完成 | 已建立 `useCurrentChapterContent()` 衍生 hook，優先取用 EPUB 章節內容 |
-| 1.3 持久化用戶 ID | ✅ 完成 | `CollaborationContext.tsx` 已使用 `getOrCreateUserId()` 搭配 localStorage 持久化 |
+**驗證結果**：
+- ✅ TypeScript 編譯無錯誤
+- ✅ Context dispatch 正常運作
+- ✅ Mock AI 分析回傳正確結構
+- ✅ 測試組件成功顯示 Context 狀態
 
-### 階段 2: 提取業務邏輯到 Custom Hooks
+### Phase 2 🔄 進行中檔案清單
 
-| 項目 | 狀態 | 說明 |
-|------|:----:|------|
-| 2.1 建立 useAIActions hook | ✅ 完成 | 包含 `handleToggleAITutor`, `handleAIExplain`, `handleAIMindMap`, `handleGenerateQuiz`, `handleLessonPlan`, `clearSelection` |
-| 2.2 建立 useSelectionActions hook | ✅ 完成 | 封裝所有選取操作，App.tsx 直接解構使用 |
+**已完成**：
+1. ✅ React Flow 安裝 (`@xyflow/react` v12)
+2. ✅ `src/components/features/learning-path/nodes/ChapterNode.tsx` - 章節節點組件
+3. ✅ `src/components/features/learning-path/WorkflowEditor.tsx` - 簡化版流程編輯器
 
-### 階段 3: 組件分拆
+**未完成**：
+- ⏳ `src/components/features/learning-path/LearningPathWorkflow.tsx` - 容器組件
+- ⏳ `src/components/features/learning-path/NodePalette.tsx` - 節點拖曳面板
+- ⏳ `src/components/features/learning-path/WorkflowSidebar.tsx` - 側邊欄
+- ⏳ `src/components/features/learning-path/nodes/ExerciseNode.tsx` - 練習題節點
+- ⏳ `src/components/features/learning-path/nodes/VideoNode.tsx` - 影片節點
+- ⏳ `src/components/features/learning-path/nodes/AITutorNode.tsx` - AI 家教節點
+- ⏳ `src/components/features/learning-path/nodes/QuizNode.tsx` - 測驗節點
+- ⏳ `src/components/features/learning-path/nodes/CollaborationNode.tsx` - 協作節點
+- ⏳ `src/components/features/learning-path/edges/` - 自定義邊組件 (3 種)
 
-| 項目 | 狀態 | 說明 |
-|------|:----:|------|
-| 3.1 分拆 RightSidePanel | ✅ 完成 | `ContextAnalysisPanel`, `ChatPanel`, `MaterialLibraryPanel`, `ReviewPanel` 皆已獨立至 `components/panels/`，並有 barrel file |
-| 3.2 提取 EditorToolbar | ✅ 完成 | `EditorToolbar.tsx` 已獨立存在於 `components/canvas/` |
-| 3.3 簡化 FixedToolbar Props | ✅ 完成 | 從 16 個 Props 減至 5 個，內部透過 `useEditor()` 與 `useUI()` 取得狀態 |
+**目前狀態**：
+- WorkflowEditor 已建立，可在瀏覽器中顯示 AI 生成的學習路徑
+- 整合 React Flow 的 Background、Controls、MiniMap
+- 支援平移 (Pan)、縮放 (Zoom)、節點連接
+- 目前僅支援 ChapterNode，其他節點類型待實作
 
-### 階段 4: 類型定義強化
-
-| 項目 | 狀態 | 說明 |
-|------|:----:|------|
-| 4.1 定義核心資料結構 | ✅ 完成 | `types/index.ts` 已定義完整型別，Context 已消除所有 `any` |
-| 4.2 Context any 修復 | ✅ 完成 | `CollaborationContext` 的 `any[]` → `WhiteboardStroke[]`，`useCanvasInteraction` 型別修正 |
-
-### 階段 5: 目錄結構優化
-
-| 項目 | 狀態 | 說明 |
-|------|:----:|------|
-| 5.1 按功能域重組 | ❌ 未執行 | 維持現有結構，可視專案規模再評估 |
-
----
-
-## ✅ P0-P3 已完成（2024-12-16）
-
-### P0: Context 型別修復 ✅
-
-**已修復**：
-- `EditorContext.tsx`：`strokes`, `mindMaps`, `aiMemos`, `textObjects`, `laserPath`, `selectionBox`, `selectionMenuPos` 皆已套用強型別
-- `ContentContext.tsx`：`textbookContent`, `epubMetadata`, `epubChapters` 皆已套用 `TiptapContent`, `EPUBMetadata`, `EPUBChapter` 型別
-- `types/index.ts`：修正 `TextObject.color` 與 `TextObject.fontSize` 為 required
-- `SelectionFloatingMenu.tsx`：統一 position 型別為 `{ x, y }`
+**驗證標準進度**：
+- ⏳ 可從 NodePalette 拖曳新增節點 (待實作)
+- ✅ 可連接節點建立邊 (已支援)
+- ⏳ 可刪除節點和邊 (待實作)
+- ✅ 節點狀態正確反映在樣式上 (已支援)
 
 ---
 
-### P1: 新增 Error Boundary ✅
+## 專案概述
 
-**已建立**：`src/components/ErrorBoundary.tsx`
-- 捕獲子組件的 JavaScript 錯誤
-- 顯示使用者友善的錯誤頁面
-- 支援「嘗試恢復」與「重新載入」操作
-- 開發模式下顯示 componentStack
-
-**已整合**：`src/main.tsx` 中包裹 `AppProviders`
+為 Interactive Textbook Editor 新增「AI 驅動學習流程編排系統」，讓教師能夠：
+1. 針對任何學生手動觸發 AI 分析
+2. AI 根據學生作答記錄推薦個性化學習路徑
+3. 使用類似 n8n 的視覺化流程圖編輯學習路徑
+4. 每位學生擁有獨立的學習路徑
+5. 支援多種學習節點類型（章節、練習、影片、協作、AI 輔導等）
 
 ---
 
-### P1: 移動 services 檔案 ✅
+## 技術選型決策
 
-**已重組**：
+### ✅ 推薦方案：React Flow (@xyflow/react v12)
+
+**決策理由**：
+- **開發效率**：2-4 週 vs 自建需 6-8 週
+- **功能完整**：內建虛擬化、邊重新連接、連接點系統
+- **可維護性**：活躍社群、完整 TypeScript 支援
+- **擴展性**：支援自定義節點/邊、節點嵌套、自動佈局
+
+**Trade-offs**：
+| 維度 | React Flow | 擴展現有系統 |
+|------|-----------|------------|
+| 依賴大小 | +200KB (gzipped ~50KB) | 0 |
+| 開發時間 | 2-4 週 | 6-8 週 |
+| 功能完整性 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| 長期維護 | 社群支援 | 自行維護 |
+
+---
+
+## 核心資料結構設計
+
+### 1. 學習路徑節點類型
+
+```typescript
+// src/types/learning-path.ts
+
+export type LearningNodeType =
+  | 'chapter'        // 章節閱讀
+  | 'exercise'       // 練習題
+  | 'video'          // 影片教材
+  | 'collaboration'  // 小組討論
+  | 'ai_tutor'       // AI 家教
+  | 'quiz'           // 測驗
+  | 'review'         // 複習
+  | 'project'        // 專題
+  | 'custom';        // 自定義內容
+
+export interface LearningPathNode {
+  id: string;
+  type: LearningNodeType;
+  position: { x: number; y: number };
+
+  data: {
+    label: string;
+    description?: string;
+    content?: any;  // 根據類型有不同結構
+    completionCriteria?: {
+      type: 'time' | 'score' | 'manual';
+      threshold?: number;
+    };
+    status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+    aiGenerated?: boolean;
+    isRequired?: boolean;
+    knowledgeNodeIds?: string[];
+  };
+}
+
+export interface LearningPathEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: 'default' | 'conditional' | 'optional';
+  data?: {
+    condition?: any;
+    label?: string;
+    style?: any;
+  };
+}
+
+export interface StudentLearningPath {
+  id: string;
+  studentId: string;
+  studentName: string;
+  nodes: LearningPathNode[];
+  edges: LearningPathEdge[];
+  viewport: { x: number; y: number; zoom: number };
+  createdAt: number;
+  createdBy: string;
+  lastModified: number;
+  aiRecommendation?: {
+    summary: string;
+    focusAreas: string[];
+    estimatedDuration: number;
+    difficulty: 'easy' | 'medium' | 'hard';
+  };
+  progress: {
+    totalNodes: number;
+    completedNodes: number;
+    currentNodeId?: string;
+  };
+}
 ```
-src/
-├── services/
-│   └── ai/
-│       └── mockLLMService.ts  ← 從 utils/ 移入
-├── utils/
-│   ├── epubParser.ts
-│   └── geometry.ts
+
+### 2. 學生作答記錄
+
+```typescript
+export interface StudentAnswer {
+  id: string;
+  studentId: string;
+  questionId: string;
+  answer: string | string[];
+  isCorrect: boolean;
+  score: number;
+  timeSpent: number;
+  knowledgeNodeIds: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  answeredAt: number;
+  attemptCount: number;
+}
+
+export interface StudentLearningRecord {
+  studentId: string;
+  studentName: string;
+  answers: StudentAnswer[];
+  totalQuestions: number;
+  correctCount: number;
+  averageScore: number;
+  weakKnowledgeNodes: Array<{
+    nodeId: string;
+    nodeName: string;
+    errorRate: number;
+    relatedQuestions: string[];
+  }>;
+  lastUpdated: number;
+}
 ```
 
-**已更新**：`App.tsx` 的 import 路徑
+---
+
+## Context 架構擴展
+
+### 新增 LearningPathContext
+
+**檔案位置**：`src/context/LearningPathContext.tsx`
+
+**職責分離理由**：
+- 學習路徑管理與編輯器狀態、內容狀態不同
+- 獨立 Context 更容易測試與擴展
+- 不影響現有穩定的 EditorContext 和 ContentContext
+
+**State 結構**：
+```typescript
+interface LearningPathState {
+  studentPaths: Map<string, StudentLearningPath>;
+  currentStudentId: string | null;
+  learningRecords: Map<string, StudentLearningRecord>;
+  isEditorOpen: boolean;
+  isGenerating: boolean;
+  nodeTemplates: Array<{
+    type: LearningNodeType;
+    label: string;
+    icon: string;
+    defaultData: any;
+  }>;
+}
+```
+
+**主要 Actions**：
+- `CREATE_PATH` - 建立新學習路徑
+- `ADD_NODE` / `UPDATE_NODE` / `DELETE_NODE` - 節點 CRUD
+- `ADD_EDGE` / `DELETE_EDGE` - 邊管理
+- `UPDATE_PROGRESS` - 更新學生進度
+- `SET_AI_RECOMMENDATION` - 儲存 AI 推薦
+- `OPEN_EDITOR` / `CLOSE_EDITOR` - 編輯器狀態
 
 ---
 
-### P2: 建立 Barrel Files ✅
+## 組件架構設計
 
-**已建立**：
-- `src/components/ui/index.ts`
-- `src/components/canvas/index.ts`
-- `src/hooks/index.ts`
-- `src/context/index.ts`
+### 組件樹結構
 
----
+```
+LearningPathWorkflow (容器)
+├── WorkflowToolbar
+│   ├── NodePalette (拖曳節點選擇)
+│   ├── AIAnalyzeButton
+│   └── SaveButton
+│
+├── WorkflowEditor (React Flow)
+│   ├── CustomNodes
+│   │   ├── ChapterNode
+│   │   ├── ExerciseNode
+│   │   ├── VideoNode
+│   │   ├── CollaborationNode
+│   │   ├── AITutorNode
+│   │   └── QuizNode
+│   │
+│   ├── CustomEdges
+│   │   ├── DefaultEdge
+│   │   ├── ConditionalEdge
+│   │   └── OptionalEdge
+│   │
+│   └── Controls (React Flow 內建)
+│
+└── WorkflowSidebar
+    ├── StudentInfo
+    ├── AIRecommendationPanel
+    ├── ProgressTracker
+    └── NodePropertiesPanel
+```
 
-### P3: 更新 README.md ✅
+### 自定義節點範例 (ChapterNode)
 
-**新內容**：
-- 專案描述與功能特色
-- 安裝與啟動指令
-- 專案結構說明
-- 快捷鍵一覽表
-- 技術棧說明
+**檔案位置**：`src/components/features/learning-path/nodes/ChapterNode.tsx`
 
----
-
-### P4: 測試架構（低優先）
-
-**問題**：沒有任何 `*.test.ts` 或 `*.spec.ts` 檔案
-
-**建議**：
-1. 安裝 Vitest：`npm install -D vitest @testing-library/react`
-2. 為關鍵 hooks 撰寫單元測試（`useAIActions`, `useSelectionActions`）
-3. 為 Context reducers 撰寫測試
-
----
-
-## ✅ 已完成項目總結
-
-| 完成項目 | 效果 |
-|----------|------|
-| `useAIActions` hook | App.tsx 減少 ~60 行 AI 邏輯 |
-| `useSelectionActions` hook | 消除選取狀態重複 |
-| `useCurrentChapterContent` hook | 消除內容冗餘 |
-| `getOrCreateUserId()` | 修復協作 userId 持久化 |
-| RightSidePanel 分拆 | 4 個子組件 + barrel file |
-| FixedToolbar Props 簡化 | 從 16 個減至 5 個 |
-| `types/index.ts` 型別定義 | 完整但 Context 未使用 |
-
----
-
-## 📊 優化前後對比
-
-| 指標 | 計畫前 | 目前狀態 | 目標 |
-|------|--------|----------|------|
-| App.tsx 行數 | 621 | **451** | ~350 ✅ |
-| 最大組件行數 | 297 | **196** (FixedToolbar) | ~150 ✅ |
-| Props drilling 深度 | 3 層 | **1-2 層** | ✅ 達成 |
-| 重複狀態數 | 4 處 | **0 處** | ✅ 達成 |
-| Context any 數量 | 3 處 | **0 處** | ✅ 達成 |
-| 架構評分 | 5.4/10 | **7.5/10** | 7.5+/10 ✅ |
+**設計規範**：
+- 使用 React Flow Handle 作為連接點
+- 根據 `status` 顯示不同樣式（pending/completed）
+- 顯示 AI 推薦標記
+- 支援選中高亮
 
 ---
 
-## 🆕 2024-12-17 更新
+## AI 服務擴展
 
-### 已完成
+### 新增 learningPathService.ts
 
-| Commit | 內容 |
-|--------|------|
-| `484bbad` | fix(types): 消除 Context/hooks 的 `any` 型別 |
-| `dd42ee7` | chore: 移除未使用檔案（App.css, useToolbarActions.ts） |
-| `27c065f` | refactor(hooks): 提取 useAppShortcuts hook，App.tsx 534→451 行 |
-| `4924be2` | refactor(toolbar): FixedToolbar 拆分 273→196 行 (-28%) |
+**檔案位置**：`src/services/ai/learningPathService.ts`
 
-### 新增檔案
+**核心函數**：
 
-- `src/hooks/useAppShortcuts.ts` - 集中管理鍵盤快捷鍵定義
-- `src/components/tools/toolbar/ToolbarPositionControls.tsx` - 工具列位置控制
-- `src/components/tools/toolbar/ZoomControls.tsx` - 縮放控制
-- `src/components/tools/toolbar/ColorPicker.tsx` - 調色盤
-- `src/components/tools/toolbar/WidgetBox.tsx` - 百寶箱面板
-- `src/components/tools/toolbar/index.ts` - barrel file
+```typescript
+/**
+ * AI 分析學生作答記錄，生成學習路徑推薦
+ */
+async function analyzeStudentAndGeneratePath(
+  record: StudentLearningRecord
+): Promise<{
+  nodes: LearningPathNode[];
+  edges: LearningPathEdge[];
+  recommendation: StudentLearningPath['aiRecommendation'];
+}>
+```
 
-### 移除檔案
+**AI 推薦邏輯**（Mock 實作）：
+1. 分析 `weakKnowledgeNodes` 取前 3 個弱點
+2. 為每個弱點生成：
+   - 章節複習節點
+   - 練習題節點
+   - 選修 AI 家教節點
+3. 最後加入綜合測驗節點
+4. 自動連接邊，選修路徑使用虛線
 
-- `src/App.css` - 被 TailwindCSS 取代
-- `src/hooks/useToolbarActions.ts` - 未使用
-
----
-
-## ✅ Phase 1 完成總結
-
-1. ~~**[立即]** 修復 Context 中的 `any` 型別~~ ✅ 已完成
-2. ~~**[本週]** 新增 `ErrorBoundary` 組件~~ ✅ 已完成
-3. ~~**[本週]** 重組 services 目錄~~ ✅ 已完成
-4. ~~**[進行中]** FixedToolbar 拆分（273 行 → ~150 行）~~ ✅ 已完成 (273→196)
-
----
-
-## 🚀 Phase 2 架構優化計畫（2024-12-17）
-
-### 現況評估（更新後）
-
-| 指標 | 優化前 | 優化後 | 目標 | 評估 |
-|------|--------|--------|------|------|
-| App.tsx 行數 | 451 行 | **331 行** | ~300 行 | ✅ 達成 (-26.6%) |
-| Dashboard.tsx | 257 行 | **68 行** | ~150 行 | ✅ 超越目標 (-73.5%) |
-| Barrel Files | 4 個 | **8 個** | 8 個 | ✅ 達成 |
-| 測試覆蓋率 | 0% | 0% | >50% | ⏳ P2 待執行 |
+**真實資料整合點**：
+- 從 `knowledgeNodeIds` 取得真實知識節點資料
+- 使用 `generateContentForKnowledgeNode()` 動態生成補充內容
 
 ---
 
-### 🔴 P0: 高優先（架構核心問題）✅ 已完成
+## UI/UX 流程設計
 
-#### P0-1: App.tsx 瘦身 - 提取 Hooks ✅
+### 1. 觸發方式：Dashboard Tab 整合
 
-| 任務 | 狀態 | 說明 |
-|------|:----:|------|
-| 建立 `useViewportZoom.ts` | ✅ | 提取滾輪縮放邏輯 |
-| 建立 `useContentImport.ts` | ✅ | 提取 handleImportContent, handleEPUBImport |
-| 建立 `useWhiteboardControl.ts` | ✅ | 提取 handleOpenWhiteboard, handleCloseWhiteboard |
-| 建立 `useOnboarding.ts` | ✅ | 提取 tour 相關邏輯與 localStorage |
-| 更新 App.tsx 使用新 hooks | ✅ | 移除 120 行冗餘代碼 |
+在 `Dashboard.tsx` 新增第 5 個 Tab：「AI 學習路徑」
 
-#### P0-2: 拆分大型組件 ✅
+**LearningPathTab 組件流程**：
+```
+顯示學生清單
+  ↓ 點擊「AI 分析路徑」按鈕
+  ↓ SET_GENERATING(true)
+  ↓ 載入學生作答記錄
+  ↓ AI 分析 (analyzeStudentAndGeneratePath)
+  ↓ CREATE_PATH + 批次 ADD_NODE + ADD_EDGE
+  ↓ SET_GENERATING(false)
+  ↓ OPEN_EDITOR (全螢幕 Modal)
+```
 
-| 任務 | 狀態 | 說明 |
-|------|:----:|------|
-| 拆分 `Dashboard.tsx` | ✅ | 257 行 → 68 行 + 4 個子組件 |
+### 2. 流程圖呈現：全螢幕 Modal
+
+使用現有的 `Modal` 組件，設定 `size="fullscreen"`：
+- 優點：足夠編輯空間，不干擾主畫布
+- 內嵌 `LearningPathWorkflow` 組件
+
+### 3. 教師編輯流程
+
+1. **新增節點**：從 NodePalette 拖曳到畫布
+2. **連接節點**：拖曳 Handle 建立邊
+3. **編輯屬性**：點擊節點，在 Sidebar 編輯
+4. **刪除**：選中後按 Delete 鍵
+5. **儲存**：點擊儲存按鈕，更新 Context
+
+### 4. 進度追蹤
+
+在 WorkflowSidebar 顯示：
+- 總節點數 / 已完成節點數
+- 進度條
+- 當前節點
+- 預估剩餘時間
+
+---
+
+## 實作步驟 (分 5 個 Phase)
+
+### Phase 1: 基礎架構與 Mock 資料 (第 1-2 週)
 
 **新增檔案**：
-- `src/components/features/dashboard/OverviewTab.tsx`
-- `src/components/features/dashboard/HomeworkTab.tsx`
-- `src/components/features/dashboard/CollaborationTab.tsx`
-- `src/components/features/dashboard/AIQuizTab.tsx`
-- `src/components/features/dashboard/index.ts`
+1. `src/types/learning-path.ts` - 型別定義
+2. `src/context/LearningPathContext.tsx` - Context & Reducer
+3. `src/services/ai/learningPathService.ts` - AI Mock 服務
+4. `src/mocks/learningPathMocks.ts` - Mock 學生資料
+
+**修改檔案**：
+5. `src/types/index.ts` - 匯出新型別
+6. `src/App.tsx` - 新增 LearningPathProvider
+
+**驗證標準**：
+- ✅ 型別定義無 TypeScript 錯誤
+- ✅ Context dispatch 正常運作
+- ✅ Mock AI 分析回傳正確結構
 
 ---
 
-### 🔷 P1: 中優先（開發體驗）✅ 已完成
+### Phase 2: React Flow 整合與核心組件 (第 3-4 週)
 
-#### P1-3: 補齊 Barrel Files ✅
-
-| 任務 | 狀態 |
-|------|:----:|
-| 新增 `components/features/index.ts` | ✅ |
-| 新增 `components/layout/index.ts` | ✅ |
-| 新增 `services/index.ts` | ✅ |
-| 新增 `utils/index.ts` | ✅ |
-
-#### P1-4: 型別集中化 ✅
-
-| 任務 | 狀態 | 說明 |
-|------|:----:|------|
-| 修復 `TextbookEditorProps.initialContent` | ✅ | `any` → `TiptapContent \| string` |
-| 使用 `FileMeta` 型別 | ✅ | 從 types/index.ts 匯入 |
-
-#### P1-5: Constants 集中 ✅
-
-| 任務 | 狀態 | 說明 |
-|------|:----:|------|
-| 建立 `config/constants.ts` | ✅ | 集中管理常數 |
-| 移動 `NAV_ZONES` | ✅ | 從 App.tsx 移出 |
-
----
-
-### 🔵 P2: 低優先（品質保證）
-
-#### P2-6: 測試架構
-
-| 任務 | 狀態 | 說明 |
-|------|:----:|------|
-| 安裝 Vitest + RTL | ⏳ | `npm install -D vitest @testing-library/react` |
-| 撰寫 `editorReducer` 測試 | ⏳ | 純函式，最易測試 |
-| 撰寫 `useAIActions` 測試 | ⏳ | 核心業務邏輯 |
-
----
-
-### 📁 目標目錄結構
-
+**安裝依賴**：
+```bash
+npm install @xyflow/react
 ```
-src/
-├── components/
-│   ├── canvas/          # ✅ 已整理
-│   ├── collaboration/
-│   ├── features/
-│   │   ├── dashboard/   # [NEW] Dashboard 子組件
-│   │   └── index.ts     # [NEW] barrel file
-│   ├── layout/
-│   │   └── index.ts     # [NEW] barrel file
-│   ├── panels/          # ✅ 已整理
-│   ├── tools/           # ✅ 已整理
-│   └── ui/              # ✅ 已整理
-├── config/
-│   ├── toolConfig.ts
-│   └── constants.ts     # [NEW]
-├── context/             # ✅ 已整理
-├── hooks/               # ✅ 已整理
-│   ├── useViewportZoom.ts      # [NEW]
-│   ├── useContentImport.ts     # [NEW]
-│   ├── useWhiteboardControl.ts # [NEW]
-│   └── useOnboarding.ts        # [NEW]
-├── services/
-│   ├── ai/
-│   └── index.ts         # [NEW]
-├── types/
-└── utils/
-    └── index.ts         # [NEW]
+
+**新增檔案**：
+7. `src/components/features/learning-path/LearningPathWorkflow.tsx`
+8. `src/components/features/learning-path/WorkflowEditor.tsx`
+9. `src/components/features/learning-path/NodePalette.tsx`
+10. `src/components/features/learning-path/WorkflowSidebar.tsx`
+11-16. `src/components/features/learning-path/nodes/*.tsx` (6 種節點)
+17-19. `src/components/features/learning-path/edges/*.tsx` (3 種邊)
+
+**實作步驟**：
+1. 實作基礎 WorkflowEditor（顯示節點和邊）
+2. 實作 6 種自定義節點（統一樣式）
+3. 實作 NodePalette（拖曳新增）
+4. 整合 LearningPathContext
+5. 實作節點/邊刪除功能
+
+**驗證標準**：
+- ✅ 可從 NodePalette 拖曳新增節點
+- ✅ 可連接節點建立邊
+- ✅ 可刪除節點和邊
+- ✅ 節點狀態正確反映在樣式上
+
+---
+
+### Phase 3: Dashboard 整合與 AI 推薦 (第 5-6 週)
+
+**新增檔案**：
+20. `src/components/features/dashboard/LearningPathTab.tsx`
+21. `src/components/features/learning-path/AIRecommendationPanel.tsx`
+22. `src/components/features/learning-path/ProgressTracker.tsx`
+
+**修改檔案**：
+23. `src/components/features/Dashboard.tsx` - 新增 Tab
+
+**實作步驟**：
+1. Dashboard 新增「AI 學習路徑」Tab
+2. 實作學生清單 + AI 分析按鈕
+3. 實作 AI 分析流程（Loading → 生成 → 開啟編輯器）
+4. 實作 AIRecommendationPanel（弱點分析、推薦摘要）
+5. 實作 ProgressTracker（進度條、統計）
+
+**驗證標準**：
+- ✅ 點擊「AI 分析」正確生成流程圖
+- ✅ AI 推薦面板顯示正確
+- ✅ 進度追蹤正確計算
+
+---
+
+### Phase 4: 節點編輯與儲存 (第 7-8 週)
+
+**新增檔案**：
+24. `src/components/features/learning-path/NodePropertiesPanel.tsx`
+25. `src/hooks/useLearningPathActions.ts`
+26. `src/utils/learningPathStorage.ts`
+
+**實作步驟**：
+1. 實作 NodePropertiesPanel（根據節點類型顯示表單）
+2. 實作節點屬性即時更新
+3. 實作 WorkflowToolbar（儲存、匯出、復原/重做）
+4. 實作 LocalStorage 儲存（自動 + 手動）
+5. 實作載入已儲存路徑
+
+**驗證標準**：
+- ✅ 點擊節點顯示屬性面板
+- ✅ 編輯屬性即時更新畫布
+- ✅ 重新整理後可載入之前路徑
+
+---
+
+### Phase 5: 進階功能與優化 (第 9-10 週)
+
+**新增檔案**：
+27. `src/components/features/learning-path/PathTemplateLibrary.tsx`
+28. `src/components/features/learning-path/StudentProgressView.tsx`
+
+**實作步驟**：
+1. 路徑模板功能（教師儲存常用路徑）
+2. 學生端進度視圖（只讀模式）
+3. 條件式邊（根據分數自動跳轉）
+4. 效能優化（React.memo、虛擬化）
+5. 鍵盤快捷鍵（Ctrl+S、Ctrl+Z）
+6. 匯出功能（PDF、PNG、JSON）
+
+**驗證標準**：
+- ✅ 路徑模板可正確套用
+- ✅ 學生端可查看進度
+- ✅ 大型流程圖（50+ 節點）流暢運作
+
+---
+
+## 與現有系統整合點
+
+### 1. Dashboard 整合
+- **檔案**：`src/components/features/Dashboard.tsx`
+- **方式**：新增 `learning-path` Tab + `LearningPathTab` 組件
+
+### 2. AI 服務整合
+- **檔案**：`src/services/ai/mockLLMService.ts`（擴充）
+- **檔案**：`src/services/ai/learningPathService.ts`（新增）
+- **方式**：使用現有 AI 模擬模式
+
+### 3. 學生資料整合
+- **檔案**：`src/mocks/dashboardMocks.ts`（擴充）
+- **方式**：為現有學生建立 StudentLearningRecord
+
+### 4. Context 整合
+- **檔案**：`src/App.tsx`
+- **方式**：在 Provider 樹新增 LearningPathProvider
+
+```typescript
+<EditorProvider>
+  <ContentProvider>
+    <UIProvider>
+      <CollaborationProvider>
+        <LearningPathProvider>  {/* 新增 */}
+          {/* 現有組件 */}
+        </LearningPathProvider>
+      </CollaborationProvider>
+    </UIProvider>
+  </ContentProvider>
+</EditorProvider>
 ```
+
+### 5. 知識節點整合（未來）
+- **方式**：從 `ContentContext.epubChapters` 提取知識節點
+- **工具**：建立 `knowledgeNodeExtractor.ts`
+
+---
+
+## 關鍵檔案清單
+
+**實作此系統最關鍵的 5 個檔案**：
+
+1. **`src/context/LearningPathContext.tsx`**
+   - 核心狀態管理，所有組件依賴此 Context
+   - 定義 Reducer Actions 與 State 結構
+
+2. **`src/components/features/learning-path/WorkflowEditor.tsx`**
+   - React Flow 核心編輯器
+   - 整合自定義節點/邊、拖曳邏輯、事件處理
+
+3. **`src/services/ai/learningPathService.ts`**
+   - AI 分析與路徑生成邏輯
+   - Mock 實作與未來接真實 LLM 的介面
+
+4. **`src/types/index.ts`**
+   - 擴充完整型別定義
+   - TypeScript 型別是系統的設計契約
+
+5. **`src/components/features/dashboard/LearningPathTab.tsx`**
+   - 使用者入口點
+   - 連接 Dashboard 與學習路徑系統的橋樑
+
+---
+
+## 技術風險與緩解策略
+
+### 風險 1: React Flow 學習曲線
+**緩解**：
+- 參考官方 Custom Nodes 範例
+- 先實作 ChapterNode，確立模式後複製
+
+### 風險 2: Mock 資料與真實資料差異
+**緩解**：
+- 定義清楚介面（StudentLearningRecord、KnowledgeNode）
+- TypeScript 強型別確保結構一致
+- 預留 `knowledgeNodeIds` 欄位
+
+### 風險 3: 效能問題（大型流程圖）
+**緩解**：
+- React Flow 內建虛擬化
+- 使用 React.memo 包裹自定義節點
+- 限制初始生成節點數量（≤ 15 個）
+
+### 風險 4: 學生進度追蹤實作複雜
+**緩解**：
+- Phase 1-3 聚焦教師端編輯功能
+- Phase 5 才實作學生端進度視圖
+- 使用簡單 `status` 欄位
+
+---
+
+## 總結
+
+此計劃提供完整的「AI 驅動學習流程編排系統」實作路徑：
+
+1. **技術選型**：React Flow - 平衡開發效率與功能完整性
+2. **資料結構**：清晰型別系統，支援多種學習節點與條件式路徑
+3. **架構設計**：獨立 LearningPathContext，保持關注點分離
+4. **組件設計**：模組化組件樹，6 種節點 + 可擴展邊類型
+5. **實作步驟**：分 5 個 Phase，每階段有明確驗證標準
+6. **整合方案**：與現有 Dashboard、AI 服務、Context 無縫整合
+
+**預估總開發時間**：8-10 週
+**核心價值**：個性化學習路徑推薦，視覺化學習流程管理
+

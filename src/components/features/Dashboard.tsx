@@ -44,7 +44,7 @@ const DashboardContent = () => {
    };
 
    return (
-      <div className="h-[600px] flex flex-col">
+      <div className="h-full flex flex-col">
          {/* 儀表板導航 Tab */}
          <div className="flex border-b border-slate-200 mb-6">
             {TABS.map((tab) => (
