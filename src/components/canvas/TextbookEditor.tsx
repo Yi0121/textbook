@@ -42,10 +42,10 @@ interface TextbookEditorProps {
 
 // 預設內容
 const DEFAULT_CONTENT = `
-  <h1>CH3. 細胞的構造與功能</h1>
-  <p>細胞是生命的基本單位。在本章節中，我們將深入探討真核細胞中最重要的能量轉換中心。</p>
-  <h2>3.1 細胞的能量工廠：粒線體 (Mitochondria)</h2>
-  <p><strong>粒線體</strong> 是真核細胞中至關重要的胞器。它的主要功能是透過<span style="background-color: #fef9c3; color: #854d0e; padding: 0 4px; border-radius: 2px;">有氧呼吸作用</span>，將有機物中的化學能轉化為 <strong>ATP</strong>。</p>
+  <h1>CH3. 一元二次方程式</h1>
+  <p>一元二次方程式是代數中的基礎課題。在本章節中，我們將深入探討如何解一元二次方程式。</p>
+  <h2>3.1 一元二次方程式的公式解</h2>
+  <p><strong>公式解</strong> 是解一元二次方程式最通用的方法。對於 ax² + bx + c = 0，其解為<span style="background-color: #fef9c3; color: #854d0e; padding: 0 4px; border-radius: 2px;">x = (-b ± √(b²-4ac)) / 2a</span>，其中判別式 <strong>D = b² - 4ac</strong> 決定解的性質。</p>
 `;
 
 const TextbookEditor: React.FC<TextbookEditorProps> = ({
@@ -56,10 +56,10 @@ const TextbookEditor: React.FC<TextbookEditorProps> = ({
   initialContent,
   // 🔥 設定預設檔案資訊，確保沒傳入時也有顯示
   fileMeta = {
-    title: "Ch3. 細胞生物學概論",
+    title: "Ch3. 一元二次方程式",
     version: "V2.4 (113學年度)",
     lastModified: "2024-12-10",
-    tags: ["教師版", "高一生物"]
+    tags: ["教師版", "高一數學"]
   }
 }) => {
 

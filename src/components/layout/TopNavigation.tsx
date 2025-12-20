@@ -36,7 +36,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
       <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 hidden md:block"></div>
       <div className="flex items-center gap-1.5 md:gap-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors overflow-hidden">
         <BookOpen className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
-        <span className="font-medium truncate">康軒生物 2-1：細胞的能量</span>
+        <span className="font-medium truncate">康軒數學 2-1：一元二次方程式</span>
         <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500 hidden sm:block shrink-0" />
       </div>
     </div>
@@ -52,11 +52,10 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                 setUserRole('teacher');
                 if (setIsEditMode) setIsEditMode(false);
               }}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${
-                userRole === 'teacher'
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${userRole === 'teacher'
                   ? 'bg-indigo-500 text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
+                }`}
             >
               老師
             </button>
@@ -65,11 +64,10 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                 setUserRole('student');
                 if (setIsEditMode) setIsEditMode(false);
               }}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${
-                userRole === 'student'
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${userRole === 'student'
                   ? 'bg-purple-500 text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
+                }`}
             >
               學生
             </button>
@@ -91,11 +89,10 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                   const next = !isEditMode;
                   setIsEditMode(next);
                 }}
-                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${
-                  isEditMode
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-all ${isEditMode
                     ? 'bg-emerald-500 text-white shadow-sm'
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                }`}
+                  }`}
               >
                 {isEditMode ? '💾完成' : '✏️編輯'}
               </button>
@@ -119,14 +116,13 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
       )}
       <button
         onClick={toggleSidebar}
-        className={`p-1.5 md:p-2 rounded-lg transition-colors border shrink-0 ${
-          isSidebarOpen
+        className={`p-1.5 md:p-2 rounded-lg transition-colors border shrink-0 ${isSidebarOpen
             ? 'bg-indigo-50 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700'
             : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-        }`}
+          }`}
         title="AI 側邊欄"
       >
-         {isSidebarOpen ? <PanelRightClose className="w-4 h-4 md:w-5 md:h-5" /> : <PanelRightOpen className="w-4 h-4 md:w-5 md:h-5" />}
+        {isSidebarOpen ? <PanelRightClose className="w-4 h-4 md:w-5 md:h-5" /> : <PanelRightOpen className="w-4 h-4 md:w-5 md:h-5" />}
       </button>
     </div>
   </div>

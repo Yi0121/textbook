@@ -213,7 +213,7 @@ export async function fetchEPUBFromAPI(): Promise<TextbookContent> {
 
   // 模擬 EPUB 轉換結果
   return {
-    title: '生物學教科書 (EPUB)',
+    title: '數學教科書 (EPUB)',
     author: '教育出版社',
     pages: [
       {
@@ -222,21 +222,21 @@ export async function fetchEPUBFromAPI(): Promise<TextbookContent> {
         y: 0,
         width: 900,
         height: 1200,
-        title: '第一章：細胞的基本結構',
+        title: '第一章：一元二次方程式',
         content: `
-          <h1>細胞的基本結構</h1>
-          <h2>1.1 細胞膜</h2>
-          <p>細胞膜是由<strong>磷脂雙層</strong>構成，具有選擇性通透的特性。</p>
+          <h1>一元二次方程式</h1>
+          <h2>1.1 方程式的定義</h2>
+          <p>一元二次方程式的<strong>標準式</strong>為 ax² + bx + c = 0，其中 a ≠ 0。</p>
           <ul>
-            <li>調節物質進出細胞</li>
-            <li>維持細胞內環境穩定</li>
-            <li>進行細胞識別與通訊</li>
+            <li>a 稱為二次項係數</li>
+            <li>b 稱為一次項係數</li>
+            <li>c 稱為常數項</li>
           </ul>
 
-          <h2>1.2 細胞核</h2>
-          <p>細胞核包含遺傳物質 DNA，是細胞的控制中心。</p>
+          <h2>1.2 公式解</h2>
+          <p>利用公式 x = (-b ± √(b²-4ac)) / 2a 可求得方程式的解。</p>
           <blockquote>
-            "細胞核就像細胞的大腦，掌管所有生命活動的指令。"
+            "判別式 D = b² - 4ac 決定解的性質：D > 0 有兩相異實根，D = 0 有重根，D < 0 無實根。"
           </blockquote>
         `,
         chapter: 1,
@@ -247,27 +247,23 @@ export async function fetchEPUBFromAPI(): Promise<TextbookContent> {
         y: 0,
         width: 900,
         height: 1200,
-        title: '第二章：細胞器的功能',
+        title: '第二章：二次函數',
         content: `
-          <h1>細胞器的功能</h1>
-          <h2>2.1 粒線體</h2>
-          <p>粒線體是細胞的<em>能量工廠</em>，負責產生 ATP。</p>
+          <h1>二次函數</h1>
+          <h2>2.1 函數圖形</h2>
+          <p>二次函數 y = ax² + bx + c 的圖形為<em>拋物線</em>。</p>
           <table border="1">
             <tr>
-              <th>細胞器</th>
-              <th>主要功能</th>
+              <th>係數 a</th>
+              <th>圖形開口方向</th>
             </tr>
             <tr>
-              <td>粒線體</td>
-              <td>有氧呼吸，產生 ATP</td>
+              <td>a > 0</td>
+              <td>開口向上，有最小值</td>
             </tr>
             <tr>
-              <td>葉綠體</td>
-              <td>光合作用</td>
-            </tr>
-            <tr>
-              <td>核糖體</td>
-              <td>蛋白質合成</td>
+              <td>a < 0</td>
+              <td>開口向下，有最大值</td>
             </tr>
           </table>
         `,
@@ -279,20 +275,18 @@ export async function fetchEPUBFromAPI(): Promise<TextbookContent> {
         y: 0,
         width: 900,
         height: 1200,
-        title: '第三章：細胞分裂',
+        title: '第三章：圓的方程式',
         content: `
-          <h1>細胞分裂</h1>
-          <h2>3.1 有絲分裂</h2>
-          <p>有絲分裂是體細胞進行分裂的過程，分為以下階段：</p>
+          <h1>圓的方程式</h1>
+          <h2>3.1 圓的標準式</h2>
+          <p>圓心在 (h, k)、半徑為 r 的圓方程式為：</p>
           <ol>
-            <li><strong>前期</strong>：染色體濃縮</li>
-            <li><strong>中期</strong>：染色體排列在赤道板</li>
-            <li><strong>後期</strong>：染色體分離</li>
-            <li><strong>末期</strong>：細胞質分裂</li>
+            <li><strong>標準式</strong>：(x-h)² + (y-k)² = r²</li>
+            <li><strong>一般式</strong>：x² + y² + Dx + Ey + F = 0</li>
           </ol>
 
-          <h2>3.2 減數分裂</h2>
-          <p>減數分裂產生<code>配子</code>（生殖細胞），染色體數目減半。</p>
+          <h2>3.2 圓與直線的關係</h2>
+          <p>利用<code>圓心到直線的距離</code>與半徑的比較，可判斷圓與直線的位置關係。</p>
         `,
         chapter: 3,
       },
