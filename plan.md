@@ -2,16 +2,16 @@
 
 ## 📊 實作進度總覽
 
-**最後更新**：2025-12-19
+**最後更新**：2025-12-20
 
 ### 階段完成狀況
 
 | Phase | 狀態 | 完成度 | 說明 |
 |-------|------|--------|------|
 | Phase 1 | ✅ 完成 | 100% | 基礎架構與 Mock 資料 |
-| Phase 2 | 🔄 進行中 | 40% | React Flow 整合 - 簡化版編輯器已完成 |
-| Phase 3 | ⏳ 待開始 | 0% | Dashboard 整合與 AI 推薦 |
-| Phase 4 | ⏳ 待開始 | 0% | 節點編輯與儲存 |
+| Phase 2 | ✅ 完成 | 100% | React Flow 整合 - 全部節點/邊已完成 |
+| Phase 3 | ✅ 完成 | 100% | Dashboard 整合與 AI 推薦 |
+| Phase 4 | ✅ 完成 | 100% | 節點編輯、儲存、Undo/Redo、快捷鍵 |
 | Phase 5 | ⏳ 待開始 | 0% | 進階功能與優化 |
 
 ### Phase 1 ✅ 完成檔案清單
@@ -31,35 +31,91 @@
 - ✅ Mock AI 分析回傳正確結構
 - ✅ 測試組件成功顯示 Context 狀態
 
-### Phase 2 🔄 進行中檔案清單
+### Phase 2 ✅ 完成檔案清單
 
 **已完成**：
 1. ✅ React Flow 安裝 (`@xyflow/react` v12)
-2. ✅ `src/components/features/learning-path/nodes/ChapterNode.tsx` - 章節節點組件
-3. ✅ `src/components/features/learning-path/WorkflowEditor.tsx` - 簡化版流程編輯器
-
-**未完成**：
-- ⏳ `src/components/features/learning-path/LearningPathWorkflow.tsx` - 容器組件
-- ⏳ `src/components/features/learning-path/NodePalette.tsx` - 節點拖曳面板
-- ⏳ `src/components/features/learning-path/WorkflowSidebar.tsx` - 側邊欄
-- ⏳ `src/components/features/learning-path/nodes/ExerciseNode.tsx` - 練習題節點
-- ⏳ `src/components/features/learning-path/nodes/VideoNode.tsx` - 影片節點
-- ⏳ `src/components/features/learning-path/nodes/AITutorNode.tsx` - AI 家教節點
-- ⏳ `src/components/features/learning-path/nodes/QuizNode.tsx` - 測驗節點
-- ⏳ `src/components/features/learning-path/nodes/CollaborationNode.tsx` - 協作節點
-- ⏳ `src/components/features/learning-path/edges/` - 自定義邊組件 (3 種)
-
-**目前狀態**：
-- WorkflowEditor 已建立，可在瀏覽器中顯示 AI 生成的學習路徑
-- 整合 React Flow 的 Background、Controls、MiniMap
-- 支援平移 (Pan)、縮放 (Zoom)、節點連接
-- 目前僅支援 ChapterNode，其他節點類型待實作
+2. ✅ `src/components/features/learning-path/WorkflowEditor.tsx` - 流程編輯器
+3. ✅ `src/components/features/learning-path/NodePalette.tsx` - 節點拖曳面板
+4. ✅ `src/components/features/learning-path/nodes/BaseNodeWrapper.tsx` - 節點基礎包裝器
+5. ✅ `src/components/features/learning-path/nodes/ChapterNode.tsx` - 章節節點
+6. ✅ `src/components/features/learning-path/nodes/ExerciseNode.tsx` - 練習題節點
+7. ✅ `src/components/features/learning-path/nodes/VideoNode.tsx` - 影片節點
+8. ✅ `src/components/features/learning-path/nodes/AITutorNode.tsx` - AI 家教節點
+9. ✅ `src/components/features/learning-path/nodes/QuizNode.tsx` - 測驗節點
+10. ✅ `src/components/features/learning-path/nodes/CollaborationNode.tsx` - 協作節點
+11. ✅ `src/components/features/learning-path/edges/OptionalEdge.tsx` - 選修邊
+12. ✅ `src/components/features/learning-path/edges/ConditionalEdge.tsx` - 條件邊
+13. ✅ `src/utils/layout.ts` - Dagre 自動佈局工具
 
 **驗證標準進度**：
-- ⏳ 可從 NodePalette 拖曳新增節點 (待實作)
-- ✅ 可連接節點建立邊 (已支援)
-- ⏳ 可刪除節點和邊 (待實作)
-- ✅ 節點狀態正確反映在樣式上 (已支援)
+- ✅ 可從 NodePalette 拖曳新增節點
+- ✅ 可連接節點建立邊
+- ✅ 可刪除節點和邊
+- ✅ 節點狀態正確反映在樣式上
+- ✅ 自動佈局功能正常運作
+
+### Phase 3 ✅ 完成檔案清單
+
+**已完成**：
+1. ✅ `src/components/features/dashboard/LearningPathTab.tsx` - Dashboard AI 學習路徑分頁
+2. ✅ `src/components/features/Dashboard.tsx` - 已整合「AI 學習路徑」Tab
+
+**驗證標準進度**：
+- ✅ 點擊「AI 分析」正確生成流程圖
+- ✅ AI 推薦面板顯示正確
+- ✅ 學生清單與選擇功能正常
+
+### Phase 4 ✅ 完成檔案清單
+
+**已完成**：
+1. ✅ `src/components/features/learning-path/NodeDetailModal.tsx` - 節點屬性編輯面板
+2. ✅ `src/hooks/useLearningPathActions.ts` - 學習路徑操作 Hook
+3. ✅ `src/utils/learningPathStorage.ts` - LocalStorage 儲存
+4. ✅ Undo/Redo 復原重做功能
+5. ✅ 手動儲存功能（儲存至 LocalStorage）
+6. ✅ 自動儲存功能（Debounce 2 秒）
+7. ✅ 鍵盤快捷鍵（Ctrl+Z/Y/S）
+
+### Bug 修復記錄
+
+- ✅ 2025-12-20: 修復「清空畫布」未同步 Context 的問題
+- ✅ 2025-12-20: 修復 AI 推薦路徑連續按多次產生無數節點問題
+- ✅ 2025-12-20: 修復 Undo/Redo 不更新 UI 的問題（使用展開運算符創建新陣列）
+
+### 內容更新記錄
+
+- ✅ 2025-12-20: 將所有生物內容替換為數學內容（一元二次方程式、判別式、二次函數等）
+- ✅ 2025-12-20: 修改 Workflow 排版方向為水平（左→右）
+- ✅ 2025-12-20: 移除學生選擇功能，改為全班共用路徑
+
+---
+
+## 課堂流程工作流架構設計 (未來規劃)
+
+### 核心模組
+
+| 模組 | 工具/AI | 說明 |
+|------|---------|------|
+| **課程教材** | AI Agent | 內容生成、教材檢測 |
+| **教學** | 識別 AI + GeoGebra | 行為識別 + 數學互動 |
+| **學習分析** | LA AI | Learning Analytics |
+| **儀表板** | Dashboard | 數據視覺化、進度追蹤 |
+| **評估 SRL** | MSRL AI | 自主學習評估 |
+
+### 與現有系統整合
+
+| 現有元件 | 對應模組 |
+|----------|----------|
+| `Dashboard.tsx` | 儀表板模組 |
+| `WorkflowEditor` | 工作流編輯器 |
+| 學習路徑節點 | 各模組內部元件 |
+
+### 實作路線
+
+- **Phase A**: 模組節點 UI (1 週) - 建立 ModuleNode 自定義節點
+- **Phase B**: 工作流連接 (1 週) - 模組間連接邏輯
+- **Phase C**: AI 整合 (依模組) - 各模組 AI 服務對接
 
 ---
 

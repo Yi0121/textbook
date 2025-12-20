@@ -55,12 +55,12 @@ export const BaseNodeWrapper = memo(({
       w-[250px] bg-white rounded-lg shadow-sm border-2 transition-all duration-200
       ${getBorderColor()}
     `}>
-            {/* Input Handle */}
+            {/* Input Handle - 左側 */}
             {showTargetHandle && (
                 <Handle
                     type="target"
-                    position={Position.Top}
-                    className="w-3 h-3 !bg-gray-400"
+                    position={Position.Left}
+                    className="w-4 h-4 !bg-indigo-400 hover:!bg-indigo-500 !border-2 !border-white"
                 />
             )}
 
@@ -80,12 +80,12 @@ export const BaseNodeWrapper = memo(({
                 {children}
             </div>
 
-            {/* Output Handle */}
+            {/* Output Handle - 右側 */}
             {showSourceHandle && (
                 <Handle
                     type="source"
-                    position={Position.Bottom}
-                    className="w-3 h-3 !bg-gray-400"
+                    position={Position.Right}
+                    className="w-4 h-4 !bg-indigo-400 hover:!bg-indigo-500 !border-2 !border-white"
                 />
             )}
         </div>

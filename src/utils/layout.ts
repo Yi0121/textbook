@@ -16,7 +16,7 @@ const NODE_HEIGHT = 150; // 增加高度容納更多內容
 export const getLayoutedElements = (
     nodes: Node[],
     edges: Edge[],
-    direction = 'TB'
+    direction = 'LR'  // 預設水平排版（左→右）
 ) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));

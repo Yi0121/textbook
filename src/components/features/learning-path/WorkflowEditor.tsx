@@ -29,7 +29,7 @@ import {
   applyNodeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Sparkles, Trash2, RotateCcw } from 'lucide-react';
+import { Sparkles, Trash2, RotateCcw, Undo2, Redo2, Save } from 'lucide-react';
 import { ChapterNode } from './nodes/ChapterNode';
 import { ExerciseNode } from './nodes/ExerciseNode';
 import { QuizNode } from './nodes/QuizNode';
@@ -40,6 +40,7 @@ import { NodePalette } from './NodePalette';
 import { useLearningPath } from '../../../context/LearningPathContext';
 import { analyzeStudentAndGeneratePath } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
+import { savePath } from '../../../utils/learningPathStorage';
 
 import { OptionalEdge } from './edges/OptionalEdge';
 import { ConditionalEdge } from './edges/ConditionalEdge';
@@ -105,6 +106,9 @@ const FlowEditorInternal = () => {
   const handleDeleteNode = (nodeId: string) => {
     if (!state.currentStudentId) return;
 
+    // 0. 先記錄歷史
+    saveToHistory();
+
     // 1. 更新 UI
     setNodes((nds) => nds.filter((n) => n.id !== nodeId));
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
@@ -127,6 +131,155 @@ const FlowEditorInternal = () => {
   // React Flow 內部狀態
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // ==================== Undo/Redo 歷史記錄 ====================
+  interface HistoryEntry {
+    nodes: Node[];
+    edges: Edge[];
+  }
+
+  const historyRef = useRef<HistoryEntry[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const isUndoRedoRef = useRef<boolean>(false);
+
+  // 儲存當前狀態到歷史記錄
+  const saveToHistory = useCallback(() => {
+    if (isUndoRedoRef.current) return;
+
+    // 如果在歷史中間進行了新操作，刪除後面的記錄
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    }
+
+    historyRef.current.push({
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    });
+
+    // 限制歷史記錄大小（最多 30 步）
+    if (historyRef.current.length > 30) {
+      historyRef.current.shift();
+    } else {
+      historyIndexRef.current++;
+    }
+    console.log(`📝 歷史記錄 (${historyIndexRef.current + 1}/${historyRef.current.length})`);
+  }, [nodes, edges]);
+
+  // 復原 (Undo)
+  const handleUndo = useCallback(() => {
+    if (historyIndexRef.current <= 0) {
+      console.log('無法復原：已到最早記錄');
+      return;
+    }
+
+    isUndoRedoRef.current = true;
+    historyIndexRef.current--;
+
+    const entry = historyRef.current[historyIndexRef.current];
+    // 使用展開運算符創建新陣列，確保 React Flow 偵測到變化
+    setNodes([...entry.nodes]);
+    setEdges([...entry.edges]);
+
+    console.log(`✓ 復原成功 (${historyIndexRef.current + 1}/${historyRef.current.length})`);
+
+    setTimeout(() => {
+      isUndoRedoRef.current = false;
+    }, 100);
+  }, [setNodes, setEdges]);
+
+  // 重做 (Redo)
+  const handleRedo = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) {
+      console.log('無法重做：已到最新記錄');
+      return;
+    }
+
+    isUndoRedoRef.current = true;
+    historyIndexRef.current++;
+
+    const entry = historyRef.current[historyIndexRef.current];
+    // 使用展開運算符創建新陣列，確保 React Flow 偵測到變化
+    setNodes([...entry.nodes]);
+    setEdges([...entry.edges]);
+
+    console.log(`✓ 重做成功 (${historyIndexRef.current + 1}/${historyRef.current.length})`);
+
+    setTimeout(() => {
+      isUndoRedoRef.current = false;
+    }, 100);
+  }, [setNodes, setEdges]);
+
+  // ==================== 鍵盤快捷鍵 ====================
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 檢查是否在輸入框內，若是則不處理快捷鍵
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const ctrlOrMeta = isMac ? e.metaKey : e.ctrlKey;
+
+      // Ctrl+Z / Cmd+Z → Undo
+      if (ctrlOrMeta && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Ctrl+Y / Cmd+Y 或 Ctrl+Shift+Z → Redo
+      if (ctrlOrMeta && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      // Ctrl+S / Cmd+S → Save
+      if (ctrlOrMeta && e.key === 's') {
+        e.preventDefault();
+        if (currentPath) {
+          savePath(currentPath);
+          console.log('✓ 快捷鍵儲存成功 (Ctrl+S)');
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo, currentPath]);
+
+  // ==================== 自動儲存 (Debounce) ====================
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSavedRef = useRef<string>('');
+
+  useEffect(() => {
+    if (!currentPath || nodes.length === 0) return;
+
+    // 計算當前狀態的 hash（簡化版：使用 JSON 字串）
+    const currentStateHash = JSON.stringify({ nodes, edges });
+
+    // 若狀態沒變，不觸發自動儲存
+    if (currentStateHash === lastAutoSavedRef.current) return;
+
+    // 清除之前的 timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // 設定 2 秒 debounce
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      savePath(currentPath);
+      lastAutoSavedRef.current = currentStateHash;
+      console.log('💾 自動儲存完成');
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [nodes, edges, currentPath]);
 
   // 追蹤最後一次同步的時間戳，避免重複更新
   const lastSyncedRef = useRef<number>(0);
@@ -154,7 +307,8 @@ const FlowEditorInternal = () => {
 
     // 2. 外部更新（如 AI 生成）導致的變更：同步回 Local State
     // 若 Context 的最後修改時間比我們上次同步的時間新，則更新
-    if (currentPath.lastModified > lastSyncedRef.current) {
+    // 但如果正在進行 Undo/Redo，則跳過同步
+    if (currentPath.lastModified > lastSyncedRef.current && !isUndoRedoRef.current) {
       setNodes(currentPath.nodes);
       setEdges(currentPath.edges);
       lastSyncedRef.current = currentPath.lastModified;
@@ -168,6 +322,14 @@ const FlowEditorInternal = () => {
       setNodes((nds) => applyNodeChanges(changes, nds));
     },
     [setNodes]
+  );
+
+  // 拖曳開始時先儲存狀態
+  const onNodeDragStart = useCallback(
+    () => {
+      saveToHistory(); // 拖曳前先記錄
+    },
+    [saveToHistory]
   );
 
   // 拖曳結束同步位置
@@ -186,6 +348,7 @@ const FlowEditorInternal = () => {
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!state.currentStudentId) return;
+      saveToHistory(); // 連接前先記錄
       setEdges((eds) => addEdge(connection, eds));
       dispatch({
         type: 'ADD_EDGE',
@@ -200,7 +363,7 @@ const FlowEditorInternal = () => {
         },
       });
     },
-    [setEdges, dispatch, state.currentStudentId]
+    [setEdges, dispatch, state.currentStudentId, saveToHistory]
   );
 
   // ==================== Drag & Drop 新增節點 ====================
@@ -250,62 +413,62 @@ const FlowEditorInternal = () => {
   const handleManualAI = async () => {
     if (!state.currentStudentId) return;
 
-    // 假裝取得記錄（真實情況應從 Context 或 API 獲取）
-    const dummyRecord = state.learningRecords.get(state.currentStudentId);
-    if (!dummyRecord) {
-      alert("請先選擇有記錄的學生");
-      return;
+    // 取得記錄，若無則使用預設全班弱點
+    let record = state.learningRecords.get(state.currentStudentId);
+
+    // 全班模式：使用預設的數學弱點資料
+    if (!record) {
+      record = {
+        studentId: state.currentStudentId,
+        studentName: '全班',
+        answers: [],
+        totalQuestions: 0,
+        correctCount: 0,
+        averageScore: 65,
+        averageTimeSpent: 0,
+        weakKnowledgeNodes: [
+          { nodeId: 'kn-quadratic-formula', nodeName: '一元二次方程式公式解', errorRate: 0.6, relatedQuestions: [] },
+          { nodeId: 'kn-discriminant', nodeName: '判別式應用', errorRate: 0.5, relatedQuestions: [] },
+          { nodeId: 'kn-factoring', nodeName: '因式分解', errorRate: 0.4, relatedQuestions: [] },
+        ],
+        lastUpdated: Date.now(),
+      };
     }
+
+    // 在生成前先儲存當前狀態（這樣才能 undo 回到生成前的狀態）
+    saveToHistory();
 
     dispatch({ type: 'SET_GENERATING', payload: true });
     try {
-      const { nodes: newNodes, edges: newEdges } = await analyzeStudentAndGeneratePath(dummyRecord);
+      const { nodes: newNodes, edges: newEdges } = await analyzeStudentAndGeneratePath(record);
 
-      // 1. 先計算 Layout (確保寫入 Context 的是有座標的)
-      // 注意：這裡我們需要載入目前的節點一起排版，還是只排新的？
-      // 策略：將新節點加入現有節點後，做全域排版
+      // 1. 先計算 Layout (新節點獨立排版，取代現有節點)
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        [...nodes, ...newNodes],
-        [...edges, ...newEdges]
+        newNodes,  // 只用新節點，不疊加現有節點
+        newEdges
       );
 
-      // 2. 將排版後的結果「取代」或是「更新」回 Context
-      // 因為我們做了全域排版，所以所有節點位置都可能變動
-      // 這邊我們需要一個 Batch Update 或者逐一更新
-      // 簡單作法：先加入新節點，再更新所有節點位置 (較多 Action)
-      // 優化作法：直接更新 Local State (讓使用者看到)，然後非同步寫入 Context (保存)
+      // 2. 清空現有節點並寫入新節點到 Context
+      // 先清空
+      const path = state.studentPaths.get(state.currentStudentId!);
+      if (path) {
+        path.nodes.forEach(node => {
+          dispatch({ type: 'DELETE_NODE', payload: { studentId: state.currentStudentId!, nodeId: node.id } });
+        });
+      }
 
-      // 這裡採用：寫入 Context 為主，讓 useEffect 同步回來 (維持單一數據源原則)
-      // 但因為我們改變了舊節點位置，需要發送 UPDATE_NODE_POSITION * N + ADD_NODE * M
-      // 為了簡化，我們發送 ADD_NODE 給新的，並期待 Context 接受帶有座標的 Node
-
-      // 找出哪些是新節點 (在新排版結果中，ID 存在於 newNodes 的)
-      const newNodesSet = new Set(newNodes.map(n => n.id));
-
-      // 分兩步：
-      // A. 新增節點 (帶有排版後的座標)
-      layoutedNodes.filter(n => newNodesSet.has(n.id)).forEach(n => {
+      // 再新增
+      layoutedNodes.forEach(n => {
         dispatch({ type: 'ADD_NODE', payload: { studentId: state.currentStudentId!, node: n as any } });
       });
-      newEdges.forEach(e => dispatch({ type: 'ADD_EDGE', payload: { studentId: state.currentStudentId!, edge: e } }));
+      layoutedEdges.forEach(e => dispatch({ type: 'ADD_EDGE', payload: { studentId: state.currentStudentId!, edge: e as any } }));
 
-      // B. 更新舊節點位置 (如果有變動)
-      layoutedNodes.filter(n => !newNodesSet.has(n.id)).forEach(n => {
-        dispatch({
-          type: 'UPDATE_NODE_POSITION',
-          payload: { studentId: state.currentStudentId!, nodeId: n.id, position: n.position }
-        });
-      });
-      // C. 立即更新 Local State 以確保 UI 即時反應 (不用等 Context Round-trip)
+      // 3. 立即更新 Local State
       setNodes(layoutedNodes);
-      setEdges(newEdges); // 注意：這裡 edges 應該是用包含了新舊的 edges 還是? 
-      // analyzeStudentAndGeneratePath 回傳的是完整的 newEdges 嗎? 
-      // 不，是 "新的 edge"。
-      // 我們應該使用 layoutedEdges (如果包含全部) 或 [...edges, ...newEdges]
-
-      // 因為 getLayoutedElements 剛才傳入的是 [...nodes, ...newNodes] 和 [...edges, ...newEdges]
-      // 所以 layoutedEdges 應該包含全部邊
       setEdges(layoutedEdges);
+
+      // 4. 儲存到歷史記錄（供 Undo 使用）
+      setTimeout(() => saveToHistory(), 200);
 
     } catch (error) {
       console.error("AI Generation Error:", error);
@@ -332,6 +495,7 @@ const FlowEditorInternal = () => {
               onNodesChange={onNodesChangeHandler}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onNodeDragStart={onNodeDragStart}
               onNodeDragStop={onNodeDragStop}
               onNodeClick={onNodeClick} // [NEW]
               onDragOver={onDragOver}
@@ -342,17 +506,15 @@ const FlowEditorInternal = () => {
               maxZoom={2}
             >
               <Background color="#e5e7eb" gap={16} />
-              <Controls />
+              <Controls position="bottom-left" />
               <MiniMap
                 nodeColor={(node) => node.data.status === 'completed' ? '#10b981' : '#e5e7eb'}
                 maskColor="rgba(0, 0, 0, 0.1)"
               />
 
-              {/* 工具列 */}
-              <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                <div className="bg-white p-2 rounded-lg shadow-md border border-gray-200 flex flex-col gap-1">
-                  <span className="text-xs font-bold text-gray-500 px-2">ACTIONS</span>
-
+              {/* 頂部工具列 - 水平排版 */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-200 flex items-center gap-2">
                   <button
                     onClick={handleManualAI}
                     disabled={state.isGenerating}
@@ -362,32 +524,58 @@ const FlowEditorInternal = () => {
                     {state.isGenerating ? '生成中...' : 'AI 推薦路徑'}
                   </button>
 
+                  <div className="w-px h-6 bg-gray-200" />
+
                   <button
                     onClick={() => {
                       const { nodes: lNodes, edges: lEdges } = getLayoutedElements(nodes, edges);
                       setNodes(lNodes);
                       setEdges(lEdges);
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    title="自動排版"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    自動排版
                   </button>
 
-                  <div className="h-px bg-gray-200 my-1" />
+                  <div className="w-px h-6 bg-gray-200" />
+
+                  <button
+                    onClick={() => handleUndo()}
+                    className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    title="復原 (Ctrl+Z)"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleRedo()}
+                    className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    title="重做 (Ctrl+Y)"
+                  >
+                    <Redo2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (currentPath) {
+                        savePath(currentPath);
+                        alert('已儲存到瀏覽器 LocalStorage！');
+                      }
+                    }}
+                    className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-green-600 bg-white border border-gray-200 rounded hover:bg-green-50 transition-colors"
+                    title="儲存 (Ctrl+S)"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-px h-6 bg-gray-200" />
 
                   <button
                     onClick={() => {
                       if (!state.currentStudentId) return;
-
-                      // 1. 清空 Local State
                       setNodes([]);
                       setEdges([]);
-
-                      // 2. 同步清空 Context 中該學生的所有節點和邊
                       const path = state.studentPaths.get(state.currentStudentId);
                       if (path) {
-                        // 刪除所有節點（這會連帶刪除相關的邊）
                         path.nodes.forEach(node => {
                           dispatch({
                             type: 'DELETE_NODE',
@@ -395,14 +583,12 @@ const FlowEditorInternal = () => {
                           });
                         });
                       }
-
-                      // 3. 更新 lastSyncedRef 避免重新同步
                       lastSyncedRef.current = Date.now();
                     }}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-transparent rounded hover:bg-red-50 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded hover:bg-red-50 transition-colors"
+                    title="清空畫布"
                   >
                     <Trash2 className="w-4 h-4" />
-                    清空畫布
                   </button>
                 </div>
               </div>
