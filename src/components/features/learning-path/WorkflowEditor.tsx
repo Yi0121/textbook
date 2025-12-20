@@ -378,9 +378,26 @@ const FlowEditorInternal = () => {
 
                   <button
                     onClick={() => {
+                      if (!state.currentStudentId) return;
+
+                      // 1. 清空 Local State
                       setNodes([]);
                       setEdges([]);
-                      // 同步清除 Context 邏輯待補
+
+                      // 2. 同步清空 Context 中該學生的所有節點和邊
+                      const path = state.studentPaths.get(state.currentStudentId);
+                      if (path) {
+                        // 刪除所有節點（這會連帶刪除相關的邊）
+                        path.nodes.forEach(node => {
+                          dispatch({
+                            type: 'DELETE_NODE',
+                            payload: { studentId: state.currentStudentId!, nodeId: node.id }
+                          });
+                        });
+                      }
+
+                      // 3. 更新 lastSyncedRef 避免重新同步
+                      lastSyncedRef.current = Date.now();
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-transparent rounded hover:bg-red-50 transition-colors"
                   >
