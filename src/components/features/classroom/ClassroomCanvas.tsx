@@ -2,12 +2,12 @@
 import React, { useRef, useEffect } from 'react';
 import { useEditor } from '../../../context/EditorContext';
 import { useContent, useCurrentChapterContent } from '../../../context/ContentContext';
-import { useUI } from '../../../context/UIContext';
+
 import { useSelectionActions } from '../../../hooks/useSelectionActions';
 import { useCanvasInteraction } from '../../../hooks/useCanvasInteraction';
 import { useAIActions } from '../../../hooks/useAIActions';
 import { useViewportZoom } from '../../../hooks/useViewportZoom';
-import { useWhiteboardControl } from '../../../hooks/useWhiteboardControl';
+
 
 import TextbookEditor from '../../canvas/TextbookEditor';
 import DrawingLayer from '../../canvas/DrawingLayer';
@@ -31,7 +31,7 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
     const { state: editorState, dispatch: editorDispatch } = useEditor();
     const { state: contentState, dispatch: contentDispatch } = useContent();
     const currentContent = useCurrentChapterContent();
-    const ui = useUI();
+
 
     // ==================== Viewport Adapter ====================
     const viewport = editorState.viewport;
@@ -75,6 +75,15 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
 
     const aiActions = useAIActions({ viewport });
     useViewportZoom({ containerRef, setViewport });
+
+    // ==================== Effects ====================
+    // 模擬載入 (Simulated Loading)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            contentDispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [contentDispatch]);
 
     // ==================== Helper ====================
     const isEditMode = editorState.isEditMode;

@@ -47,7 +47,7 @@ export default function ClassroomPage() {
     // ==================== Context ====================
     const { userRole } = useOutletContext<OutletContextType>();
     const { state: editorState, dispatch: editorDispatch } = useEditor();
-    const { state: contentState } = useContent();
+    const { state: contentState, dispatch: contentDispatch } = useContent();
     const ui = useUI();
 
     // ==================== Local State ====================
