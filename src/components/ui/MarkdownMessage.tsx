@@ -13,10 +13,10 @@ const MarkdownMessage: React.FC<MarkdownMessageProps> = ({ content, role }) => {
   return (
     <div
       className={`
-        p-3 rounded-2xl text-sm leading-relaxed
+        p-3 rounded-2xl text-sm leading-relaxed inline-block
         ${role === 'user'
-          ? 'bg-gray-800 text-white rounded-tr-none max-w-[85%]'
-          : 'bg-gray-100 text-gray-700 rounded-tl-none max-w-[85%]'
+          ? 'bg-gray-800 text-white rounded-tr-none'
+          : 'bg-gray-100 text-gray-700 rounded-tl-none'
         }
         prose prose-sm max-w-none
         ${role === 'ai' ? 'prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900' : 'prose-headings:text-white prose-p:text-white prose-strong:text-white'}

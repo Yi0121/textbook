@@ -132,7 +132,7 @@ export default function HomePage() {
                             </div>
 
                             {/* 訊息內容 */}
-                            <div className={`flex-1 max-w-[80%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+                            <div className={`max-w-[75%] ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
                                 <MarkdownMessage
                                     content={msg.content}
                                     role={msg.role === 'user' ? 'user' : 'ai'}
