@@ -7,7 +7,8 @@ import {
   MessageCircle,
   UploadCloud,
   ShieldAlert,
-  Bot
+  Bot,
+  Sparkles,
 } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
 
@@ -18,16 +19,17 @@ import {
   MaterialLibraryPanel,
   ReviewPanel
 } from '../panels';
+import TeacherAgentPanel from '../features/TeacherAgentPanel';
 
 interface RightSidePanelProps {
   isOpen: boolean;
   onClose: () => void;
   selectedText: string;
   userRole: UserRole;
-  initialTab?: 'context' | 'chat';
+  initialTab?: 'context' | 'chat' | 'agent';
 }
 
-type TabType = 'context' | 'chat' | 'upload' | 'review';
+type TabType = 'context' | 'chat' | 'upload' | 'review' | 'agent';
 
 const RightSidePanel: React.FC<RightSidePanelProps> = ({
   isOpen,
@@ -36,22 +38,32 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
   userRole,
   initialTab = 'context'
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('context');
+  // 教師預設顯示 AI 助手，學生預設顯示內容分析
+  const getDefaultTab = (): TabType => {
+    if (userRole === 'teacher') return 'agent';
+    return 'context';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
 
   // 當側邊欄打開時，設定預設分頁
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab);
+      // 如果有指定 initialTab 就用，否則用角色預設
+      if (initialTab) {
+        setActiveTab(initialTab);
+      } else {
+        setActiveTab(getDefaultTab());
+      }
     }
-  }, [isOpen, initialTab]);
+  }, [isOpen, initialTab, userRole]);
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
 
@@ -65,17 +77,15 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
       >
         {/* Header */}
         <div
-          className={`p-4 border-b flex items-center justify-between ${
-            userRole === 'teacher' ? 'bg-orange-50' : 'bg-indigo-50'
-          }`}
+          className={`p-4 border-b flex items-center justify-between ${userRole === 'teacher' ? 'bg-orange-50' : 'bg-indigo-50'
+            }`}
         >
           <div className="flex items-center gap-3">
             <div
-              className={`p-2 rounded-lg ${
-                userRole === 'teacher'
-                  ? 'bg-orange-100 text-orange-600'
-                  : 'bg-indigo-100 text-indigo-600'
-              }`}
+              className={`p-2 rounded-lg ${userRole === 'teacher'
+                ? 'bg-orange-100 text-orange-600'
+                : 'bg-indigo-100 text-indigo-600'
+                }`}
             >
               {userRole === 'teacher' ? (
                 <GraduationCap className="w-6 h-6" />
@@ -85,9 +95,8 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
             </div>
             <div>
               <h2
-                className={`font-bold text-lg ${
-                  userRole === 'teacher' ? 'text-orange-900' : 'text-indigo-900'
-                }`}
+                className={`font-bold text-lg ${userRole === 'teacher' ? 'text-orange-900' : 'text-indigo-900'
+                  }`}
               >
                 {userRole === 'teacher' ? '教學中控台' : 'AI 學習助手'}
               </h2>
@@ -104,49 +113,66 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
 
         {/* Tabs Navigation */}
         <div className="flex border-b border-gray-100 bg-white">
-          <button
-            onClick={() => setActiveTab('context')}
-            className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${
-              activeTab === 'context'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" /> 內容分析
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${
-              activeTab === 'chat'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <MessageCircle className="w-4 h-4" /> AI 對話
-          </button>
-
-          {/* 老師專用 Tabs */}
-          {userRole === 'teacher' && (
+          {/* 教師模式 Tabs */}
+          {userRole === 'teacher' ? (
             <>
               <button
+                onClick={() => setActiveTab('agent')}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'agent'
+                  ? 'border-indigo-500 text-indigo-600 bg-indigo-50'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <Sparkles className="w-4 h-4" /> AI 助教
+              </button>
+              <button
+                onClick={() => setActiveTab('context')}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'context'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <BookOpen className="w-4 h-4" /> 內容分析
+              </button>
+              <button
                 onClick={() => setActiveTab('upload')}
-                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${
-                  activeTab === 'upload'
-                    ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
-                }`}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'upload'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
               >
                 <UploadCloud className="w-4 h-4" /> 教材庫
               </button>
               <button
                 onClick={() => setActiveTab('review')}
-                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${
-                  activeTab === 'review'
-                    ? 'border-red-500 text-red-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600'
-                }`}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'review'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
               >
                 <ShieldAlert className="w-4 h-4" /> 審查
+              </button>
+            </>
+          ) : (
+            /* 學生模式 Tabs */
+            <>
+              <button
+                onClick={() => setActiveTab('context')}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'context'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <BookOpen className="w-4 h-4" /> 內容分析
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`flex-1 py-3 text-xs font-bold flex flex-col items-center gap-1 border-b-2 transition-colors ${activeTab === 'chat'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                <MessageCircle className="w-4 h-4" /> AI 對話
               </button>
             </>
           )}
@@ -154,6 +180,7 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white scrollbar-thin">
+          {activeTab === 'agent' && <TeacherAgentPanel onClose={onClose} />}
           {activeTab === 'context' && (
             <ContextAnalysisPanel selectedText={selectedText} userRole={userRole} />
           )}
@@ -167,3 +194,5 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
 };
 
 export default RightSidePanel;
+
+
