@@ -26,7 +26,7 @@ export interface ChatMessage {
     };
 }
 
-// 預設學生即時記錄（模擬）
+// 預設學生即時記錄（模擬 - 包含典型的數學弱點）
 const DEFAULT_STUDENT_RECORD: StudentLearningRecord = {
     studentId: 'class-default',
     studentName: '全班',
@@ -35,7 +35,11 @@ const DEFAULT_STUDENT_RECORD: StudentLearningRecord = {
     correctCount: 0,
     averageScore: 65,
     averageTimeSpent: 0,
-    weakKnowledgeNodes: [],
+    weakKnowledgeNodes: [
+        { nodeId: 'kn-quadratic-formula', nodeName: '一元二次方程式公式解', errorRate: 0.6, relatedQuestions: ['q-1', 'q-2'] },
+        { nodeId: 'kn-discriminant', nodeName: '判別式應用', errorRate: 0.5, relatedQuestions: ['q-3'] },
+        { nodeId: 'kn-factoring', nodeName: '因式分解', errorRate: 0.4, relatedQuestions: ['q-4', 'q-5'] },
+    ],
     lastUpdated: Date.now(),
 };
 
