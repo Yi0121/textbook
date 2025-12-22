@@ -127,7 +127,7 @@ export function useTeacherAIChat() {
                     // 呼叫服務
                     const result = await analyzeStudentAndGeneratePath(record);
 
-                    // 更新 Context
+                    // 更新 Context（先儲存但不跳轉）
                     lpDispatch({
                         type: 'SET_NODES_AND_EDGES',
                         payload: { studentId, nodes: result.nodes, edges: result.edges }
@@ -140,10 +140,10 @@ export function useTeacherAIChat() {
                         });
                     }
 
-                    // 移除思考中，加入完成訊息
+                    // 移除思考中，加入確認訊息（不自動跳轉）
                     setMessages(prev => prev.filter(m => m.id !== thinkingId));
                     addAssistantMessage(
-                        `✅ AI 學習路徑已生成！\n\n📊 分析結果：\n${result.recommendation?.summary || '已根據學生弱點生成個性化學習路徑'}\n\n🎯 重點加強：\n${result.recommendation?.focusAreas?.map(a => `• ${a}`).join('\n') || '• 核心概念複習'}`,
+                        `✅ AI 學習路徑分析完成！\n\n📊 **分析結果**：\n${result.recommendation?.summary || '已根據學生弱點生成個性化學習路徑'}\n\n🎯 **重點加強區域**：\n${result.recommendation?.focusAreas?.map(a => `• ${a}`).join('\n') || '• 核心概念複習'}\n\n📐 **預估學習時間**：${result.recommendation?.estimatedDuration || 30} 分鐘\n\n---\n\n👉 **確認後請點擊「查看學習路徑」進入詳細規劃**`,
                         { type: 'navigate', target: 'learning-path', data: result }
                     );
                     break;

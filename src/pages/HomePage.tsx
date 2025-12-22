@@ -88,16 +88,8 @@ export default function HomePage() {
         }
     }, [isTeacher, messages.length, setMessages]);
 
-    // 處理跳轉動作
-    useEffect(() => {
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg?.action?.type === 'navigate' && lastMsg.action.target) {
-            // 如果是 learning-path，跳轉並帶參數
-            if (lastMsg.action.target === 'learning-path') {
-                navigate('/dashboard?tab=learning-path');
-            }
-        }
-    }, [messages, navigate]);
+    // 移除自動跳轉：改為顯示確認按鈕
+    // (原本的自動跳轉已移除，現在由按鈕觸發)
 
     const handleSend = () => {
         if (!input.trim() || isProcessing) return;
@@ -138,6 +130,17 @@ export default function HomePage() {
                                     role={msg.role === 'user' ? 'user' : 'ai'}
                                     userRole={userRole === 'all' ? 'student' : userRole}
                                 />
+
+                                {/* 確認按鈕：學習路徑導航 */}
+                                {msg.action?.type === 'navigate' && msg.action.target === 'learning-path' && (
+                                    <button
+                                        onClick={() => navigate('/dashboard?tab=learning-path')}
+                                        className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
+                                    >
+                                        <BarChart3 className="w-4 h-4" />
+                                        查看學習路徑
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
