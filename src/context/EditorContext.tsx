@@ -28,6 +28,9 @@ export interface EditorState {
 
   // 特殊模式
   isStudentStage: boolean;
+
+  // 視圖狀態 (持久化)
+  viewport: { x: number; y: number; scale: number };
 }
 
 // ==================== Actions ====================
@@ -53,7 +56,8 @@ export type EditorAction =
   | { type: 'SET_SELECTED_TEXT'; payload: string }
   | { type: 'SET_LASER_PATH'; payload: Point[] }
   | { type: 'ADD_LASER_POINT'; payload: Point }
-  | { type: 'TOGGLE_STUDENT_STAGE' };
+  | { type: 'TOGGLE_STUDENT_STAGE' }
+  | { type: 'SET_VIEWPORT'; payload: { x: number; y: number; scale: number } };
 
 // ==================== Initial State ====================
 export const initialEditorState: EditorState = {
@@ -71,6 +75,7 @@ export const initialEditorState: EditorState = {
   selectionMenuPos: null,
   selectedText: '粒線體結構與功能',
   isStudentStage: false,
+  viewport: { x: 0, y: 0, scale: 1 },
 };
 
 // ==================== Reducer ====================
@@ -101,6 +106,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'SET_LASER_PATH': return { ...state, laserPath: action.payload };
     case 'ADD_LASER_POINT': return { ...state, laserPath: [...state.laserPath, action.payload] };
     case 'TOGGLE_STUDENT_STAGE': return { ...state, isStudentStage: !state.isStudentStage };
+    case 'SET_VIEWPORT': return { ...state, viewport: action.payload };
     default: return state;
   }
 }
