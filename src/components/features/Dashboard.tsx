@@ -1,5 +1,5 @@
 // components/features/Dashboard.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, BarChart3, ClipboardCheck, Users, GitBranch } from 'lucide-react';
 import { OverviewTab } from './dashboard/OverviewTab';
 import { HomeworkTab } from './dashboard/HomeworkTab';
@@ -23,8 +23,18 @@ const TABS: TabConfig[] = [
    { id: 'learning-path', label: 'AI 學習路徑', icon: GitBranch },
 ];
 
-const DashboardContent = () => {
-   const [activeTab, setActiveTab] = useState<TabId>('overview');
+interface DashboardContentProps {
+   /** 初始顯示的 Tab */
+   initialTab?: TabId;
+}
+
+const DashboardContent = ({ initialTab = 'learning-path' }: DashboardContentProps) => {
+   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+
+   // 當 initialTab 改變時更新
+   useEffect(() => {
+      setActiveTab(initialTab);
+   }, [initialTab]);
 
    const renderTabContent = () => {
       switch (activeTab) {

@@ -112,7 +112,17 @@ export type LearningPathAction =
   | { type: 'CLOSE_EDITOR' }
 
   // 學習記錄
-  | { type: 'LOAD_LEARNING_RECORD'; payload: StudentLearningRecord };
+  | { type: 'LOAD_LEARNING_RECORD'; payload: StudentLearningRecord }
+
+  // 批量設定節點和邊 (AI 生成用)
+  | {
+    type: 'SET_NODES_AND_EDGES';
+    payload: {
+      studentId: string;
+      nodes: LearningPathNode[];
+      edges: LearningPathEdge[];
+    };
+  };
 
 // ==================== Initial State ====================
 
@@ -417,6 +427,47 @@ export function learningPathReducer(
       const newRecords = new Map(state.learningRecords);
       newRecords.set(action.payload.studentId, action.payload);
       return { ...state, learningRecords: newRecords };
+    }
+
+    case 'SET_NODES_AND_EDGES': {
+      const path = state.studentPaths.get(action.payload.studentId);
+      if (!path) {
+        // 如果路徑不存在，先建立
+        const newPath: StudentLearningPath = {
+          id: `path-${Date.now()}`,
+          studentId: action.payload.studentId,
+          studentName: action.payload.studentId,
+          nodes: action.payload.nodes,
+          edges: action.payload.edges,
+          viewport: { x: 0, y: 0, zoom: 1 },
+          createdAt: Date.now(),
+          createdBy: 'ai-agent',
+          lastModified: Date.now(),
+          progress: {
+            totalNodes: action.payload.nodes.length,
+            completedNodes: 0,
+          },
+        };
+        const newPaths = new Map(state.studentPaths);
+        newPaths.set(action.payload.studentId, newPath);
+        return { ...state, studentPaths: newPaths };
+      }
+
+      // 更新現有路徑
+      const updatedPath: StudentLearningPath = {
+        ...path,
+        nodes: action.payload.nodes,
+        edges: action.payload.edges,
+        lastModified: Date.now(),
+        progress: {
+          ...path.progress,
+          totalNodes: action.payload.nodes.length,
+        },
+      };
+
+      const newPaths = new Map(state.studentPaths);
+      newPaths.set(action.payload.studentId, updatedPath);
+      return { ...state, studentPaths: newPaths };
     }
 
     default:
