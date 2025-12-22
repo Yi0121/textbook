@@ -36,9 +36,9 @@ export function useAIActions({ viewport }: UseAIActionsOptions) {
     }, duration);
   };
 
-  // 開啟 AI 對話面板
+  // 開啟 AI 中控台面板（教師模式會預設 AI 助教 Tab）
   const handleToggleAITutor = () => {
-    ui.setSidebarInitialTab('chat');
+    // 不設定 initialTab，讓 RightSidePanel 根據 userRole 決定預設 Tab
     if (ui.isQuizPanelOpen) {
       ui.setQuizPanelOpen(!ui.isQuizPanelOpen);
       ui.setSidebarOpen(!ui.isSidebarOpen);
