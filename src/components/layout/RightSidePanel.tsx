@@ -36,9 +36,9 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
   onClose,
   selectedText,
   userRole,
-  initialTab = 'context'
+  initialTab
 }) => {
-  // 教師預設顯示 AI 助手，學生預設顯示內容分析
+  // 教師預設顯示 AI 助教，學生預設顯示內容分析
   const getDefaultTab = (): TabType => {
     if (userRole === 'teacher') return 'agent';
     return 'context';
@@ -46,15 +46,11 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
 
-  // 當側邊欄打開時，設定預設分頁
+  // 當側邊欄打開時，根據角色設定預設分頁
   useEffect(() => {
     if (isOpen) {
-      // 如果有指定 initialTab 就用，否則用角色預設
-      if (initialTab) {
-        setActiveTab(initialTab);
-      } else {
-        setActiveTab(getDefaultTab());
-      }
+      // 如果有明確指定 initialTab 就用，否則用角色預設
+      setActiveTab(initialTab || getDefaultTab());
     }
   }, [isOpen, initialTab, userRole]);
 
