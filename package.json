@@ -13,7 +13,6 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@floating-ui/dom": "^1.7.4",
     "@tiptap/extension-highlight": "^3.13.0",
     "@tiptap/extension-image": "^3.13.0",
     "@tiptap/extension-link": "^3.13.0",
