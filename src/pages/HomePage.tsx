@@ -24,6 +24,7 @@ import {
 import { type UserRole } from '../config/toolConfig';
 import MarkdownMessage from '../components/ui/MarkdownMessage';
 import { useTeacherAIChat } from '../hooks/useTeacherAIChat';
+import { useStudentAIChat } from '../hooks/useStudentAIChat';
 
 interface OutletContextType {
     userRole: UserRole;
@@ -50,13 +51,17 @@ export default function HomePage() {
     const isTeacher = userRole === 'teacher';
     const navigate = useNavigate();
 
-    // 使用真實的 Agent Chat Hook（僅在教師模式下啟用，學生模式暫用 Mock）
+    // 根據角色動態選擇 Chat Hook
+    const teacherChat = useTeacherAIChat();
+    const studentChat = useStudentAIChat();
+
+    // 根據角色使用對應的 Chat
     const {
         messages,
         setMessages,
         sendMessage,
         isProcessing
-    } = useTeacherAIChat();
+    } = isTeacher ? teacherChat : studentChat;
 
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
