@@ -10,7 +10,6 @@ import { useOutletContext } from 'react-router-dom';
 import { LayoutDashboard, Sparkles } from 'lucide-react';
 
 // --- Components Imports ---
-import TopNavigation from '../components/layout/TopNavigation';
 import FixedToolbar from '../components/tools/Toolbar';
 import RightSidePanel from '../components/layout/RightSidePanel';
 import Modal from '../components/ui/Modal';
@@ -66,7 +65,7 @@ interface OutletContextType {
 
 export default function ClassroomPage() {
     // ==================== Context ====================
-    const { userRole, setUserRole } = useOutletContext<OutletContextType>();
+    const { userRole } = useOutletContext<OutletContextType>();
     const { state: editorState, dispatch: editorDispatch } = useEditor();
     const { state: contentState, dispatch: contentDispatch } = useContent();
     const currentContent = useCurrentChapterContent();
@@ -140,7 +139,7 @@ export default function ClassroomPage() {
     useViewportZoom({ containerRef, setViewport });
 
     // Content Import
-    const { handleImportContent, handleEPUBImport } = useContentImport({
+    const { handleEPUBImport } = useContentImport({
         setViewport,
         setShowEPUBImporter,
     });
@@ -174,21 +173,9 @@ export default function ClassroomPage() {
     return (
         <div className="h-full w-full bg-slate-50 dark:bg-gray-900 overflow-hidden flex flex-col select-none overscroll-none transition-colors">
 
-            {/* 導覽列 */}
-            <TopNavigation
-                isSidebarOpen={ui.isSidebarOpen || ui.isQuizPanelOpen}
-                toggleSidebar={() => { ui.setSidebarOpen(!ui.isSidebarOpen); ui.setQuizPanelOpen(!ui.isQuizPanelOpen) }}
-                onShowShortcuts={() => setShowShortcutsHelp(true)}
-                userRole={userRole}
-                setUserRole={setUserRole}
-                isEditMode={isEditMode}
-                setIsEditMode={setIsEditMode}
-                onImportContent={handleImportContent}
-            />
-
             {/* AI 思考動畫 */}
             {contentState.aiState === 'thinking' && (
-                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-300">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in slide-in-from-top-2 fade-in duration-300">
                     <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-indigo-200 flex items-center gap-3">
                         <Sparkles className="w-5 h-5 text-indigo-600 animate-spin" style={{ animationDuration: '3s' }} />
                         <span className="text-indigo-700 font-medium text-sm">AI 正在分析教材與筆跡...</span>

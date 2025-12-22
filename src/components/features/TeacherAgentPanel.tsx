@@ -1,12 +1,3 @@
-/**
- * TeacherAgentPanel - 教師 AI 助手面板
- * 
- * Prompt 驅動模式：
- * 1. 使用者輸入自然語言指令
- * 2. Agent 解析意圖並執行
- * 3. 跳轉到對應工作台（如 AI 學習路徑）
- */
-
 import { useState, useRef, useEffect } from 'react';
 import {
     Send,
@@ -21,44 +12,13 @@ import {
     User,
 } from 'lucide-react';
 import { useTeacherAgents } from '../../context/AgentContext';
-import { useLearningPath } from '../../context/LearningPathContext';
 import { useUI } from '../../context/UIContext';
-import { analyzeStudentAndGeneratePath } from '../../services/ai/learningPathService';
-import type { StudentLearningRecord } from '../../types';
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: number;
-    action?: {
-        type: 'navigate' | 'generate';
-        target?: string;
-        data?: unknown;
-    };
-}
+import { useTeacherAIChat, type ChatMessage } from '../../hooks/useTeacherAIChat';
 
 interface TeacherAgentPanelProps {
     className?: string;
     onClose?: () => void;
 }
-
-// 預設學生弱點資料（模擬）
-const DEFAULT_STUDENT_RECORD: StudentLearningRecord = {
-    studentId: 'class-default',
-    studentName: '全班',
-    answers: [],
-    totalQuestions: 0,
-    correctCount: 0,
-    averageScore: 65,
-    averageTimeSpent: 0,
-    weakKnowledgeNodes: [
-        { nodeId: 'kn-quadratic-formula', nodeName: '一元二次方程式公式解', errorRate: 0.6, relatedQuestions: [] },
-        { nodeId: 'kn-discriminant', nodeName: '判別式應用', errorRate: 0.5, relatedQuestions: [] },
-        { nodeId: 'kn-factoring', nodeName: '因式分解', errorRate: 0.4, relatedQuestions: [] },
-    ],
-    lastUpdated: Date.now(),
-};
 
 // 預設提示範例
 const PROMPT_EXAMPLES = [
@@ -69,19 +29,14 @@ const PROMPT_EXAMPLES = [
 
 export default function TeacherAgentPanel({ className = '', onClose }: TeacherAgentPanelProps) {
     const teacher = useTeacherAgents();
-    const { state: lpState, dispatch: lpDispatch } = useLearningPath();
     const ui = useUI();
+    const {
+        messages,
+        sendMessage,
+        isProcessing
+    } = useTeacherAIChat();
 
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: 'welcome',
-            role: 'assistant',
-            content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫這個班級推薦學習路徑\n• 生成練習題\n• 進行分組\n\n我會幫你完成並帶你到對應的工作台！',
-            timestamp: Date.now(),
-        }
-    ]);
     const [input, setInput] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -90,194 +45,33 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // 解析使用者意圖
-    const parseIntent = (prompt: string): { category: string; params: Record<string, unknown> } => {
-        const lowerPrompt = prompt.toLowerCase();
-
-        // 學習路徑相關
-        if (lowerPrompt.includes('路徑') || lowerPrompt.includes('推薦') ||
-            lowerPrompt.includes('學習計畫') || lowerPrompt.includes('弱點')) {
-            return {
-                category: 'learning-path',
-                params: {
-                    studentId: 'class-default',
-                }
-            };
+    // 初始化歡迎訊息 (如果 Hook 沒有提供歷史紀錄)
+    useEffect(() => {
+        if (messages.length === 0) {
+            // 注意：這裡我們不直接 setMessages (因為它來自 Hook)，而是依賴 UI 渲染層加上歡迎訊息，
+            // 或者我們可以發送一個不經過 LLM 的本地歡迎訊息。
+            // 為了簡化，我們可以在這裡是直接調用 Hook 的 setMessages，但通常更好的做法是 UI 渲染時處理空的狀態，
+            // 不過為了與舊版行為一致，我們這裡手動插入一則歡迎訊息到本地狀態（如果我們要完全控制）。
+            // 
+            // 修正策略：useTeacherAIChat 暴露 setMessages，我們可以在這裡用。
+            // 但如果我們切換頁面回來，messages 還在嗎？目前 Hook 是 local state，每次 mount 都是新的。
+            // 所以每次打開面板都會看到歡迎訊息是合理的。
         }
+    }, [messages.length]);
 
-        // 練習題相關
-        if (lowerPrompt.includes('練習') || lowerPrompt.includes('題目') || lowerPrompt.includes('測驗')) {
-            const countMatch = prompt.match(/(\d+)/);
-            return {
-                category: 'exercise',
-                params: {
-                    count: countMatch ? parseInt(countMatch[1]) : 5,
-                    topic: prompt.replace(/生成|幫我|\d+題|練習|測驗/g, '').trim() || '數學',
-                }
-            };
-        }
-
-        // 分組相關
-        if (lowerPrompt.includes('分組') || lowerPrompt.includes('小組') || lowerPrompt.includes('組別')) {
-            const countMatch = prompt.match(/(\d+)/);
-            return {
-                category: 'grouping',
-                params: {
-                    groupCount: countMatch ? parseInt(countMatch[1]) : 4,
-                }
-            };
-        }
-
-        // 預設：學習路徑
-        return { category: 'learning-path', params: {} };
-    };
+    // 合併歡迎訊息與聊天訊息
+    const displayMessages = messages.length > 0 ? messages : [{
+        id: 'welcome',
+        role: 'assistant',
+        content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫這個班級推薦學習路徑\n• 生成練習題\n• 進行分組\n\n我會幫你完成並帶你到對應的工作台！',
+        timestamp: Date.now(),
+    }];
 
     // 處理使用者輸入
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         if (!input.trim() || isProcessing) return;
-
-        const userMessage: Message = {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: input,
-            timestamp: Date.now(),
-        };
-
-        setMessages(prev => [...prev, userMessage]);
+        sendMessage(input);
         setInput('');
-        setIsProcessing(true);
-
-        try {
-            const intent = parseIntent(input);
-            let response: Message;
-
-            switch (intent.category) {
-                case 'learning-path': {
-                    // 調用真正的 AI 學習路徑服務
-                    setMessages(prev => [...prev, {
-                        id: `thinking-${Date.now()}`,
-                        role: 'assistant',
-                        content: '🔍 分析學生學習記錄...\n正在識別弱點並生成個性化學習路徑...',
-                        timestamp: Date.now(),
-                    }]);
-
-                    // 取得學習記錄（若無則使用預設）
-                    const studentId = 'class-default';
-                    let record = lpState.learningRecords.get(studentId);
-                    if (!record) {
-                        record = DEFAULT_STUDENT_RECORD;
-                    }
-
-                    // 調用 AI 服務生成學習路徑
-                    const result = await analyzeStudentAndGeneratePath(record);
-
-                    // 更新 LearningPath Context
-                    lpDispatch({
-                        type: 'SET_NODES_AND_EDGES',
-                        payload: {
-                            studentId,
-                            nodes: result.nodes,
-                            edges: result.edges,
-                        }
-                    });
-
-                    // 設定 AI 推薦摘要
-                    if (result.recommendation) {
-                        lpDispatch({
-                            type: 'SET_AI_RECOMMENDATION',
-                            payload: {
-                                studentId,
-                                recommendation: result.recommendation,
-                            }
-                        });
-                    }
-
-                    // 移除 "思考中" 訊息，添加成功訊息
-                    setMessages(prev => prev.filter(m => !m.id.startsWith('thinking-')));
-
-                    response = {
-                        id: `assistant-${Date.now()}`,
-                        role: 'assistant',
-                        content: `✅ AI 學習路徑已生成！\n\n📊 分析結果：\n${result.recommendation?.summary || '已根據學生弱點生成個性化學習路徑'}\n\n🎯 重點加強：\n${result.recommendation?.focusAreas?.map(a => `• ${a}`).join('\n') || '• 核心概念複習'}\n\n⏱ 預估時間：約 ${result.recommendation?.estimatedDuration || 45} 分鐘\n\n已生成 ${result.nodes.length} 個學習節點，點擊下方按鈕前往編輯。`,
-                        timestamp: Date.now(),
-                        action: {
-                            type: 'navigate',
-                            target: 'learning-path',
-                            data: result,
-                        }
-                    };
-                    break;
-                }
-
-                case 'exercise': {
-                    const result = await teacher.generateExercise(
-                        intent.params.topic as string,
-                        { count: intent.params.count as number, difficulty: 'medium', type: 'multiple-choice' }
-                    );
-
-                    if (result.success) {
-                        response = {
-                            id: `assistant-${Date.now()}`,
-                            role: 'assistant',
-                            content: `✅ 已生成 ${intent.params.count || 5} 題「${intent.params.topic}」練習題！\n\n題目已準備好，可以加入到學習路徑或直接發布給學生。`,
-                            timestamp: Date.now(),
-                            action: {
-                                type: 'generate',
-                                data: result.data,
-                            }
-                        };
-                    } else {
-                        throw new Error(result.error);
-                    }
-                    break;
-                }
-
-                case 'grouping': {
-                    const result = await teacher.autoGroupStudents(
-                        'class-default',
-                        { groupCount: intent.params.groupCount as number, strategy: 'mixed' }
-                    );
-
-                    if (result.success) {
-                        response = {
-                            id: `assistant-${Date.now()}`,
-                            role: 'assistant',
-                            content: `✅ 已將全班分成 ${intent.params.groupCount || 4} 組！\n\n採用混合分組策略，確保各組能力均衡。你可以在分組管理中調整。`,
-                            timestamp: Date.now(),
-                            action: {
-                                type: 'generate',
-                                data: result.data,
-                            }
-                        };
-                    } else {
-                        throw new Error(result.error);
-                    }
-                    break;
-                }
-
-                default:
-                    response = {
-                        id: `assistant-${Date.now()}`,
-                        role: 'assistant',
-                        content: '抱歉，我不太理解你的需求。你可以試試：\n• 幫這個班級推薦學習路徑\n• 生成練習題\n• 進行分組',
-                        timestamp: Date.now(),
-                    };
-            }
-
-            setMessages(prev => [...prev, response]);
-        } catch (error) {
-            // 移除 "思考中" 訊息
-            setMessages(prev => prev.filter(m => !m.id.startsWith('thinking-')));
-
-            setMessages(prev => [...prev, {
-                id: `error-${Date.now()}`,
-                role: 'assistant',
-                content: `❌ 處理時發生錯誤：${error instanceof Error ? error.message : '未知錯誤'}`,
-                timestamp: Date.now(),
-            }]);
-        } finally {
-            setIsProcessing(false);
-        }
     };
 
     // 跳轉到備課工作台
@@ -310,7 +104,7 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         <div className={`flex flex-col h-full ${className}`}>
             {/* 訊息列表 */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map(msg => (
+                {displayMessages.map((msg: any) => (
                     <div
                         key={msg.id}
                         className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}

@@ -8,7 +8,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import {
     Send,
     Sparkles,
@@ -23,16 +23,10 @@ import {
 } from 'lucide-react';
 import { type UserRole } from '../config/toolConfig';
 import MarkdownMessage from '../components/ui/MarkdownMessage';
+import { useTeacherAIChat } from '../hooks/useTeacherAIChat';
 
 interface OutletContextType {
     userRole: UserRole;
-}
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: number;
 }
 
 // 教師快速入口
@@ -54,19 +48,17 @@ const STUDENT_QUICK_ACTIONS = [
 export default function HomePage() {
     const { userRole } = useOutletContext<OutletContextType>();
     const isTeacher = userRole === 'teacher';
+    const navigate = useNavigate();
 
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: 'welcome',
-            role: 'assistant',
-            content: isTeacher
-                ? '老師您好！我是您的 AI 助教 🎓\n\n有什麼我可以幫您的嗎？例如：\n- 幫我準備今天的課程\n- 分析班級學習狀況\n- 生成隨堂測驗'
-                : '嗨！我是你的 AI 學習夥伴 ✨\n\n有什麼問題嗎？我可以幫你：\n- 解答課本上的問題\n- 複習重點概念\n- 練習題目',
-            timestamp: Date.now(),
-        }
-    ]);
+    // 使用真實的 Agent Chat Hook（僅在教師模式下啟用，學生模式暫用 Mock）
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        isProcessing
+    } = useTeacherAIChat();
+
     const [input, setInput] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -77,46 +69,35 @@ export default function HomePage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // 角色變化時重置歡迎訊息
+    // 初始化歡迎訊息
     useEffect(() => {
-        setMessages([{
-            id: 'welcome',
-            role: 'assistant',
-            content: isTeacher
-                ? '老師您好！我是您的 AI 助教 🎓\n\n有什麼我可以幫您的嗎？例如：\n- 幫我準備今天的課程\n- 分析班級學習狀況\n- 生成隨堂測驗'
-                : '嗨！我是你的 AI 學習夥伴 ✨\n\n有什麼問題嗎？我可以幫你：\n- 解答課本上的問題\n- 複習重點概念\n- 練習題目',
-            timestamp: Date.now(),
-        }]);
-    }, [isTeacher]);
-
-    const handleSend = async () => {
-        if (!input.trim() || isProcessing) return;
-
-        const userMessage: Message = {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: input,
-            timestamp: Date.now(),
-        };
-
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsProcessing(true);
-
-        // 模擬 AI 回應
-        setTimeout(() => {
-            const aiResponse = isTeacher
-                ? `好的！針對「${input}」，我為您整理了以下建議：\n\n**教學重點：**\n1. 先複習前一課的重點\n2. 使用互動式範例\n3. 安排隨堂練習\n\n需要我幫您生成相關的教材嗎？`
-                : `讓我來幫你解答「${input}」：\n\n這是一個很好的問題！\n\n**重點說明：**\n- 首先...（這裡是詳細解釋）\n- 其次...（更多說明）\n\n還有不清楚的地方嗎？`;
-
-            setMessages(prev => [...prev, {
-                id: `assistant-${Date.now()}`,
+        if (messages.length === 0) {
+            setMessages([{
+                id: 'welcome',
                 role: 'assistant',
-                content: aiResponse,
+                content: isTeacher
+                    ? '老師您好！我是您的 AI 助教 🎓\n\n有什麼我可以幫您的嗎？例如：\n- 幫我準備今天的課程\n- 分析班級學習狀況\n- 生成隨堂測驗'
+                    : '嗨！我是你的 AI 學習夥伴 ✨\n\n有什麼問題嗎？我可以幫你：\n- 解答課本上的問題\n- 複習重點概念\n- 練習題目',
                 timestamp: Date.now(),
             }]);
-            setIsProcessing(false);
-        }, 1500);
+        }
+    }, [isTeacher, messages.length, setMessages]);
+
+    // 處理跳轉動作
+    useEffect(() => {
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg?.action?.type === 'navigate' && lastMsg.action.target) {
+            // 如果是 learning-path，跳轉並帶參數
+            if (lastMsg.action.target === 'learning-path') {
+                navigate('/dashboard?tab=learning-path');
+            }
+        }
+    }, [messages, navigate]);
+
+    const handleSend = () => {
+        if (!input.trim() || isProcessing) return;
+        sendMessage(input);
+        setInput('');
     };
 
     return (
