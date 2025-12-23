@@ -1,13 +1,12 @@
 // components/features/Dashboard.tsx
 import { useState, useEffect } from 'react';
-import { Sparkles, BarChart3, ClipboardCheck, Users, GitBranch } from 'lucide-react';
+import { Sparkles, BarChart3, ClipboardCheck, Users } from 'lucide-react';
 import { OverviewTab } from './dashboard/OverviewTab';
 import { HomeworkTab } from './dashboard/HomeworkTab';
 import { CollaborationTab } from './dashboard/CollaborationTab';
 import { AIQuizTab } from './dashboard/AIQuizTab';
-import { LearningPathTab } from './dashboard/LearningPathTab';
 
-type TabId = 'overview' | 'homework' | 'collaboration' | 'ai-quiz' | 'learning-path';
+type TabId = 'overview' | 'homework' | 'collaboration' | 'ai-quiz';
 
 interface TabConfig {
    id: TabId;
@@ -20,7 +19,6 @@ const TABS: TabConfig[] = [
    { id: 'homework', label: '作業繳交', icon: ClipboardCheck },
    { id: 'collaboration', label: '小組協作', icon: Users },
    { id: 'ai-quiz', label: 'AI 測驗生成', icon: Sparkles },
-   { id: 'learning-path', label: 'AI 學習路徑', icon: GitBranch },
 ];
 
 interface DashboardContentProps {
@@ -28,7 +26,7 @@ interface DashboardContentProps {
    initialTab?: TabId;
 }
 
-const DashboardContent = ({ initialTab = 'learning-path' }: DashboardContentProps) => {
+const DashboardContent = ({ initialTab = 'overview' }: DashboardContentProps) => {
    const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
    // 當 initialTab 改變時更新
@@ -46,8 +44,6 @@ const DashboardContent = ({ initialTab = 'learning-path' }: DashboardContentProp
             return <CollaborationTab />;
          case 'ai-quiz':
             return <AIQuizTab />;
-         case 'learning-path':
-            return <LearningPathTab />;
          default:
             return null;
       }
