@@ -1,151 +1,263 @@
 /**
- * MyLearningPathPage - 我的學習路徑
+ * MyLearningPathPage - 學生端學習路徑頁面（Workflow 視覺化版本）
  * 
- * 學生端頁面：
- * - 顯示指派的學習路徑
- * - 節點完成狀態
- * - 開始/繼續學習按鈕
+ * 學生視角：
+ * - 看得到：學習路徑流程圖、任務、進度
+ * - 看不到：Agent、Tools、教學設計細節
  */
 
-import { BookOpen, CheckCircle, Circle, Clock, Play, ArrowRight } from 'lucide-react';
-
-// Mock 學習路徑資料
-const MOCK_LEARNING_PATH = {
-    courseName: '四則運算',
-    totalNodes: 8,
-    completedNodes: 3,
-    estimatedTime: 45,
-    nodes: [
-        { id: '1', label: '學習診斷', status: 'completed', type: 'diagnosis' },
-        { id: '2', label: 'Part 1: 加法與減法', status: 'completed', type: 'chapter' },
-        { id: '3', label: 'Part 2: 乘法', status: 'completed', type: 'chapter' },
-        { id: '4', label: 'Part 3: 除法', status: 'in_progress', type: 'chapter' },
-        { id: '5', label: '測驗', status: 'pending', type: 'quiz' },
-        { id: '6', label: '小組討論', status: 'pending', type: 'collaboration' },
-        { id: '7', label: '綜合練習', status: 'pending', type: 'exercise' },
-        { id: '8', label: '學習總結', status: 'pending', type: 'summary' },
-    ],
-};
-
-const getStatusIcon = (status: string) => {
-    switch (status) {
-        case 'completed':
-            return <CheckCircle className="w-5 h-5 text-green-500" />;
-        case 'in_progress':
-            return <Play className="w-5 h-5 text-blue-500" />;
-        default:
-            return <Circle className="w-5 h-5 text-gray-300" />;
-    }
-};
-
-const getStatusBadge = (status: string) => {
-    switch (status) {
-        case 'completed':
-            return <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">已完成</span>;
-        case 'in_progress':
-            return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">進行中</span>;
-        default:
-            return <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">未開始</span>;
-    }
-};
+import { useState } from 'react';
+import { ReactFlow, Background, Controls, MiniMap, MarkerType, Handle, Position } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { BookOpen, CheckCircle, Lock, PlayCircle, Award, TrendingUp } from 'lucide-react';
+import { MOCK_GENERATED_LESSON } from '../types/lessonPlan';
+import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
+import type { LessonNode } from '../types/lessonPlan';
+import type { NodeProgress } from '../types/studentProgress';
 
 export default function MyLearningPathPage() {
-    const path = MOCK_LEARNING_PATH;
-    const progress = Math.round((path.completedNodes / path.totalNodes) * 100);
+    // TODO: 從 API 或 localStorage 讀取
+    const lesson = MOCK_GENERATED_LESSON;
+    const studentProgress = MOCK_STUDENT_PROGRESS[0]; // 模擬當前學生
+
+    const getNodeProgress = (nodeId: string): NodeProgress | undefined => {
+        return studentProgress.nodeProgress.find(np => np.nodeId === nodeId);
+    };
+
+    const getNodeStatus = (node: LessonNode): 'completed' | 'current' | 'locked' => {
+        const progress = getNodeProgress(node.id);
+        if (!progress) return 'locked';
+        if (progress.completed) return 'completed';
+        if (node.id === studentProgress.currentNodeId) return 'current';
+        return 'locked';
+    };
+
+    // 建立學生端的 ReactFlow nodes（簡化版，不顯示 Agent）
+    const createStudentNode = (node: LessonNode, idx: number): Node => {
+        const status = getNodeStatus(node);
+        const progress = getNodeProgress(node.id);
+
+        return {
+            id: node.id,
+            type: 'default',
+            position: { x: 50 + idx * 320, y: 150 },
+            data: {
+                label: (
+                    <div className="px-4 py-3" style={{ width: '260px' }}>
+                        {/* 連接點 */}
+                        <Handle
+                            type="target"
+                            position={Position.Left}
+                            style={{ background: '#6366f1', width: 10, height: 10 }}
+                        />
+
+                        {/* 狀態圖標 */}
+                        <div className="flex items-center gap-3 mb-3">
+                            {status === 'completed' && (
+                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <CheckCircle className="w-6 h-6 text-green-600" />
+                                </div>
+                            )}
+                            {status === 'current' && (
+                                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse">
+                                    <PlayCircle className="w-6 h-6 text-indigo-600" />
+                                </div>
+                            )}
+                            {status === 'locked' && (
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <Lock className="w-6 h-6 text-gray-400" />
+                                </div>
+                            )}
+                            <div className="flex-1">
+                                <h3 className="font-bold text-gray-900 text-sm truncate">{node.title}</h3>
+                            </div>
+                        </div>
+
+                        {/* 學習內容 - 不顯示 Agent/Tools */}
+                        <div className="space-y-1.5 text-xs text-gray-600">
+                            {node.generatedContent?.materials && (
+                                <div className="flex items-center gap-1.5">
+                                    <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span className="truncate">{node.generatedContent.materials[0]}</span>
+                                </div>
+                            )}
+                            {node.generatedContent?.exercises && (
+                                <div className="flex items-center gap-1.5">
+                                    <Award className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span>練習 {node.generatedContent.exercises} 題</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 進度資訊 */}
+                        {progress && progress.score !== undefined && (
+                            <div className="mt-2 pt-2 border-t border-gray-100">
+                                <div className="flex items-center gap-1.5 text-xs">
+                                    <TrendingUp className="w-3.5 h-3.5 text-yellow-500" />
+                                    <span className="font-medium text-gray-900">{progress.score} 分</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <Handle
+                            type="source"
+                            position={Position.Right}
+                            style={{ background: '#6366f1', width: 10, height: 10 }}
+                        />
+                    </div>
+                ),
+            },
+            style: {
+                background: 'white',
+                border: status === 'completed'
+                    ? '2px solid #10b981'
+                    : status === 'current'
+                        ? '3px solid #6366f1'
+                        : '2px solid #d1d5db',
+                borderRadius: '12px',
+                boxShadow: status === 'current' ? '0 8px 16px rgba(99, 102, 241, 0.3)' : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                padding: 0,
+                width: '260px',
+                opacity: status === 'locked' ? 0.6 : 1,
+            },
+        };
+    };
+
+    // 建立邊線（簡化版，根據學生實際路徑）
+    const createStudentEdges = (): Edge[] => {
+        const edges: Edge[] = [];
+
+        lesson.nodes.forEach((node, idx) => {
+            const progress = getNodeProgress(node.id);
+
+            // 條件節點的路徑（根據學生實際走的路徑）
+            if (node.isConditional && node.conditions && progress) {
+                if (progress.pathTaken === 'learned' && node.conditions.learnedPath) {
+                    edges.push({
+                        id: `e${node.id}-learned`,
+                        source: node.id,
+                        target: node.conditions.learnedPath,
+                        type: 'smoothstep',
+                        animated: true,
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
+                        style: { stroke: '#10b981', strokeWidth: 2 },
+                    });
+                } else if (progress.pathTaken === 'remedial' && node.conditions.notLearnedPath) {
+                    edges.push({
+                        id: `e${node.id}-remedial`,
+                        source: node.id,
+                        target: node.conditions.notLearnedPath,
+                        type: 'smoothstep',
+                        animated: true,
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' },
+                        style: { stroke: '#f59e0b', strokeWidth: 2 },
+                    });
+                }
+            } else if (node.nextNodeId) {
+                // 明確指定的下一個節點
+                edges.push({
+                    id: `e${node.id}-next`,
+                    source: node.id,
+                    target: node.nextNodeId,
+                    type: 'smoothstep',
+                    animated: true,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
+                    style: { stroke: '#6366f1', strokeWidth: 2 },
+                });
+            } else if (idx < lesson.nodes.length - 1) {
+                // 順序連接
+                edges.push({
+                    id: `e${node.id}-${lesson.nodes[idx + 1].id}`,
+                    source: node.id,
+                    target: lesson.nodes[idx + 1].id,
+                    type: 'smoothstep',
+                    animated: true,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
+                    style: { stroke: '#6366f1', strokeWidth: 2 },
+                });
+            }
+        });
+
+        return edges;
+    };
+
+    const [nodes] = useState<Node[]>(lesson.nodes.map((node, idx) => createStudentNode(node, idx)));
+    const [edges] = useState<Edge[]>(createStudentEdges());
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-            <div className="max-w-4xl mx-auto">
-                {/* 標題區 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                                <BookOpen className="w-7 h-7 text-indigo-600" />
-                                {path.courseName}
-                            </h1>
-                            <p className="text-gray-500 mt-1">老師為您規劃的個人化學習路徑</p>
-                        </div>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-md">
-                            <Play className="w-5 h-5" />
-                            繼續學習
-                        </button>
+        <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50">
+            {/* 頭部資訊 */}
+            <div className="bg-white shadow-sm p-4 border-b">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+                        <p className="text-sm text-gray-600 mt-1">你的學習路徑</p>
                     </div>
-
-                    {/* 進度條 */}
-                    <div className="mt-6">
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-600">學習進度</span>
-                            <span className="font-medium text-indigo-600">{progress}%</span>
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-2">
-                            <span>{path.completedNodes} / {path.totalNodes} 節點完成</span>
-                            <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                預估還需 {path.estimatedTime - Math.round(path.estimatedTime * progress / 100)} 分鐘
-                            </span>
-                        </div>
+                    <div className="text-right">
+                        <div className="text-3xl font-bold text-indigo-600">{studentProgress.overallProgress}%</div>
+                        <div className="text-xs text-gray-500">完成度</div>
                     </div>
                 </div>
 
-                {/* 學習路徑節點列表 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4">學習路徑</h2>
-                    <div className="space-y-3">
-                        {path.nodes.map((node, index) => (
-                            <div
-                                key={node.id}
-                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${node.status === 'in_progress'
-                                    ? 'border-blue-300 bg-blue-50'
-                                    : node.status === 'completed'
-                                        ? 'border-green-200 bg-green-50/50'
-                                        : 'border-gray-200 bg-gray-50/50'
-                                    }`}
-                            >
-                                {/* 節點序號與連接線 */}
-                                <div className="flex flex-col items-center">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${node.status === 'completed'
-                                        ? 'bg-green-500 text-white'
-                                        : node.status === 'in_progress'
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-200 text-gray-500'
-                                        }`}>
-                                        {index + 1}
-                                    </div>
-                                    {index < path.nodes.length - 1 && (
-                                        <div className={`w-0.5 h-6 ${node.status === 'completed' ? 'bg-green-300' : 'bg-gray-200'
-                                            }`} />
-                                    )}
-                                </div>
-
-                                {/* 節點內容 */}
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-gray-900">{node.label}</span>
-                                        {getStatusBadge(node.status)}
-                                    </div>
-                                </div>
-
-                                {/* 狀態圖示 */}
-                                <div className="flex items-center gap-2">
-                                    {getStatusIcon(node.status)}
-                                    {node.status === 'in_progress' && (
-                                        <button className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-                                            繼續 <ArrowRight className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                {/* 進度條 */}
+                <div className="max-w-7xl mx-auto mt-3">
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                            style={{ width: `${studentProgress.overallProgress}%` }}
+                        />
                     </div>
                 </div>
             </div>
+
+            {/* ReactFlow 學習路徑圖 */}
+            <div className="flex-1">
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    fitView
+                    attributionPosition="bottom-right"
+                    proOptions={{ hideAttribution: true }}
+                    nodesDraggable={false}
+                    nodesConnectable={false}
+                    elementsSelectable={false}
+                    minZoom={0.5}
+                    maxZoom={1.5}
+                >
+                    <Background />
+                    <Controls />
+                    <MiniMap
+                        nodeColor={(node) => {
+                            const lessonNode = lesson.nodes.find(n => n.id === node.id);
+                            if (!lessonNode) return '#d1d5db';
+                            const status = getNodeStatus(lessonNode);
+                            return status === 'completed' ? '#10b981' : status === 'current' ? '#6366f1' : '#d1d5db';
+                        }}
+                        maskColor="rgba(0, 0, 0, 0.1)"
+                    />
+                </ReactFlow>
+            </div>
+
+            {/* 補強提示（如果正在補強） */}
+            {studentProgress.currentNodeId === 'node-2-补强' && (
+                <div className="absolute bottom-6 left-6 right-6 max-w-md mx-auto">
+                    <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                                <BookOpen className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-orange-900">💪 加強練習中</h3>
+                                <p className="text-sm text-orange-700">完成補強後可繼續學習</p>
+                            </div>
+                            <button className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors whitespace-nowrap">
+                                繼續練習
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

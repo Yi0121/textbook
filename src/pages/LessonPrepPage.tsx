@@ -1,95 +1,201 @@
 /**
- * LessonPrepPage - 備課頁面
+ * LessonPrepPage - 備課工作台
  * 
- * 整合學習路徑編輯器作為備課工作台
+ * 提供兩種備課入口：
+ * 1. 快速開始：輸入主題，AI 生成課程
+ * 2. 查看現有課程
  */
 
-import { useEffect } from 'react';
-import { Edit3, BookOpen, GitBranch } from 'lucide-react';
-import { WorkflowEditor } from '../components/features/learning-path/WorkflowEditor';
-import { useLearningPath } from '../context/LearningPathContext';
-
-// 全班共用的路徑 ID
-const CLASS_PATH_ID = 'class-default';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Sparkles, List, ArrowRight } from 'lucide-react';
 
 export default function LessonPrepPage() {
-    const { state, dispatch } = useLearningPath();
+    const navigate = useNavigate();
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [topic, setTopic] = useState('');
+    const [objectives, setObjectives] = useState('');
+    const [difficulty, setDifficulty] = useState<'basic' | 'intermediate' | 'advanced'>('intermediate');
+    const [isGenerating, setIsGenerating] = useState(false);
 
-    // 初始化：確保有全班共用的路徑
-    useEffect(() => {
-        // 設定當前路徑為全班共用
-        if (state.currentStudentId !== CLASS_PATH_ID) {
-            dispatch({ type: 'SET_CURRENT_STUDENT', payload: CLASS_PATH_ID });
+    const handleQuickStart = () => {
+        if (!topic.trim()) {
+            alert('請輸入課程主題');
+            return;
         }
 
-        // 若無路徑則建立
-        if (!state.studentPaths.has(CLASS_PATH_ID)) {
-            dispatch({
-                type: 'CREATE_PATH',
-                payload: { studentId: CLASS_PATH_ID, studentName: '全班學習路徑' }
-            });
-        }
-    }, [dispatch, state.currentStudentId, state.studentPaths]);
+        setIsGenerating(true);
 
-    const currentPath = state.studentPaths.get(CLASS_PATH_ID);
+        // 模擬 AI 生成過程
+        setTimeout(() => {
+            setIsGenerating(false);
+            // 導航到視覺化編輯器
+            navigate('/lesson-prep/preview');
+        }, 2000);
+    };
 
     return (
-        <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
-            {/* 頁面標題 */}
-            <div className="px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <div className="max-w-7xl mx-auto flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                        <Edit3 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 p-6">
+            <div className="max-w-4xl mx-auto">
+                {/* 頁面標題 */}
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <BookOpen className="w-8 h-8 text-indigo-600" />
+                        <h1 className="text-3xl font-bold text-gray-900">備課工作台</h1>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-                            📝 備課工作台
-                        </h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            設計與編排課程學習路徑
-                        </p>
-                    </div>
+                    <p className="text-gray-600">設計與編輯您的 AI 驅動課程</p>
                 </div>
-            </div>
 
-            {/* 工作台區域 */}
-            <div className="flex-1 p-6 overflow-hidden">
-                <div className="h-full">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 h-full flex flex-col overflow-hidden">
-                        {/* 頂部資訊列 */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
-                                    <GitBranch className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                                <div>
-                                    <h2 className="font-bold text-gray-800 dark:text-white">AI 學習路徑編輯器</h2>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        設計全班共用的學習流程，之後可個別指派給學生
-                                    </p>
+                {!showCreateForm ? (
+                    /* 選擇入口 */
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 快速開始 */}
+                        <button
+                            onClick={() => setShowCreateForm(true)}
+                            className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-300 text-left group"
+                        >
+                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <Sparkles className="w-8 h-8 text-white" />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">🚀 快速開始</h2>
+                            <p className="text-gray-600 mb-4">
+                                輸入課程主題，讓 AI 為您規劃完整的教學流程
+                            </p>
+                            <div className="flex items-center gap-2 text-indigo-600 font-medium">
+                                立即開始 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+
+                        {/* 查看現有課程 */}
+                        <button
+                            onClick={() => navigate('/lesson-prep/preview')}
+                            className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
+                        >
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <List className="w-8 h-8 text-white" />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">📚 查看示範課程</h2>
+                            <p className="text-gray-600 mb-4">
+                                瀏覽和編輯已建立的課程（示範：四則運算）
+                            </p>
+                            <div className="flex items-center gap-2 text-purple-600 font-medium">
+                                前往查看 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    </div>
+                ) : (
+                    /* 快速開始表單 */
+                    <div className="bg-white rounded-2xl shadow-lg p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">建立新課程</h2>
+                            <button
+                                onClick={() => setShowCreateForm(false)}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* 課程主題 */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    課程主題 *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={topic}
+                                    onChange={(e) => setTopic(e.target.value)}
+                                    placeholder="例：國小五年級四則運算"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+
+                            {/* 教學目標 */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    教學目標（選填）
+                                </label>
+                                <textarea
+                                    value={objectives}
+                                    onChange={(e) => setObjectives(e.target.value)}
+                                    placeholder="例：&#10;- 理解加減乘除運算順序&#10;- 能正確計算混合運算&#10;- 解決生活中的數學問題"
+                                    rows={4}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+
+                            {/* 難度 */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    難度
+                                </label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { value: 'basic', label: '基礎', icon: '📘' },
+                                        { value: 'intermediate', label: '中階', icon: '📗' },
+                                        { value: 'advanced', label: '進階', icon: '📕' },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.value}
+                                            onClick={() => setDifficulty(item.value as any)}
+                                            className={`px-4 py-3 rounded-xl font-medium transition-all ${difficulty === item.value
+                                                    ? 'bg-indigo-600 text-white shadow-lg'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            <span className="mr-2">{item.icon}</span>
+                                            {item.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* 路徑統計 */}
-                            {currentPath && (
-                                <div className="flex items-center gap-4 text-sm">
-                                    <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                        <BookOpen className="w-4 h-4" />
-                                        <span>{currentPath.nodes.length} 個節點</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                        <span>{currentPath.edges.length} 條連線</span>
-                                    </div>
-                                </div>
-                            )}
+                            {/* 按鈕 */}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setShowCreateForm(false)}
+                                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleQuickStart}
+                                    disabled={isGenerating || !topic.trim()}
+                                    className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isGenerating || !topic.trim()
+                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                                        }`}
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            AI 規劃中...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-5 h-5" />
+                                            開始 AI 規劃
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
-                        {/* 編輯器區域 */}
-                        <div className="flex-1 min-h-0 overflow-hidden">
-                            <WorkflowEditor />
+                        {/* 提示 */}
+                        <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                            <p className="text-sm text-blue-800">
+                                💡 <span className="font-medium">AI 將為您：</span>
+                            </p>
+                            <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-6 list-disc">
+                                <li>分析課程主題，拆解知識點</li>
+                                <li>選擇適合的 AI Agents 和工具</li>
+                                <li>規劃符合 APOS 理論的學習路徑</li>
+                                <li>設計互動練習與評量節點</li>
+                            </ul>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
