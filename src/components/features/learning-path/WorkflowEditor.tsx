@@ -41,7 +41,7 @@ import { AIDiagnosisNode } from './nodes/AIDiagnosisNode';
 import { AdaptiveExerciseNode } from './nodes/AdaptiveExerciseNode';
 import { LearningAnalyticsNode } from './nodes/LearningAnalyticsNode';
 import { AIGroupingNode } from './nodes/AIGroupingNode';
-import { NodePalette } from './NodePalette';
+
 import { useLearningPathStore } from '../../../stores';
 import { generateLessonPrepWorkflow } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
@@ -446,8 +446,6 @@ const FlowEditorInternal = () => {
 
   return (
     <div className="flex h-full w-full">
-      {/* 左側元件庫 */}
-      <NodePalette />
 
       {/* 右側畫布 */}
       <div className="flex-1 relative h-full bg-gray-50" ref={wrapperRef}>

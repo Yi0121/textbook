@@ -90,6 +90,17 @@ export function useTeacherAIChat() {
             };
         }
 
+        // 4. 備課/課程規劃
+        if (lowerPrompt.includes('備課') || lowerPrompt.includes('準備課程') ||
+            lowerPrompt.includes('設計課程') || lowerPrompt.includes('規劃教學')) {
+            return {
+                category: 'lesson-prep',
+                params: {
+                    topic: prompt.replace(/備課|準備|設計|規劃|課程|教學|幫我/g, '').trim() || '數學',
+                }
+            };
+        }
+
         // 預設
         return { category: 'chat', params: {} };
     };
@@ -184,6 +195,33 @@ export function useTeacherAIChat() {
                     } else {
                         throw new Error(result.error);
                     }
+                    break;
+                }
+
+                case 'lesson-prep': {
+                    // 加入規劃中訊息
+                    const planningId = `planning-${Date.now()}`;
+                    setMessages(prev => [...prev, {
+                        id: planningId,
+                        role: 'assistant',
+                        content: '🤖 AI 正在規劃課程...\n\n✓ 分析課程目標\n✓ 對齊 108 課綱\n⏳ 選擇適合的 AI Agents\n○ 生成學習路徑',
+                        timestamp: Date.now(),
+                        loading: true
+                    }]);
+
+                    // 模擬 AI 規劃 (2秒)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // 移除規劃中，顯示文字版結果
+                    setMessages(prev => prev.filter(m => m.id !== planningId));
+
+                    const topic = intent.params.topic as string;
+                    const coursePreview = `✅ **課程規劃完成！${topic}**\n\n### 📚 學習路徑 (4個節點)\n\n**節點 1: 基礎運算複習**\n• Agent: Content Generator Agent (內容生成)\n• Tools: 題目生成器、多模態內容生成\n• 內容: 教學影片 3分鐘、練習題 10題\n\n**節點 2: 混合運算順序**\n• Agent: Multi-Solution Strategy Agent (多重解法)\n• Tools: 多重解法生成\n• 內容: 範例題組 3題、多重解題策略展示\n\n**節點 3: GeoGebra 互動練習**\n• Agent: Technical Support Agent (GeoGebra)\n• Tools: GeoGebra 腳本生成、狀態讀取\n• 內容: GGB 互動元件 2個、動態操作\n\n**節點 4: 綜合評量**\n• Agent: Automated Assessment Agent (自動評分)\n• Tools: 自動計分\n• 內容: 測驗題 15題\n\n---\n\n💡 **AI 建議**：本課程已根據 108 課綱與 APOS 理論設計，預計學習時間 45 分鐘。\n\n👉 點擊下方按鈕進入**視覺化編輯器**，可拖曳調整節點、編輯 Agent 與 Tools，或直接發布給學生。`;
+
+                    addAssistantMessage(
+                        coursePreview,
+                        { type: 'navigate', target: 'lesson-preview', data: { topic } }
+                    );
                     break;
                 }
 

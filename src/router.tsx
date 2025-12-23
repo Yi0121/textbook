@@ -21,6 +21,7 @@ const MyLearningPathPage = lazy(() => import('./pages/MyLearningPathPage'));
 const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
 const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
+const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
 
 // ==================== Suspense Wrapper ====================
 
@@ -80,6 +81,11 @@ export const router = createBrowserRouter([
             {
                 path: 'analytics/student/:id',
                 element: withSuspense(StudentAnalyticsPage),
+            },
+            // 視覺化課程編輯器
+            {
+                path: 'lesson-prep/preview',
+                element: withSuspense(LessonPrepPreviewPage),
             },
         ],
     },
