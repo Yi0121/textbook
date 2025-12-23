@@ -7,8 +7,8 @@
  * - 測試節點新增/刪除
  */
 
-import React, { useState } from 'react';
-import { Sparkles, Plus, Trash2, BookOpen } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, Plus, BookOpen } from 'lucide-react';
 import { useLearningPath } from '../../../context/LearningPathContext';
 import { MOCK_STUDENT_RECORDS } from '../../../mocks/learningPathMocks';
 import { analyzeStudentAndGeneratePath } from '../../../services/ai/learningPathService';

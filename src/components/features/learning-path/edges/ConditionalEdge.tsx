@@ -1,8 +1,7 @@
-import React from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react';
 
 export const ConditionalEdge = ({
-    id,
+    id: _id,
     sourceX,
     sourceY,
     targetX,

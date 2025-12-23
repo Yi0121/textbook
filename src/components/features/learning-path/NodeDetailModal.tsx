@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Trash2, CheckCircle, AlertCircle, Clock, BookOpen, PenTool, Youtube, Users, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Save, Trash2, CheckCircle, AlertCircle, BookOpen, PenTool, Youtube, Users, Sparkles, ExternalLink } from 'lucide-react';
 import Modal from '../../ui/Modal';
 import { type LearningPathNode, type LearningNodeType } from '../../../types';
 
@@ -10,6 +11,27 @@ interface NodeDetailModalProps {
     onSave: (nodeId: string, updates: Partial<LearningPathNode['data']>) => void;
     onDelete: (nodeId: string) => void;
 }
+
+// 根據節點標籤/類型取得對應頁面路徑
+const getNodeNavigationPath = (node: LearningPathNode): string | null => {
+    const label = node.data.label?.toLowerCase() || '';
+    const type = node.type;
+
+    // 根據 label 關鍵字匹配
+    if (label.includes('dashboard') || label.includes('儀表板')) return '/dashboard';
+    if (label.includes('lesson planner') || label.includes('課程設計') || label.includes('備課')) return '/lesson-prep';
+    if (label.includes('teaching') || label.includes('教學建議')) return '/teaching-suggestions';
+    if (label.includes('learning') || label.includes('學習建議')) return '/learning-suggestions';
+    if (label.includes('class') || label.includes('上課') || label.includes('教材')) return '/class';
+
+    // 根據節點類型匹配
+    if (type === 'learning_analytics') return '/dashboard';
+    if (type === 'ai_grouping') return '/groups';
+    if (type === 'collaboration') return '/groups';
+    if (type === 'quiz' || type === 'exercise') return '/assignments';
+
+    return null; // 無對應頁面
+};
 
 // 根據類型取得圖示
 const getTypeIcon = (type: LearningNodeType) => {
@@ -43,6 +65,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
     onSave,
     onDelete,
 }) => {
+    const navigate = useNavigate();
     // 本地狀態用來暫存編輯內容
     const [formData, setFormData] = useState<Partial<LearningPathNode['data']>>({});
 
@@ -54,6 +77,15 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
     }, [node]);
 
     if (!node) return null;
+
+    const navigationPath = getNodeNavigationPath(node);
+
+    const handleNavigate = () => {
+        if (navigationPath) {
+            onClose();
+            navigate(navigationPath);
+        }
+    };
 
     const handleSave = () => {
         onSave(node.id, formData);
@@ -263,13 +295,25 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                 {/* 底部按鈕 */}
                 <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between">
-                    <button
-                        onClick={handleDelete}
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        刪除節點
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleDelete}
+                            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            刪除
+                        </button>
+
+                        {navigationPath && (
+                            <button
+                                onClick={handleNavigate}
+                                className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-sm font-medium"
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                                前往 Agent 頁面
+                            </button>
+                        )}
+                    </div>
 
                     <div className="flex gap-2">
                         <button

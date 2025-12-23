@@ -1,5 +1,5 @@
 // components/canvas/TextbookEditor.tsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 // 1. UI Component 引入
 // 如果您的環境提示 BubbleMenu 在 '@tiptap/react/menus'，請保留該路徑；
@@ -12,7 +12,6 @@ import BubbleMenuExtension from '@tiptap/extension-bubble-menu';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
-import Link from '@tiptap/extension-link';
 import Youtube from '@tiptap/extension-youtube';
 import Image from '@tiptap/extension-image';
 

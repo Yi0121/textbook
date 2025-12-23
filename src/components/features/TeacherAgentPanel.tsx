@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useTeacherAgents } from '../../context/AgentContext';
 import { useUI } from '../../context/UIContext';
-import { useTeacherAIChat, type ChatMessage } from '../../hooks/useTeacherAIChat';
+import { useTeacherAIChat } from '../../hooks/useTeacherAIChat';
 
 interface TeacherAgentPanelProps {
     className?: string;

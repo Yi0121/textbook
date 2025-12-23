@@ -1,4 +1,4 @@
-import React, { } from 'react';
+import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { LayoutDashboard, Sparkles } from 'lucide-react';
 
@@ -47,7 +47,7 @@ export default function ClassroomPage() {
     // ==================== Context ====================
     const { userRole } = useOutletContext<OutletContextType>();
     const { state: editorState, dispatch: editorDispatch } = useEditor();
-    const { state: contentState, dispatch: contentDispatch } = useContent();
+    const { state: contentState, dispatch: _contentDispatch } = useContent();
     const ui = useUI();
 
     // ==================== Local State ====================

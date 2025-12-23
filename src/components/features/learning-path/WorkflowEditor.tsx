@@ -29,19 +29,23 @@ import {
   applyNodeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Sparkles, Trash2, RotateCcw, Undo2, Redo2, Save } from 'lucide-react';
+import { Trash2, RotateCcw, Undo2, Redo2, Save, GitBranch } from 'lucide-react';
 import { ChapterNode } from './nodes/ChapterNode';
 import { ExerciseNode } from './nodes/ExerciseNode';
 import { QuizNode } from './nodes/QuizNode';
 import { AITutorNode } from './nodes/AITutorNode';
 import { VideoNode } from './nodes/VideoNode';
 import { CollaborationNode } from './nodes/CollaborationNode';
+// Agent 節點
+import { AIDiagnosisNode } from './nodes/AIDiagnosisNode';
+import { AdaptiveExerciseNode } from './nodes/AdaptiveExerciseNode';
+import { LearningAnalyticsNode } from './nodes/LearningAnalyticsNode';
+import { AIGroupingNode } from './nodes/AIGroupingNode';
 import { NodePalette } from './NodePalette';
 import { useLearningPath } from '../../../context/LearningPathContext';
-import { analyzeStudentAndGeneratePath } from '../../../services/ai/learningPathService';
+import { generateLessonPrepWorkflow } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
 import { savePath } from '../../../utils/learningPathStorage';
-
 import { OptionalEdge } from './edges/OptionalEdge';
 import { ConditionalEdge } from './edges/ConditionalEdge';
 
@@ -53,6 +57,11 @@ const nodeTypes = {
   ai_tutor: AITutorNode,
   video: VideoNode,
   collaboration: CollaborationNode,
+  // Agent 節點
+  ai_diagnosis: AIDiagnosisNode,
+  adaptive_exercise: AdaptiveExerciseNode,
+  learning_analytics: LearningAnalyticsNode,
+  ai_grouping: AIGroupingNode,
 };
 
 // 註冊自定義邊類型
@@ -408,48 +417,18 @@ const FlowEditorInternal = () => {
     [reactFlowInstance, setNodes, dispatch, state.currentStudentId]
   );
 
-  // ==================== AI 功能 ====================
+  // ==================== 備課流程 ====================
 
-  const handleManualAI = async () => {
+  const handleLessonPrepWorkflow = async () => {
     if (!state.currentStudentId) return;
 
-    // 取得記錄，若無則使用預設全班弱點
-    let record = state.learningRecords.get(state.currentStudentId);
-
-    // 全班模式：使用預設的數學弱點資料
-    if (!record) {
-      record = {
-        studentId: state.currentStudentId,
-        studentName: '全班',
-        answers: [],
-        totalQuestions: 0,
-        correctCount: 0,
-        averageScore: 65,
-        averageTimeSpent: 0,
-        weakKnowledgeNodes: [
-          { nodeId: 'kn-quadratic-formula', nodeName: '一元二次方程式公式解', errorRate: 0.6, relatedQuestions: [] },
-          { nodeId: 'kn-discriminant', nodeName: '判別式應用', errorRate: 0.5, relatedQuestions: [] },
-          { nodeId: 'kn-factoring', nodeName: '因式分解', errorRate: 0.4, relatedQuestions: [] },
-        ],
-        lastUpdated: Date.now(),
-      };
-    }
-
-    // 在生成前先儲存當前狀態（這樣才能 undo 回到生成前的狀態）
     saveToHistory();
-
     dispatch({ type: 'SET_GENERATING', payload: true });
+
     try {
-      const { nodes: newNodes, edges: newEdges } = await analyzeStudentAndGeneratePath(record);
+      const { nodes: newNodes, edges: newEdges } = await generateLessonPrepWorkflow();
 
-      // 1. 先計算 Layout (新節點獨立排版，取代現有節點)
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        newNodes,  // 只用新節點，不疊加現有節點
-        newEdges
-      );
-
-      // 2. 清空現有節點並寫入新節點到 Context
-      // 先清空
+      // 清空現有節點
       const path = state.studentPaths.get(state.currentStudentId!);
       if (path) {
         path.nodes.forEach(node => {
@@ -457,22 +436,20 @@ const FlowEditorInternal = () => {
         });
       }
 
-      // 再新增
-      layoutedNodes.forEach(n => {
+      // 新增節點
+      newNodes.forEach(n => {
         dispatch({ type: 'ADD_NODE', payload: { studentId: state.currentStudentId!, node: n as any } });
       });
-      layoutedEdges.forEach(e => dispatch({ type: 'ADD_EDGE', payload: { studentId: state.currentStudentId!, edge: e as any } }));
+      newEdges.forEach(e => dispatch({ type: 'ADD_EDGE', payload: { studentId: state.currentStudentId!, edge: e as any } }));
 
-      // 3. 立即更新 Local State
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
+      // 更新 Local State
+      setNodes(newNodes as any);
+      setEdges(newEdges as any);
 
-      // 4. 儲存到歷史記錄（供 Undo 使用）
       setTimeout(() => saveToHistory(), 200);
-
     } catch (error) {
-      console.error("AI Generation Error:", error);
-      alert(`AI 生成失敗: ${error instanceof Error ? error.message : String(error)}`);
+      console.error("Lesson Prep Workflow Error:", error);
+      alert(`備課流程生成失敗: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       dispatch({ type: 'SET_GENERATING', payload: false });
     }
@@ -516,12 +493,12 @@ const FlowEditorInternal = () => {
               <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
                 <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-200 flex items-center gap-2">
                   <button
-                    onClick={handleManualAI}
+                    onClick={handleLessonPrepWorkflow}
                     disabled={state.isGenerating}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors disabled:opacity-50"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    {state.isGenerating ? '生成中...' : 'AI 推薦路徑'}
+                    <GitBranch className="w-4 h-4" />
+                    {state.isGenerating ? '生成中...' : '備課流程'}
                   </button>
 
                   <div className="w-px h-6 bg-gray-200" />
