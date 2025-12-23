@@ -2,8 +2,8 @@
  * AppSidebar - 應用程式側邊欄
  * 
  * 根據 userRole 顯示不同的導航選單：
- * - 教師：AI 助教、上課、學習數據、作業管理、分組協作、教材庫
- * - 學生：AI 家教、上課、學習進度、作業、錯題本
+ * - 教師：AI 助教、上課、備課、學習數據、教學建議、作業管理、分組協作、教材庫
+ * - 學生：AI 家教、上課、學習進度、作業、學習建議
  */
 
 import { NavLink } from 'react-router-dom';
@@ -17,10 +17,11 @@ import {
     Settings,
     Sparkles,
     TrendingUp,
-    AlertCircle,
+    Lightbulb,
     ChevronLeft,
     ChevronRight,
     BrainCircuit,
+    Edit3,
 } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
 
@@ -34,7 +35,9 @@ interface NavItem {
 const TEACHER_NAV: NavItem[] = [
     { path: '/', label: 'AI 助教', icon: MessageSquare },
     { path: '/class', label: '上課', icon: BookOpen },
-    { path: '/dashboard', label: '學習數據', icon: BarChart3 },
+    { path: '/lesson-prep', label: '備課', icon: Edit3 },
+    { path: '/analytics/class', label: '學生學習分析', icon: BarChart3 },
+    { path: '/teaching-suggestions', label: '教學建議', icon: Lightbulb },
     { path: '/assignments', label: '作業管理', icon: ClipboardList },
     { path: '/groups', label: '分組協作', icon: Users },
     { path: '/materials', label: '教材庫', icon: FolderOpen },
@@ -44,9 +47,10 @@ const TEACHER_NAV: NavItem[] = [
 const STUDENT_NAV: NavItem[] = [
     { path: '/', label: 'AI 家教', icon: Sparkles },
     { path: '/class', label: '上課', icon: BookOpen },
-    { path: '/progress', label: '學習進度', icon: TrendingUp },
+    { path: '/my-path', label: '我的學習路徑', icon: TrendingUp },
+    { path: '/my-conversations', label: '對話紀錄', icon: MessageSquare },
     { path: '/assignments', label: '作業', icon: ClipboardList },
-    { path: '/mistakes', label: '錯題本', icon: AlertCircle },
+    { path: '/learning-suggestions', label: '學習建議', icon: Lightbulb },
 ];
 
 interface AppSidebarProps {
@@ -75,7 +79,7 @@ export default function AppSidebar({ userRole, collapsed, onToggleCollapse }: Ap
                     </div>
                     {!collapsed && (
                         <span className="font-bold text-gray-800 dark:text-white text-sm whitespace-nowrap">
-                            AI EduBoard
+                            AI textbook
                         </span>
                     )}
                 </div>

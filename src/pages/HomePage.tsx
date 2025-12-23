@@ -20,6 +20,7 @@ import {
     Users,
     ClipboardList,
     Lightbulb,
+    Edit3,
 } from 'lucide-react';
 import { type UserRole } from '../config/toolConfig';
 import MarkdownMessage from '../components/ui/MarkdownMessage';
@@ -32,8 +33,9 @@ interface OutletContextType {
 
 // 教師快速入口
 const TEACHER_QUICK_ACTIONS = [
-    { icon: BookOpen, label: '開始上課', description: '進入教材編輯器', path: '/class' },
-    { icon: BarChart3, label: '查看學習數據', description: '班級學習分析', path: '/dashboard' },
+    { icon: Edit3, label: '備課', description: '備課工作台', path: '/lesson-prep' },
+    { icon: BarChart3, label: '學習分析', description: '班級學習分析', path: '/dashboard' },
+    { icon: Lightbulb, label: '教學建議', description: 'AI 教學建議', path: '/teaching-suggestions' },
     { icon: Users, label: '分組協作', description: '管理小組活動', path: '/groups' },
     { icon: ClipboardList, label: '作業管理', description: '發布與批改', path: '/assignments' },
 ];
@@ -43,7 +45,7 @@ const STUDENT_QUICK_ACTIONS = [
     { icon: BookOpen, label: '開始上課', description: '閱讀教材', path: '/class' },
     { icon: BarChart3, label: '學習進度', description: '查看我的進度', path: '/progress' },
     { icon: ClipboardList, label: '我的作業', description: '查看與提交', path: '/assignments' },
-    { icon: Lightbulb, label: '錯題本', description: '複習錯誤題目', path: '/mistakes' },
+    { icon: Lightbulb, label: '學習建議', description: '個人化學習建議', path: '/learning-suggestions' },
 ];
 
 export default function HomePage() {

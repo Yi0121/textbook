@@ -39,7 +39,7 @@ export default function AppLayout() {
                     />
 
                     {/* 主內容區 */}
-                    <main className="flex-1 overflow-hidden">
+                    <main className="flex-1 overflow-auto">
                         <Outlet context={{ userRole, setUserRole }} />
                     </main>
                 </div>

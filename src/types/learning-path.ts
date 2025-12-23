@@ -17,7 +17,12 @@ export type LearningNodeType =
   | 'quiz'           // 測驗
   | 'review'         // 複習
   | 'project'        // 專題
-  | 'custom';        // 自定義內容
+  | 'custom'         // 自定義內容
+  // Agent 節點類型
+  | 'ai_diagnosis'       // AI 診斷 (SRL Analyst)
+  | 'adaptive_exercise'  // 自適應練習 (Content Generator)
+  | 'learning_analytics' // 學習分析 (Process Analyst)
+  | 'ai_grouping';       // AI 分組 (Grouping Agent)
 
 /**
  * 節點完成條件類型
@@ -65,6 +70,17 @@ export interface LearningPathNode {
 
       // custom
       customContent?: unknown;
+
+      // Agent 節點專屬
+      // adaptive_exercise
+      difficulty?: 'easy' | 'medium' | 'hard';
+
+      // ai_grouping
+      groupingStrategy?: 'ability' | 'random' | 'mixed';
+
+      // ai_diagnosis / learning_analytics
+      analysisType?: string;
+      targetMetrics?: string[];
     };
 
     // 完成條件
