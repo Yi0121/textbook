@@ -42,7 +42,7 @@ import { AdaptiveExerciseNode } from './nodes/AdaptiveExerciseNode';
 import { LearningAnalyticsNode } from './nodes/LearningAnalyticsNode';
 import { AIGroupingNode } from './nodes/AIGroupingNode';
 import { NodePalette } from './NodePalette';
-import { useLearningPath } from '../../../context/LearningPathContext';
+import { useLearningPathStore } from '../../../stores';
 import { generateLessonPrepWorkflow } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
 import { savePath } from '../../../utils/learningPathStorage';
@@ -72,7 +72,19 @@ const edgeTypes = {
 
 // 內部組件：封裝 React Flow 邏輯以便使用 useReactFlow hook
 const FlowEditorInternal = () => {
-  const { state, dispatch } = useLearningPath();
+  // Zustand Store
+  const {
+    currentStudentId,
+    studentPaths,
+    isGenerating,
+    addNode,
+    updateNode,
+    deleteNode,
+    addEdge: storeAddEdge,
+    updateNodePosition,
+    setGenerating,
+  } = useLearningPathStore();
+
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +100,7 @@ const FlowEditorInternal = () => {
 
   // 儲存節點變更 [NEW]
   const handleSaveNode = (nodeId: string, updates: Partial<LearningPathNode['data']>) => {
-    if (!state.currentStudentId) return;
+    if (!currentStudentId) return;
 
     // 1. 更新 React Flow Local State
     setNodes((nds) =>
@@ -100,20 +112,13 @@ const FlowEditorInternal = () => {
       })
     );
 
-    // 2. 同步回 Context
-    dispatch({
-      type: 'UPDATE_NODE',
-      payload: {
-        studentId: state.currentStudentId,
-        nodeId,
-        changes: { data: updates as any }
-      }
-    });
+    // 2. 同步回 Store
+    updateNode(currentStudentId, nodeId, { data: updates as any });
   };
 
   // 刪除節點 [NEW]
   const handleDeleteNode = (nodeId: string) => {
-    if (!state.currentStudentId) return;
+    if (!currentStudentId) return;
 
     // 0. 先記錄歷史
     saveToHistory();
@@ -122,19 +127,16 @@ const FlowEditorInternal = () => {
     setNodes((nds) => nds.filter((n) => n.id !== nodeId));
     setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
 
-    // 2. 同步 Context
-    dispatch({
-      type: 'DELETE_NODE',
-      payload: { studentId: state.currentStudentId, nodeId }
-    });
+    // 2. 同步 Store
+    deleteNode(currentStudentId, nodeId);
   };
 
   // 使用 Ref 追蹤當前學生 ID
   const currentStudentIdRef = useRef<string | null>(null);
 
   // 取得當前學生的學習路徑
-  const currentPath = state.currentStudentId
-    ? state.studentPaths.get(state.currentStudentId)
+  const currentPath = currentStudentId
+    ? studentPaths.get(currentStudentId)
     : null;
 
   // React Flow 內部狀態
@@ -305,10 +307,10 @@ const FlowEditorInternal = () => {
     }
 
     // 1. 切換學生：重置並 Fit View
-    if (state.currentStudentId !== currentStudentIdRef.current) {
+    if (currentStudentId !== currentStudentIdRef.current) {
       setNodes(currentPath.nodes);
       setEdges(currentPath.edges);
-      currentStudentIdRef.current = state.currentStudentId;
+      currentStudentIdRef.current = currentStudentId;
       lastSyncedRef.current = currentPath.lastModified;
       setTimeout(() => reactFlowInstance.fitView({ padding: 0.2 }), 100);
       return;
@@ -322,7 +324,7 @@ const FlowEditorInternal = () => {
       setEdges(currentPath.edges);
       lastSyncedRef.current = currentPath.lastModified;
     }
-  }, [currentPath, state.currentStudentId, setNodes, setEdges, reactFlowInstance]);
+  }, [currentPath, currentStudentId, setNodes, setEdges, reactFlowInstance]);
 
   // ==================== 事件處理 ====================
 
@@ -344,35 +346,26 @@ const FlowEditorInternal = () => {
   // 拖曳結束同步位置
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      if (!state.currentStudentId) return;
-      dispatch({
-        type: 'UPDATE_NODE_POSITION',
-        payload: { studentId: state.currentStudentId, nodeId: node.id, position: node.position },
-      });
+      if (!currentStudentId) return;
+      updateNodePosition(currentStudentId, node.id, node.position);
     },
-    [dispatch, state.currentStudentId]
+    [currentStudentId, updateNodePosition]
   );
 
   // 連接建立
   const onConnect = useCallback(
     (connection: Connection) => {
-      if (!state.currentStudentId) return;
+      if (!currentStudentId) return;
       saveToHistory(); // 連接前先記錄
       setEdges((eds) => addEdge(connection, eds));
-      dispatch({
-        type: 'ADD_EDGE',
-        payload: {
-          studentId: state.currentStudentId,
-          edge: {
-            id: `e${connection.source}-${connection.target}`,
-            source: connection.source,
-            target: connection.target,
-            type: 'default',
-          },
-        },
+      storeAddEdge(currentStudentId, {
+        id: `e${connection.source}-${connection.target}`,
+        source: connection.source!,
+        target: connection.target!,
+        type: 'default',
       });
     },
-    [setEdges, dispatch, state.currentStudentId, saveToHistory]
+    [setEdges, currentStudentId, saveToHistory, storeAddEdge]
   );
 
   // ==================== Drag & Drop 新增節點 ====================
@@ -387,7 +380,7 @@ const FlowEditorInternal = () => {
       event.preventDefault();
 
       const type = event.dataTransfer.getData('application/reactflow');
-      if (!type || !state.currentStudentId) return;
+      if (!type || !currentStudentId) return;
 
       // 計算放置座標
       const position = reactFlowInstance.screenToFlowPosition({
@@ -405,42 +398,36 @@ const FlowEditorInternal = () => {
       // 1. 更新 UI
       setNodes((nds) => nds.concat(newNode));
 
-      // 2. 同步 Context
-      dispatch({
-        type: 'ADD_NODE',
-        payload: {
-          studentId: state.currentStudentId,
-          node: newNode as any, // 轉型適配
-        },
-      });
+      // 2. 同步 Store
+      addNode(currentStudentId, newNode as any);
     },
-    [reactFlowInstance, setNodes, dispatch, state.currentStudentId]
+    [reactFlowInstance, setNodes, addNode, currentStudentId]
   );
 
   // ==================== 備課流程 ====================
 
   const handleLessonPrepWorkflow = async () => {
-    if (!state.currentStudentId) return;
+    if (!currentStudentId) return;
 
     saveToHistory();
-    dispatch({ type: 'SET_GENERATING', payload: true });
+    setGenerating(true);
 
     try {
       const { nodes: newNodes, edges: newEdges } = await generateLessonPrepWorkflow();
 
       // 清空現有節點
-      const path = state.studentPaths.get(state.currentStudentId!);
+      const path = studentPaths.get(currentStudentId);
       if (path) {
         path.nodes.forEach(node => {
-          dispatch({ type: 'DELETE_NODE', payload: { studentId: state.currentStudentId!, nodeId: node.id } });
+          deleteNode(currentStudentId, node.id);
         });
       }
 
       // 新增節點
       newNodes.forEach(n => {
-        dispatch({ type: 'ADD_NODE', payload: { studentId: state.currentStudentId!, node: n as any } });
+        addNode(currentStudentId, n as any);
       });
-      newEdges.forEach(e => dispatch({ type: 'ADD_EDGE', payload: { studentId: state.currentStudentId!, edge: e as any } }));
+      newEdges.forEach(e => storeAddEdge(currentStudentId, e as any));
 
       // 更新 Local State
       setNodes(newNodes as any);
@@ -451,7 +438,7 @@ const FlowEditorInternal = () => {
       console.error("Lesson Prep Workflow Error:", error);
       alert(`備課流程生成失敗: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      dispatch({ type: 'SET_GENERATING', payload: false });
+      setGenerating(false);
     }
   };
 
@@ -494,11 +481,11 @@ const FlowEditorInternal = () => {
                 <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-200 flex items-center gap-2">
                   <button
                     onClick={handleLessonPrepWorkflow}
-                    disabled={state.isGenerating}
+                    disabled={isGenerating}
                     className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors disabled:opacity-50"
                   >
                     <GitBranch className="w-4 h-4" />
-                    {state.isGenerating ? '生成中...' : '備課流程'}
+                    {isGenerating ? '生成中...' : '備課流程'}
                   </button>
 
                   <div className="w-px h-6 bg-gray-200" />
@@ -548,16 +535,13 @@ const FlowEditorInternal = () => {
 
                   <button
                     onClick={() => {
-                      if (!state.currentStudentId) return;
+                      if (!currentStudentId) return;
                       setNodes([]);
                       setEdges([]);
-                      const path = state.studentPaths.get(state.currentStudentId);
+                      const path = studentPaths.get(currentStudentId);
                       if (path) {
                         path.nodes.forEach(node => {
-                          dispatch({
-                            type: 'DELETE_NODE',
-                            payload: { studentId: state.currentStudentId!, nodeId: node.id }
-                          });
+                          deleteNode(currentStudentId, node.id);
                         });
                       }
                       lastSyncedRef.current = Date.now();
