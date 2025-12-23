@@ -39,6 +39,15 @@ export interface LessonNode {
         exercises?: number;
         interactions?: string[];
     };
+    // 條件分支（用於學習檢查點）
+    isConditional?: boolean;
+    conditions?: {
+        learnedPath?: string; // 學會後的下一個節點 ID
+        notLearnedPath?: string; // 未學會的補強節點 ID
+        assessmentCriteria?: string; // 評估標準
+    };
+    // 明確指定下一個節點（用於補強後返回主流程）
+    nextNodeId?: string;
 }
 
 export interface LessonPlan {
@@ -60,7 +69,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'curriculum-architect',
         name: 'Agentic Curriculum Architect Agent',
-        nameEn: '課程設計代理',
+        nameEn: '課程設計',
         category: 'content',
         description: '根據 108 課綱與 APOS 等數學理論，將知識點解構並規劃為動態教學路徑與教案塊',
         availableTools: ['generate_lesson_workflow', 'infer_curriculum_unit'],
@@ -68,7 +77,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'content-generator',
         name: 'Content Generator Agent',
-        nameEn: '內容生成代理',
+        nameEn: '內容生成',
         category: 'content',
         description: '利用 MCP 驅動繪圖與運算工具，產製多模態教材、試題與互動式數學元件',
         availableTools: ['gen_structured_problem', 'gen_ggb_script', 'gen_multimodal_content'],
@@ -76,7 +85,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'multi-solution',
         name: 'Mathematical Multi-Solution Strategy Agent',
-        nameEn: '數學多重解題策略代理',
+        nameEn: '多重解題策略',
         category: 'content',
         description: '產生多元解題題目與解法，培養數學變通性思考',
         availableTools: ['gen_multi_strategies', 'suggest_alternative_paths'],
@@ -84,7 +93,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'collaborative-grouping',
         name: 'Agentic Collaborative Grouping Agent',
-        nameEn: '協作分組代理',
+        nameEn: '協作分組',
         category: 'analytics',
         description: '根據學生能力畫像與社交特質，自動執行異質或同質分組，優化協作基礎',
         availableTools: ['query_profiles', 'run_clustering'],
@@ -94,7 +103,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'conjecture',
         name: 'Mathematical Conjecturing Agent',
-        nameEn: '數學臆測代理',
+        nameEn: '數學臆測',
         category: 'scaffolding',
         description: '引導學生觀察規律、提出初步假設 (What if?)',
         availableTools: ['scaffold_conjecture'],
@@ -102,7 +111,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'reasoning',
         name: 'Mathematical Reasoning Agent',
-        nameEn: '數學推論代理',
+        nameEn: '數學推論',
         category: 'scaffolding',
         description: '引導學生進行邏輯論證、演繹與證明 (Why?)',
         availableTools: ['verify_logical_steps'],
@@ -110,7 +119,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'cps-agent',
         name: 'Collaborative Problem Solving Agent',
-        nameEn: '合作問題解決代理',
+        nameEn: '合作問題解決',
         category: 'scaffolding',
         description: '協調成員意見，確保共同目標達成',
         availableTools: ['guide_shared_understanding'],
@@ -118,7 +127,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'apos-construction',
         name: 'APOS Mathematical Construction Agent',
-        nameEn: 'APOS數學建構代理',
+        nameEn: 'APOS數學建構',
         category: 'scaffolding',
         description: '採用啟發式對話與蘇格拉底提問，專責引導學生在數學探究中完成 APOS 理論之心理建構歷程',
         availableTools: ['socratic_dialogue', 'apos_scaffolding'],
@@ -126,7 +135,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'technical-support',
         name: 'Technical Support Agent',
-        nameEn: '技術工具代理',
+        nameEn: '技術工具',
         category: 'scaffolding',
         description: '提供 GeoGebra、Wolfram Alpha 等動態工具支援',
         availableTools: ['get_ggb_state', 'solve_algebra', 'recognize_handwriting', 'provide_hint'],
@@ -136,7 +145,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'grader',
         name: 'Automated Assessment Agent',
-        nameEn: '自動評分代理',
+        nameEn: '自動評分',
         category: 'assessment',
         description: '針對學生的解題正確性、邏輯品質與操作行為進行多維度的即時診斷與評價',
         availableTools: ['compute_score', 'grade_ggb_construction', 'grade_proof_process', 'evaluate_discourse_quality'],
@@ -144,7 +153,7 @@ export const AVAILABLE_AGENTS: Agent[] = [
     {
         id: 'learning-observer',
         name: 'Learning Behavior Observer',
-        nameEn: '學習行為觀測代理',
+        nameEn: '學習行為觀測',
         category: 'analytics',
         description: '將學生所有操作、對話串流至 LRS，自動識別學習節點',
         availableTools: ['stream_realtime_log', 'detect_session_event'],
@@ -181,7 +190,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'node-1',
             title: '基礎運算複習',
             order: 1,
-            agent: AVAILABLE_AGENTS[0], // Content Generator
+            agent: AVAILABLE_AGENTS[1], // Content Generator
             selectedTools: [AVAILABLE_TOOLS[0], AVAILABLE_TOOLS[2]], // 題目生成、多模態內容
             generatedContent: {
                 materials: ['教學影片 3分鐘', '圖解說明 5張'],
@@ -193,19 +202,40 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'node-2',
             title: '混合運算順序',
             order: 2,
-            agent: AVAILABLE_AGENTS[1], // Multi-Solution
+            agent: AVAILABLE_AGENTS[2], // Multi-Solution
             selectedTools: [AVAILABLE_TOOLS[3]], // 多重解法
             generatedContent: {
                 materials: ['範例題組 3題'],
                 exercises: 8,
                 interactions: ['多重解題策略展示'],
             },
+            // 設為學習檢查點
+            isConditional: true,
+            conditions: {
+                learnedPath: 'node-3', // 學會 → GeoGebra 互動
+                notLearnedPath: 'node-2-补强', // 未學會 → 補強
+                assessmentCriteria: '完成度 ≥ 75% 且理解度評分 ≥ 70%',
+            },
+        },
+        {
+            id: 'node-2-补强',
+            title: '基礎運算補強',
+            order: 2.5,
+            agent: AVAILABLE_AGENTS[7], // APOS Construction
+            selectedTools: [AVAILABLE_TOOLS[6]], // 臆測鷹架
+            generatedContent: {
+                materials: ['互動式引導對話'],
+                exercises: 5,
+                interactions: ['蘇格拉底提問', '概念重建'],
+            },
+            // 補強完成後，回到主流程
+            nextNodeId: 'node-3',
         },
         {
             id: 'node-3',
             title: 'GeoGebra 互動練習',
             order: 3,
-            agent: AVAILABLE_AGENTS[2], // Technical Support
+            agent: AVAILABLE_AGENTS[8], // Technical Support
             selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[4]], // GGB 腳本、狀態讀取
             generatedContent: {
                 materials: ['GeoGebra 互動元件 2個'],
@@ -217,7 +247,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'node-4',
             title: '綜合評量',
             order: 4,
-            agent: AVAILABLE_AGENTS[5], // Grader
+            agent: AVAILABLE_AGENTS[9], // Grader
             selectedTools: [AVAILABLE_TOOLS[8]], // 自動計分
             generatedContent: {
                 exercises: 15,

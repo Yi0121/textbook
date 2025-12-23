@@ -12,8 +12,8 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
-import type { Node, Edge, OnNodesChange, OnEdgesChange } from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, Handle, Position } from '@xyflow/react';
+import type { Node, Edge, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X } from 'lucide-react';
 import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
@@ -32,12 +32,24 @@ export default function LessonPrepPreviewPage() {
         data: {
             label: (
                 <div className="px-4 py-3" style={{ width: '280px' }}>
+                    {/* 左側連接點（入口） */}
+                    <Handle
+                        type="target"
+                        position={Position.Left}
+                        style={{ background: '#6366f1', width: 12, height: 12 }}
+                    />
+
                     <div className="flex items-center gap-2 mb-2">
-                        <div className="w-7 h-7 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                            {node.order}
+                        <div className={`w-7 h-7 ${node.isConditional ? 'bg-orange-500' : 'bg-indigo-500'} text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0`}>
+                            {node.isConditional ? '?' : node.order}
                         </div>
                         <span className="font-bold text-gray-900 text-sm truncate">{node.title}</span>
                     </div>
+                    {node.isConditional && (
+                        <div className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded mb-2">
+                            <span className="font-medium">條件檢查點</span>
+                        </div>
+                    )}
                     <div className="text-xs text-gray-600 space-y-1">
                         <div className="flex items-center gap-1">
                             <Settings className="w-3 h-3 flex-shrink-0" />
@@ -56,12 +68,21 @@ export default function LessonPrepPreviewPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* 右側連接點（出口） */}
+                    <Handle
+                        type="source"
+                        position={Position.Right}
+                        style={{ background: '#6366f1', width: 12, height: 12 }}
+                    />
                 </div>
             ),
         },
         style: {
             background: 'white',
-            border: selectedNodeId === node.id ? '3px solid #4f46e5' : '2px solid #6366f1',
+            border: node.isConditional
+                ? `3px solid ${selectedNodeId === node.id ? '#f97316' : '#fb923c'}`
+                : selectedNodeId === node.id ? '3px solid #4f46e5' : '2px solid #6366f1',
             borderRadius: '12px',
             boxShadow: selectedNodeId === node.id ? '0 8px 16px rgba(79, 70, 229, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
             padding: 0,
@@ -72,17 +93,71 @@ export default function LessonPrepPreviewPage() {
 
     const [nodes, setNodes] = useState<Node[]>(lesson.nodes.map((node, idx) => createReactFlowNode(node, idx)));
 
-    // 建立連接線
-    const createEdges = (lessonNodes: LessonNode[]): Edge[] =>
-        lessonNodes.slice(0, -1).map((node, idx) => ({
-            id: `e${node.id}-${lessonNodes[idx + 1].id}`,
-            source: node.id,
-            target: lessonNodes[idx + 1].id,
-            type: 'smoothstep',
-            animated: true,
-            markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
-            style: { stroke: '#6366f1', strokeWidth: 2 },
-        }));
+    // 建立連接線（支援條件分支）
+    const createEdges = (lessonNodes: LessonNode[]): Edge[] => {
+        const edges: Edge[] = [];
+
+        lessonNodes.forEach((node, idx) => {
+            if (node.isConditional && node.conditions) {
+                // 條件節點：兩條路徑
+                if (node.conditions.learnedPath) {
+                    edges.push({
+                        id: `e${node.id}-learned`,
+                        source: node.id,
+                        target: node.conditions.learnedPath,
+                        type: 'smoothstep',
+                        animated: true,
+                        label: '✓ 學會',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
+                        style: { stroke: '#10b981', strokeWidth: 2 },
+                        labelStyle: { fill: '#10b981', fontWeight: 600, fontSize: 12 },
+                        labelBgStyle: { fill: '#d1fae5' },
+                    });
+                }
+                if (node.conditions.notLearnedPath) {
+                    edges.push({
+                        id: `e${node.id}-not-learned`,
+                        source: node.id,
+                        target: node.conditions.notLearnedPath,
+                        type: 'smoothstep',
+                        animated: true,
+                        label: '✗ 未學會',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#ef4444' },
+                        style: { stroke: '#ef4444', strokeWidth: 2 },
+                        labelStyle: { fill: '#ef4444', fontWeight: 600, fontSize: 12 },
+                        labelBgStyle: { fill: '#fee2e2' },
+                    });
+                }
+            } else if (node.nextNodeId) {
+                // 明確指定下一個節點（例：補強節點返回主流程）
+                edges.push({
+                    id: `e${node.id}-next`,
+                    source: node.id,
+                    target: node.nextNodeId,
+                    type: 'smoothstep',
+                    animated: true,
+                    label: '繼續',
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
+                    style: { stroke: '#8b5cf6', strokeWidth: 2 },
+                    labelStyle: { fill: '#8b5cf6', fontWeight: 600, fontSize: 12 },
+                    labelBgStyle: { fill: '#ede9fe' },
+                });
+            } else if (idx < lessonNodes.length - 1) {
+                // 普通節點：順序連接到下一個
+                edges.push({
+                    id: `e${node.id}-${lessonNodes[idx + 1].id}`,
+                    source: node.id,
+                    target: lessonNodes[idx + 1].id,
+                    type: 'smoothstep',
+                    animated: true,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
+                    style: { stroke: '#6366f1', strokeWidth: 2 },
+                });
+            }
+        });
+
+        return edges;
+    };
 
     const [edges, setEdges] = useState<Edge[]>(createEdges(lesson.nodes));
 
@@ -95,6 +170,22 @@ export default function LessonPrepPreviewPage() {
         (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
         []
     );
+
+    const onConnect = useCallback((connection: Connection) => {
+        if (!connection.source || !connection.target) return;
+
+        // 更新 lesson 中的節點連接
+        const updatedNodes = lesson.nodes.map(node => {
+            if (node.id === connection.source) {
+                return { ...node, nextNodeId: connection.target };
+            }
+            return node;
+        });
+
+        setLesson(prev => ({ ...prev, nodes: updatedNodes }));
+        setNodes(updatedNodes.map((node, idx) => createReactFlowNode(node, idx)));
+        setEdges(createEdges(updatedNodes));
+    }, [lesson.nodes, createEdges]);
 
     const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
         setSelectedNodeId(node.id);
@@ -276,11 +367,12 @@ export default function LessonPrepPreviewPage() {
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onNodeClick={handleNodeClick}
+                        onConnect={onConnect}
                         fitView
                         attributionPosition="bottom-right"
                         proOptions={{ hideAttribution: true }}
                         nodesDraggable={true}
-                        nodesConnectable={false}
+                        nodesConnectable={true}
                         elementsSelectable={true}
                         minZoom={0.5}
                         maxZoom={1.5}
@@ -371,6 +463,138 @@ export default function LessonPrepPreviewPage() {
                                         ))}
                                 </div>
                             </div>
+
+                            {/* 條件分支設置 */}
+                            <div className="border-t pt-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-sm font-medium text-gray-700">設為學習檢查點</label>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedNode.isConditional || false}
+                                        onChange={(e) => handleUpdateNode({
+                                            ...selectedNode,
+                                            isConditional: e.target.checked,
+                                            conditions: e.target.checked ? {
+                                                learnedPath: '',
+                                                notLearnedPath: '',
+                                                assessmentCriteria: '完成度 ≥ 80%'
+                                            } : undefined
+                                        })}
+                                        className="w-5 h-5 text-indigo-600"
+                                    />
+                                </div>
+
+                                {selectedNode.isConditional && (
+                                    <div className="space-y-3 bg-orange-50 p-3 rounded-lg">
+                                        <p className="text-xs text-orange-700">
+                                            根據學生學習成果，系統將自動選擇不同的學習路徑
+                                        </p>
+
+                                        {/* 學會路徑 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                ✓ 學會後進入
+                                            </label>
+                                            <select
+                                                value={selectedNode.conditions?.learnedPath || ''}
+                                                onChange={(e) => handleUpdateNode({
+                                                    ...selectedNode,
+                                                    conditions: {
+                                                        ...selectedNode.conditions!,
+                                                        learnedPath: e.target.value
+                                                    }
+                                                })}
+                                                className="w-full px-2 py-1.5 text-sm border border-green-300 rounded bg-white"
+                                            >
+                                                <option value="">選擇下一個節點</option>
+                                                {lesson.nodes
+                                                    .filter(n => n.id !== selectedNode.id)
+                                                    .map(node => (
+                                                        <option key={node.id} value={node.id}>
+                                                            {node.title}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </div>
+
+                                        {/* 未學會路徑 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                ✗ 未學會則進行
+                                            </label>
+                                            <select
+                                                value={selectedNode.conditions?.notLearnedPath || ''}
+                                                onChange={(e) => handleUpdateNode({
+                                                    ...selectedNode,
+                                                    conditions: {
+                                                        ...selectedNode.conditions!,
+                                                        notLearnedPath: e.target.value
+                                                    }
+                                                })}
+                                                className="w-full px-2 py-1.5 text-sm border border-red-300 rounded bg-white"
+                                            >
+                                                <option value="">選擇補強節點</option>
+                                                {lesson.nodes
+                                                    .filter(n => n.id !== selectedNode.id)
+                                                    .map(node => (
+                                                        <option key={node.id} value={node.id}>
+                                                            {node.title}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </div>
+
+                                        {/* 評估標準 */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                評估標準
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={selectedNode.conditions?.assessmentCriteria || ''}
+                                                onChange={(e) => handleUpdateNode({
+                                                    ...selectedNode,
+                                                    conditions: {
+                                                        ...selectedNode.conditions!,
+                                                        assessmentCriteria: e.target.value
+                                                    }
+                                                })}
+                                                placeholder="例：完成度 ≥ 80%"
+                                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 下一個節點設定（非條件節點） */}
+                            {!selectedNode.isConditional && (
+                                <div className="border-t pt-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        下一個節點
+                                    </label>
+                                    <select
+                                        value={selectedNode.nextNodeId || ''}
+                                        onChange={(e) => handleUpdateNode({
+                                            ...selectedNode,
+                                            nextNodeId: e.target.value || undefined
+                                        })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">自動（順序下一個）</option>
+                                        {lesson.nodes
+                                            .filter(n => n.id !== selectedNode.id)
+                                            .map(node => (
+                                                <option key={node.id} value={node.id}>
+                                                    {node.title}
+                                                </option>
+                                            ))}
+                                    </select>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        可自由指定下一個節點，不受順序限制
+                                    </p>
+                                </div>
+                            )}
 
                             {/* 刪除按鈕 */}
                             <button
