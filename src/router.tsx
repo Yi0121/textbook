@@ -1,14 +1,38 @@
 /**
  * 路由配置
  * 
- * 定義應用程式的路由結構
+ * 使用 React.lazy() 實現路由級別 Code Splitting
  */
 
 import { createBrowserRouter } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import AppLayout from './components/layout/AppLayout';
-import HomePage from './pages/HomePage';
-import ClassroomPage from './pages/ClassroomPage';
-import DashboardPage from './pages/DashboardPage';
+import { PageLoader } from './components/ui/LoadingSpinner';
+
+// ==================== Lazy Loaded Pages ====================
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ClassroomPage = lazy(() => import('./pages/ClassroomPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const LessonPrepPage = lazy(() => import('./pages/LessonPrepPage'));
+const TeachingSuggestionsPage = lazy(() => import('./pages/TeachingSuggestionsPage'));
+const LearningSuggestionsPage = lazy(() => import('./pages/LearningSuggestionsPage'));
+const MyLearningPathPage = lazy(() => import('./pages/MyLearningPathPage'));
+const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
+const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
+const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
+
+// ==================== Suspense Wrapper ====================
+
+function withSuspense(Component: React.LazyExoticComponent<React.ComponentType>) {
+    return (
+        <Suspense fallback={<PageLoader />}>
+            <Component />
+        </Suspense>
+    );
+}
+
+// ==================== Router ====================
 
 export const router = createBrowserRouter([
     {
@@ -17,16 +41,47 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <HomePage />,
+                element: withSuspense(HomePage),
             },
             {
                 path: 'class',
-                element: <ClassroomPage />,
+                element: withSuspense(ClassroomPage),
             },
             {
                 path: 'dashboard',
-                element: <DashboardPage />,
+                element: withSuspense(DashboardPage),
+            },
+            {
+                path: 'lesson-prep',
+                element: withSuspense(LessonPrepPage),
+            },
+            {
+                path: 'teaching-suggestions',
+                element: withSuspense(TeachingSuggestionsPage),
+            },
+            {
+                path: 'learning-suggestions',
+                element: withSuspense(LearningSuggestionsPage),
+            },
+            // 學生端新增
+            {
+                path: 'my-path',
+                element: withSuspense(MyLearningPathPage),
+            },
+            {
+                path: 'my-conversations',
+                element: withSuspense(MyConversationsPage),
+            },
+            // 老師端分析
+            {
+                path: 'analytics/class',
+                element: withSuspense(ClassAnalyticsPage),
+            },
+            {
+                path: 'analytics/student/:id',
+                element: withSuspense(StudentAnalyticsPage),
             },
         ],
     },
 ]);
+
