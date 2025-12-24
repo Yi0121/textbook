@@ -50,7 +50,7 @@ export const MOCK_STUDENT_PROGRESS: StudentProgress[] = [
     {
         studentId: 'student-1',
         studentName: '張小明',
-        lessonId: 'lesson-001',
+        lessonId: 'lesson-math-001',
         currentNodeId: 'node-2-补强',
         overallProgress: 60,
         lastActiveAt: new Date('2024-01-15T10:20:00'),
@@ -86,7 +86,7 @@ export const MOCK_STUDENT_PROGRESS: StudentProgress[] = [
     {
         studentId: 'student-2',
         studentName: '李小華',
-        lessonId: 'lesson-001',
+        lessonId: 'lesson-math-001',
         currentNodeId: 'node-3',
         overallProgress: 75,
         lastActiveAt: new Date('2024-01-15T11:00:00'),
@@ -122,7 +122,7 @@ export const MOCK_STUDENT_PROGRESS: StudentProgress[] = [
     {
         studentId: 'student-3',
         studentName: '王小美',
-        lessonId: 'lesson-001',
+        lessonId: 'lesson-math-001',
         currentNodeId: 'node-4',
         overallProgress: 95,
         lastActiveAt: new Date('2024-01-15T12:00:00'),

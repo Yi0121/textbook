@@ -28,10 +28,13 @@ export interface Tool {
 
 // ==================== 課程節點 ====================
 
+export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external';
+
 export interface LessonNode {
     id: string;
     title: string;
     order: number;
+    nodeType?: NodeType; // 節點類型：agent（預設）、video、material、worksheet、external
     agent: Agent;
     selectedTools: Tool[];
     generatedContent?: {
@@ -178,7 +181,7 @@ export const AVAILABLE_TOOLS: Tool[] = [
 // ==================== Mock 生成的課程 ====================
 
 export const MOCK_GENERATED_LESSON: LessonPlan = {
-    id: 'lesson-001',
+    id: 'lesson-math-001',
     title: '國小五年級四則運算',
     topic: '國小五年級四則運算',
     objectives: '理解加減乘除運算順序\n能正確計算混合運算\n解決生活中的數學問題',

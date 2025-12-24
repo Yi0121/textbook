@@ -23,6 +23,8 @@ const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
+const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboard'));
+const StudentDetailProgressPage = lazy(() => import('./pages/StudentDetailProgressPage'));
 
 // ==================== Suspense Wrapper ====================
 
@@ -92,6 +94,15 @@ export const router = createBrowserRouter([
             {
                 path: 'student/learning-path',
                 element: withSuspense(StudentLearningPathPage),
+            },
+            // 教師課程監控
+            {
+                path: 'teacher/lesson-progress/:lessonId',
+                element: withSuspense(LessonProgressDashboard),
+            },
+            {
+                path: 'teacher/student-progress/:lessonId/:studentId',
+                element: withSuspense(StudentDetailProgressPage),
             },
         ],
     },

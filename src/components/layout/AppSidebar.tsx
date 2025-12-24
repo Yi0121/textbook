@@ -36,6 +36,7 @@ const TEACHER_NAV: NavItem[] = [
     { path: '/', label: 'AI 助教', icon: MessageSquare },
     { path: '/class', label: '上課', icon: BookOpen },
     { path: '/lesson-prep', label: '備課', icon: Edit3 },
+    { path: '/teacher/lesson-progress/lesson-math-001', label: '課程監控', icon: BarChart3 },
     { path: '/analytics/class', label: '學生學習分析', icon: BarChart3 },
     { path: '/teaching-suggestions', label: '教學建議', icon: Lightbulb },
     { path: '/assignments', label: '作業管理', icon: ClipboardList },
@@ -47,7 +48,7 @@ const TEACHER_NAV: NavItem[] = [
 const STUDENT_NAV: NavItem[] = [
     { path: '/', label: 'AI 家教', icon: Sparkles },
     { path: '/class', label: '上課', icon: BookOpen },
-    { path: '/my-path', label: '我的學習路徑', icon: TrendingUp },
+    { path: '/student/learning-path', label: '我的學習路徑', icon: TrendingUp },
     { path: '/my-conversations', label: '對話紀錄', icon: MessageSquare },
     { path: '/assignments', label: '作業', icon: ClipboardList },
     { path: '/learning-suggestions', label: '學習建議', icon: Lightbulb },

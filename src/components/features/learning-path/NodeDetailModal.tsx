@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Trash2, CheckCircle, AlertCircle, BookOpen, PenTool, Youtube, Users, Sparkles, ExternalLink } from 'lucide-react';
+import { Save, Trash2, CheckCircle, AlertCircle, BookOpen, PenTool, Youtube, Users, Sparkles, ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
 import Modal from '../../ui/Modal';
 import { type LearningPathNode, type LearningNodeType } from '../../../types';
+import ResourceSelector, { type Resource } from '../lesson-prep/ResourceSelector';
 
 interface NodeDetailModalProps {
     isOpen: boolean;
@@ -68,6 +69,8 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
     const navigate = useNavigate();
     // 本地狀態用來暫存編輯內容
     const [formData, setFormData] = useState<Partial<LearningPathNode['data']>>({});
+    const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
+    const [showResourceSelector, setShowResourceSelector] = useState(false);
 
     // 當 node 改變時，更新 form data
     useEffect(() => {
@@ -136,6 +139,38 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                 placeholder="輸入描述..."
                             />
                         </div>
+                    </div>
+
+                    <hr className="border-gray-100" />
+
+                    {/* 外部資源選擇 */}
+                    <div className="space-y-4">
+                        <div
+                            className="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            onClick={() => setShowResourceSelector(!showResourceSelector)}
+                        >
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                                <BookOpen className="w-4 h-4 text-purple-600" />
+                                外部資源
+                                {selectedResources.length > 0 && (
+                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                        已選 {selectedResources.length} 項
+                                    </span>
+                                )}
+                            </h4>
+                            {showResourceSelector ?
+                                <ChevronDown className="w-5 h-5 text-gray-500" /> :
+                                <ChevronRight className="w-5 h-5 text-gray-500" />
+                            }
+                        </div>
+
+                        {showResourceSelector && (
+                            <div className="animate-fadeIn">
+                                <ResourceSelector
+                                    onResourcesSelected={setSelectedResources}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <hr className="border-gray-100" />

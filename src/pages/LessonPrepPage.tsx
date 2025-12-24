@@ -2,28 +2,34 @@
  * LessonPrepPage - 備課工作台
  * 
  * 提供兩種備課入口：
- * 1. 快速開始：輸入主題，AI 生成課程
+ * 1. 快速開始：輸入主題 + 選擇資源，AI 生成課程
  * 2. 查看現有課程
  */
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Sparkles, List, ArrowRight } from 'lucide-react';
+import { BookOpen, Sparkles, List, ArrowRight, ChevronLeft } from 'lucide-react';
+import ResourceSelector, { type Resource } from '../components/features/lesson-prep/ResourceSelector';
 
 export default function LessonPrepPage() {
     const navigate = useNavigate();
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [showResourceSelector, setShowResourceSelector] = useState(false);
     const [topic, setTopic] = useState('');
     const [objectives, setObjectives] = useState('');
     const [difficulty, setDifficulty] = useState<'basic' | 'intermediate' | 'advanced'>('intermediate');
+    const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const handleQuickStart = () => {
+    const handleContinueToResources = () => {
         if (!topic.trim()) {
             alert('請輸入課程主題');
             return;
         }
+        setShowResourceSelector(true);
+    };
 
+    const handleQuickStart = () => {
         setIsGenerating(true);
 
         // 模擬 AI 生成過程
@@ -34,9 +40,13 @@ export default function LessonPrepPage() {
         }, 2000);
     };
 
+    const handleResourcesSelected = (resources: Resource[]) => {
+        setSelectedResources(resources);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 p-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 {/* 頁面標題 */}
                 <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -59,7 +69,7 @@ export default function LessonPrepPage() {
                             </div>
                             <h2 className="text-xl font-bold text-gray-900 mb-2">🚀 快速開始</h2>
                             <p className="text-gray-600 mb-4">
-                                輸入課程主題，讓 AI 為您規劃完整的教學流程
+                                輸入課程主題，選擇教學資源，讓 AI 為您規劃完整的教學流程
                             </p>
                             <div className="flex items-center gap-2 text-indigo-600 font-medium">
                                 立即開始 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -83,11 +93,16 @@ export default function LessonPrepPage() {
                             </div>
                         </button>
                     </div>
-                ) : (
-                    /* 快速開始表單 */
+                ) : !showResourceSelector ? (
+                    /* 步驟 1：快速開始表單 */
                     <div className="bg-white rounded-2xl shadow-lg p-8">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900">建立新課程</h2>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold">
+                                    1
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900">課程基本資訊</h2>
+                            </div>
                             <button
                                 onClick={() => setShowCreateForm(false)}
                                 className="text-gray-500 hover:text-gray-700"
@@ -160,26 +175,85 @@ export default function LessonPrepPage() {
                                     取消
                                 </button>
                                 <button
-                                    onClick={handleQuickStart}
-                                    disabled={isGenerating || !topic.trim()}
-                                    className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isGenerating || !topic.trim()
+                                    onClick={handleContinueToResources}
+                                    disabled={!topic.trim()}
+                                    className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${!topic.trim()
                                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
                                         }`}
                                 >
-                                    {isGenerating ? (
-                                        <>
-                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            AI 規劃中...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="w-5 h-5" />
-                                            開始 AI 規劃
-                                        </>
-                                    )}
+                                    下一步：選擇資源
+                                    <ArrowRight className="w-5 h-5" />
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* 步驟 2：資源選擇 */
+                    <div className="bg-white rounded-2xl shadow-lg p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold">
+                                    2
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900">選擇教學資源</h2>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowResourceSelector(false);
+                                    setShowCreateForm(false);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* 課程資訊摘要 */}
+                        <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                            <h3 className="font-semibold text-indigo-900 mb-2">📚 {topic}</h3>
+                            <div className="text-sm text-indigo-700">
+                                難度：{difficulty === 'basic' ? '基礎' : difficulty === 'intermediate' ? '中階' : '進階'}
+                            </div>
+                        </div>
+
+                        {/* 資源選擇器 */}
+                        <ResourceSelector onResourcesSelected={handleResourcesSelected} className="mb-6" />
+
+                        {/* 按鈕 */}
+                        <div className="flex gap-3 pt-4 border-t border-gray-100">
+                            <button
+                                onClick={() => setShowResourceSelector(false)}
+                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                                上一步
+                            </button>
+                            <button
+                                onClick={handleQuickStart}
+                                disabled={isGenerating}
+                                className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isGenerating
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                                    }`}
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        AI 規劃中...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-5 h-5" />
+                                        開始 AI 規劃課程
+                                        {selectedResources.length > 0 && (
+                                            <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-sm">
+                                                已選 {selectedResources.length} 項
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </button>
                         </div>
 
                         {/* 提示 */}
@@ -188,6 +262,7 @@ export default function LessonPrepPage() {
                                 💡 <span className="font-medium">AI 將為您：</span>
                             </p>
                             <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-6 list-disc">
+                                <li>根據選擇的資源，整合到課程流程中</li>
                                 <li>分析課程主題，拆解知識點</li>
                                 <li>選擇適合的 AI Agents 和工具</li>
                                 <li>規劃符合 APOS 理論的學習路徑</li>
