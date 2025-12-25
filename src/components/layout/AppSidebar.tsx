@@ -60,9 +60,23 @@ interface AppSidebarProps {
     onToggleCollapse: () => void;
 }
 
+// 顯式定義角色樣式，避免動態字串組合導致 Tailwind purge 失效
+const ROLE_STYLES = {
+    teacher: {
+        logoBg: 'bg-indigo-600',
+        activeBg: 'bg-indigo-50 dark:bg-indigo-900/30',
+        activeText: 'text-indigo-600 dark:text-indigo-400',
+    },
+    student: {
+        logoBg: 'bg-purple-600',
+        activeBg: 'bg-purple-50 dark:bg-purple-900/30',
+        activeText: 'text-purple-600 dark:text-purple-400',
+    },
+} as const;
+
 export default function AppSidebar({ userRole, collapsed, onToggleCollapse }: AppSidebarProps) {
     const navItems = userRole === 'teacher' ? TEACHER_NAV : STUDENT_NAV;
-    const roleColor = userRole === 'teacher' ? 'indigo' : 'purple';
+    const styles = userRole in ROLE_STYLES ? ROLE_STYLES[userRole as keyof typeof ROLE_STYLES] : ROLE_STYLES.teacher;
 
     return (
         <aside
@@ -75,7 +89,7 @@ export default function AppSidebar({ userRole, collapsed, onToggleCollapse }: Ap
             {/* Logo 區域 */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <div className={`p-1.5 bg-${roleColor}-600 text-white rounded-lg shrink-0`}>
+                    <div className={`p-1.5 ${styles.logoBg} text-white rounded-lg shrink-0`}>
                         <BrainCircuit className="w-5 h-5" />
                     </div>
                     {!collapsed && (
@@ -103,7 +117,7 @@ export default function AppSidebar({ userRole, collapsed, onToggleCollapse }: Ap
                                 className={({ isActive }) => `
                   flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                   ${isActive
-                                        ? `bg-${roleColor}-50 dark:bg-${roleColor}-900/30 text-${roleColor}-600 dark:text-${roleColor}-400 font-semibold`
+                                        ? `${styles.activeBg} ${styles.activeText} font-semibold`
                                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }
                   ${collapsed ? 'justify-center' : ''}

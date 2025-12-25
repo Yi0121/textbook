@@ -21,6 +21,10 @@ import {
     ClipboardList,
     Lightbulb,
     Edit3,
+    Clock,
+    FileEdit,
+    MessageCircle,
+    TrendingUp,
 } from 'lucide-react';
 import { type UserRole } from '../config/toolConfig';
 import MarkdownMessage from '../components/ui/MarkdownMessage';
@@ -48,6 +52,19 @@ const STUDENT_QUICK_ACTIONS = [
     { icon: Lightbulb, label: '學習建議', description: '個人化學習建議', path: '/learning-suggestions' },
 ];
 
+// Mock 最近活動資料
+const TEACHER_RECENT_ACTIVITIES = [
+    { id: 1, type: 'lesson', title: '四則運算課程', desc: '已發布給 5年甲班', time: '10 分鐘前', icon: FileEdit },
+    { id: 2, type: 'chat', title: 'AI 生成隨堂測驗', desc: '共 15 題選擇題', time: '1 小時前', icon: MessageCircle },
+    { id: 3, type: 'analytics', title: '查看班級學習分析', desc: '平均進度 72%', time: '昨天', icon: BarChart3 },
+];
+
+const STUDENT_RECENT_ACTIVITIES = [
+    { id: 1, type: 'lesson', title: '繼續上次課程', desc: 'Ch3. 一元二次方程式', time: '上次 15 分鐘前', icon: BookOpen },
+    { id: 2, type: 'progress', title: '學習進度更新', desc: '達成 3 個學習目標', time: '今天', icon: TrendingUp },
+    { id: 3, type: 'assignment', title: '作業即將到期', desc: '四則運算練習', time: '明天截止', icon: ClipboardList },
+];
+
 export default function HomePage() {
     const { userRole } = useOutletContext<OutletContextType>();
     const isTeacher = userRole === 'teacher';
@@ -70,6 +87,7 @@ export default function HomePage() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const quickActions = isTeacher ? TEACHER_QUICK_ACTIONS : STUDENT_QUICK_ACTIONS;
+    const recentActivities = isTeacher ? TEACHER_RECENT_ACTIVITIES : STUDENT_RECENT_ACTIVITIES;
 
     // 自動滾動到底部
     useEffect(() => {
@@ -190,7 +208,7 @@ export default function HomePage() {
                                         href={action.path}
                                         className={`
                       p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700
-                      hover:shadow-md hover:border-${isTeacher ? 'indigo' : 'purple'}-300 
+                      hover:shadow-md ${isTeacher ? 'hover:border-indigo-300' : 'hover:border-purple-300'}
                       transition-all group cursor-pointer
                     `}
                                     >
@@ -214,6 +232,45 @@ export default function HomePage() {
                                             </div>
                                         </div>
                                     </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 最近活動區塊 */}
+                    {messages.length <= 1 && (
+                        <div className="mt-8">
+                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
+                                <Clock className="w-4 h-4" />
+                                最近活動
+                            </h3>
+                            <div className="space-y-2">
+                                {recentActivities.map((activity) => (
+                                    <div
+                                        key={activity.id}
+                                        className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-all cursor-pointer group"
+                                    >
+                                        <div className={`
+                                            p-2 rounded-lg
+                                            ${isTeacher
+                                                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500'
+                                                : 'bg-purple-50 dark:bg-purple-900/20 text-purple-500'
+                                            }
+                                        `}>
+                                            <activity.icon className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                                                {activity.title}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                {activity.desc}
+                                            </div>
+                                        </div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                                            {activity.time}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -255,7 +312,7 @@ export default function HomePage() {
                             )}
                         </button>
                     </div>
-                    <p className="text-xs text-center text-gray-400 dark:text-gray-500 mt-2">
+                    <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
                         AI 助手可能產生錯誤，請驗證重要資訊
                     </p>
                 </div>

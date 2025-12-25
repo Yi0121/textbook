@@ -158,10 +158,10 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
                                         currentTool={currentTool}
                                         onTextSelected={(data: any) => setSelectedText(data.text)}
                                         fileMeta={{
-                                            title: "Unit 3: Cellular Respiration",
-                                            version: isEditMode ? "v2.5 (Draft)" : "v2.4 (Published)",
-                                            lastModified: new Date().toLocaleDateString(),
-                                            tags: userRole === 'teacher' ? ["Teacher Edition", "Private"] : ["Student Edition"]
+                                            title: contentState.epubMetadata?.title || "一元二次方程式",
+                                            version: isEditMode ? "v2.5 (草稿)" : "v2.4 (已發布)",
+                                            lastModified: new Date().toLocaleDateString('zh-TW'),
+                                            tags: userRole === 'teacher' ? ["教師版", "私人"] : ["學生版"]
                                         }}
                                         clearSelection={() => { }}
                                     />
