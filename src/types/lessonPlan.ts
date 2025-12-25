@@ -45,12 +45,16 @@ export interface LessonNode {
     // 條件分支（用於學習檢查點）
     isConditional?: boolean;
     conditions?: {
-        learnedPath?: string; // 學會後的下一個節點 ID
+        learnedPath?: string; // 學會後的下一個節點 ID（標準流程）
         notLearnedPath?: string; // 未學會的補強節點 ID
+        advancedPath?: string; // 進階路徑（用於差異化教學 - 高分組）
         assessmentCriteria?: string; // 評估標準
+        branchType?: 'remedial' | 'differentiated'; // 'remedial' = 補救教學, 'differentiated' = 差異化教學
     };
     // 明確指定下一個節點（用於補強後返回主流程）
     nextNodeId?: string;
+    // 分支類型標記（用於視覺區分）
+    branchLevel?: 'advanced' | 'standard' | 'remedial';
 }
 
 export interface LessonPlan {
@@ -223,7 +227,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
         {
             id: 'node-2-补强',
             title: '基礎運算補強',
-            order: 2.5,
+            order: 3,
             agent: AVAILABLE_AGENTS[7], // APOS Construction
             selectedTools: [AVAILABLE_TOOLS[6]], // 臆測鷹架
             generatedContent: {
@@ -237,7 +241,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
         {
             id: 'node-3',
             title: 'GeoGebra 互動練習',
-            order: 3,
+            order: 4,
             agent: AVAILABLE_AGENTS[8], // Technical Support
             selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[4]], // GGB 腳本、狀態讀取
             generatedContent: {
@@ -249,12 +253,174 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
         {
             id: 'node-4',
             title: '綜合評量',
-            order: 4,
+            order: 5,
             agent: AVAILABLE_AGENTS[9], // Grader
             selectedTools: [AVAILABLE_TOOLS[8]], // 自動計分
             generatedContent: {
                 exercises: 15,
             },
+        },
+    ],
+};
+
+// ==================== 差異化教學範例 ====================
+
+export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
+    id: 'lesson-math-002',
+    title: '四則運算 - 差異化教學',
+    topic: '四則混合運算',
+    objectives: '根據學生程度進行差異化教學\\n高分組深入探究\\n低分組鞏固基礎',
+    difficulty: 'intermediate',
+    status: 'draft',
+    createdAt: new Date(),
+    nodes: [
+        // 1. 課程導入
+        {
+            id: 'intro-video',
+            title: '運算規則動畫',
+            order: 1,
+            nodeType: 'video',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[2]],
+            generatedContent: {
+                materials: ['運算順序視覺化'],
+            },
+        },
+
+        // 1.5 LA Agent 學習分析 (新增)
+        {
+            id: 'la-analysis',
+            title: '學習路徑分析',
+            order: 1.5,
+            nodeType: 'agent', // AI Agent
+            agent: AVAILABLE_AGENTS[10], // Learning Observer
+            selectedTools: [AVAILABLE_TOOLS[9]], // 假設：學習歷程分析
+            generatedContent: {
+                materials: ['學生能力畫像', '路徑推薦報告'],
+            },
+        },
+
+        // 2. 前測分流 (基於 LA 分析)
+        {
+            id: 'pre-test',
+            title: '分流診斷',
+            order: 2,
+            nodeType: 'worksheet',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 10,
+            },
+            isConditional: true,
+            conditions: {
+                advancedPath: 'advanced-track',
+                learnedPath: 'standard-track',
+                notLearnedPath: 'remedial-track',
+                assessmentCriteria: 'AI 推薦信度 > 0.8',
+                branchType: 'differentiated',
+            },
+        },
+
+        // ========== 進階路徑 (Top) ==========
+        {
+            id: 'advanced-track',
+            title: '進階挑戰',
+            order: 3,
+            nodeType: 'material',
+            branchLevel: 'advanced',
+            agent: AVAILABLE_AGENTS[2],
+            selectedTools: [AVAILABLE_TOOLS[3]],
+            generatedContent: { materials: ['PISA 素養題'] },
+            nextNodeId: 'advanced-puzzle',
+        },
+        {
+            id: 'advanced-puzzle',
+            title: '數學解謎',
+            order: 4,
+            nodeType: 'external',
+            branchLevel: 'advanced',
+            agent: AVAILABLE_AGENTS[2],
+            selectedTools: [AVAILABLE_TOOLS[7]],
+            generatedContent: { materials: ['邏輯推理遊戲'] },
+            nextNodeId: 'advanced-eval',
+        },
+        {
+            id: 'advanced-eval', // 獨立終點
+            title: '進階評量',
+            order: 5,
+            nodeType: 'worksheet',
+            branchLevel: 'advanced',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: { exercises: 5, materials: ['高階思考題'] },
+        },
+
+        // ========== 標準路徑 (Middle) ==========
+        {
+            id: 'standard-track',
+            title: '混合運算',
+            order: 3,
+            nodeType: 'video',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[0]],
+            generatedContent: { materials: ['觀念圖解'] },
+            nextNodeId: 'ggb-practice',
+        },
+        {
+            id: 'ggb-practice',
+            title: 'GGB 練習',
+            order: 4,
+            nodeType: 'external',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[8],
+            selectedTools: [AVAILABLE_TOOLS[1]],
+            generatedContent: { materials: ['運算模擬'] },
+            nextNodeId: 'standard-eval',
+        },
+        {
+            id: 'standard-eval', // 獨立終點
+            title: '標準後測',
+            order: 5,
+            nodeType: 'worksheet',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: { exercises: 10, materials: ['綜合測驗卷'] },
+        },
+
+        // ========== 補救路徑 (Bottom) ==========
+        {
+            id: 'remedial-track',
+            title: '基礎補強',
+            order: 3,
+            nodeType: 'material',
+            branchLevel: 'remedial',
+            agent: AVAILABLE_AGENTS[7],
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: { materials: ['圖解運算卡'] },
+            nextNodeId: 'remedial-game',
+        },
+        {
+            id: 'remedial-game',
+            title: '數學遊戲',
+            order: 4,
+            nodeType: 'external',
+            branchLevel: 'remedial',
+            agent: AVAILABLE_AGENTS[10],
+            selectedTools: [AVAILABLE_TOOLS[1]],
+            generatedContent: { materials: ['運算闖關'] },
+            nextNodeId: 'remedial-eval',
+        },
+        {
+            id: 'remedial-eval', // 獨立終點
+            title: '達標檢測',
+            order: 5,
+            nodeType: 'worksheet',
+            branchLevel: 'remedial',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: { exercises: 8, materials: ['基礎檢核表'] },
         },
     ],
 };

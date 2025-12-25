@@ -10,13 +10,13 @@
  * 6. 發布課程
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, Handle, Position, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import type { Node, Edge, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp } from 'lucide-react';
-import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 import type { LessonNode } from '../types/lessonPlan';
 
 // 可拖曳資源卡片組件
@@ -73,11 +73,19 @@ type LeftPanelTab = 'agents' | 'video' | 'material' | 'worksheet' | 'external';
 
 function LessonPrepPreviewPageInner() {
     const navigate = useNavigate();
-    const [lesson, setLesson] = useState(MOCK_GENERATED_LESSON);
+    const [lesson, setLesson] = useState(MOCK_DIFFERENTIATED_LESSON);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('agents');
     const [searchQuery, setSearchQuery] = useState('');
     const { fitView } = useReactFlow();
+
+    // 自動調整視野以顯示所有節點
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fitView({ padding: 0.2, duration: 800 });
+        }, 100); // 稍微延遲確保節點已渲染
+        return () => clearTimeout(timer);
+    }, [lesson.nodes, fitView]);
 
     // Accordion 狀態 - 右側編輯面板折疊
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -92,7 +100,7 @@ function LessonPrepPreviewPageInner() {
     };
 
     // 將 lesson nodes 轉換為 ReactFlow nodes（水平排列）
-    const createReactFlowNode = (node: LessonNode, idx: number): Node => {
+    const createReactFlowNode = (node: LessonNode, _idx: number): Node => {
         // 根據節點類型設定顏色和圖標
         const nodeTypeConfig: Record<string, { bg: string; icon: string; label: string; border: string; borderSelected: string }> = {
             agent: { bg: 'bg-indigo-500', icon: '🤖', label: 'AI', border: '#6366f1', borderSelected: '#4f46e5' },
@@ -120,10 +128,21 @@ function LessonPrepPreviewPageInner() {
                         : node.nodeType === 'external' ? 'rgba(168, 85, 247, 0.3)'
                             : 'rgba(79, 70, 229, 0.3)';
 
+        // 計算位置：根據 branchLevel 分流
+        let yPos = 150;
+        if (node.branchLevel === 'advanced') yPos = -50;    // 進階路徑向上 (更開闊)
+        else if (node.branchLevel === 'remedial') yPos = 350; // 補救路徑向下 (更開闊)
+        // standard 維持 150
+
+        // X 軸位置計算優化：將 order 映射為邏輯順序
+        const uniqueOrders = Array.from(new Set(lesson.nodes.map(n => n.order))).sort((a, b) => a - b);
+        const visualRank = uniqueOrders.indexOf(node.order);
+        const xPos = 50 + visualRank * 400; // 寬敞間距
+
         return {
             id: node.id,
             type: 'default',
-            position: { x: 50 + idx * 350, y: 150 },
+            position: { x: xPos, y: yPos },
             data: {
                 label: (
                     <div className="px-4 py-3" style={{ width: '280px' }}>
@@ -133,6 +152,14 @@ function LessonPrepPreviewPageInner() {
                             position={Position.Left}
                             style={{ background: borderColor, width: 12, height: 12 }}
                         />
+
+                        {/* 分支標籤 */}
+                        {node.branchLevel && node.branchLevel !== 'standard' && (
+                            <div className={`absolute -top-3 left-4 px-2 py-0.5 rounded text-xs font-bold text-white ${node.branchLevel === 'advanced' ? 'bg-purple-500' : 'bg-orange-500'
+                                }`}>
+                                {node.branchLevel === 'advanced' ? '🚀 進階挑戰' : '💪 基礎補強'}
+                            </div>
+                        )}
 
                         <div className="flex items-center gap-2 mb-2">
                             <div className={`w-7 h-7 ${node.isConditional ? 'bg-orange-500' : config.bg} text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0`}>
@@ -185,7 +212,7 @@ function LessonPrepPreviewPageInner() {
                 ),
             },
             style: {
-                background: 'white',
+                background: node.branchLevel === 'remedial' ? '#fff7ed' : (node.branchLevel === 'advanced' ? '#f5f3ff' : 'white'), // Light Orange / Light Purple
                 border: isSelected ? `3px solid ${borderColor}` : `2px solid ${borderColor}`,
                 borderRadius: '12px',
                 boxShadow: isSelected ? `0 8px 16px ${shadowColor}` : '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -204,33 +231,53 @@ function LessonPrepPreviewPageInner() {
 
         lessonNodes.forEach((node, idx) => {
             if (node.isConditional && node.conditions) {
-                // 條件節點：兩條路徑
+                // 條件節點：多條路徑分流
+
+                // 1. 標準路徑 (Learned)
                 if (node.conditions.learnedPath) {
                     edges.push({
                         id: `e${node.id}-learned`,
                         source: node.id,
                         target: node.conditions.learnedPath,
-                        type: 'smoothstep',
+                        type: 'default',
                         animated: true,
-                        label: '✓ 學會',
-                        markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' },
-                        style: { stroke: '#10b981', strokeWidth: 2 },
-                        labelStyle: { fill: '#10b981', fontWeight: 600, fontSize: 12 },
-                        labelBgStyle: { fill: '#d1fae5' },
+                        label: '➜ 學會',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
+                        style: { stroke: '#3b82f6', strokeWidth: 2 },
+                        labelStyle: { fill: '#3b82f6', fontWeight: 600, fontSize: 12 },
+                        labelBgStyle: { fill: '#dbeafe' },
                     });
                 }
+
+                // 2. 補救路徑 (Not Learned) - 強化視覺效果
                 if (node.conditions.notLearnedPath) {
                     edges.push({
                         id: `e${node.id}-not-learned`,
                         source: node.id,
                         target: node.conditions.notLearnedPath,
-                        type: 'smoothstep',
+                        type: 'default',
                         animated: true,
-                        label: '✗ 未學會',
-                        markerEnd: { type: MarkerType.ArrowClosed, color: '#ef4444' },
-                        style: { stroke: '#ef4444', strokeWidth: 2 },
-                        labelStyle: { fill: '#ef4444', fontWeight: 600, fontSize: 12 },
-                        labelBgStyle: { fill: '#fee2e2' },
+                        label: '➜ 待加強',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#ea580c' }, // Deep Orange
+                        style: { stroke: '#ea580c', strokeWidth: 3 }, // 移除虛線，改為粗實線
+                        labelStyle: { fill: '#ea580c', fontWeight: 700, fontSize: 13 },
+                        labelBgStyle: { fill: '#ffedd5', stroke: '#ea580c', strokeWidth: 1 },
+                    });
+                }
+
+                // 3. 進階路徑 (Advanced)
+                if (node.conditions.advancedPath) {
+                    edges.push({
+                        id: `e${node.id}-advanced`,
+                        source: node.id,
+                        target: node.conditions.advancedPath,
+                        type: 'default',
+                        animated: true,
+                        label: '🚀 推薦進階',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' }, // Purple
+                        style: { stroke: '#a855f7', strokeWidth: 3 },
+                        labelStyle: { fill: '#a855f7', fontWeight: 600, fontSize: 12 },
+                        labelBgStyle: { fill: '#f3e8ff' },
                     });
                 }
             } else if (node.nextNodeId) {
@@ -239,7 +286,7 @@ function LessonPrepPreviewPageInner() {
                     id: `e${node.id}-next`,
                     source: node.id,
                     target: node.nextNodeId,
-                    type: 'smoothstep',
+                    type: 'default',
                     animated: true,
                     label: '繼續',
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
@@ -253,7 +300,7 @@ function LessonPrepPreviewPageInner() {
                     id: `e${node.id}-${lessonNodes[idx + 1].id}`,
                     source: node.id,
                     target: lessonNodes[idx + 1].id,
-                    type: 'smoothstep',
+                    type: 'default',
                     animated: true,
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
                     style: { stroke: '#6366f1', strokeWidth: 2 },
