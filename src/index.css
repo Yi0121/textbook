@@ -9,6 +9,31 @@
       opacity: 0;
       transform: translateY(10px);
     }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes breathe {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+
+    50% {
+      box-shadow: 0 0 20px 10px rgba(99, 102, 241, 0);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -17,6 +42,14 @@
 
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-breathe {
+    animation: breathe 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
   }
 }
 
@@ -31,6 +64,8 @@
   --color-accent: #8b5cf6;
 }
 
+/* ProseMirror 編輯器樣式 */
+@layer components {
   .ProseMirror blockquote {
     @apply border-l-4 border-gray-300 bg-gray-50 py-3 pl-4 pr-3 my-4 rounded-r text-gray-700 not-italic;
   }
@@ -47,32 +82,38 @@
     @apply bg-yellow-200 text-gray-900 px-1 rounded-sm;
   }
 
-
   .ProseMirror h1 {
     @apply mt-8 mb-4 text-3xl font-bold text-gray-900;
   }
+
   .ProseMirror h2 {
     @apply mt-6 mb-3 text-2xl font-bold text-gray-800 border-b pb-2 border-gray-200;
   }
+
   .ProseMirror h3 {
     @apply mt-4 mb-2 text-xl font-bold text-gray-800;
   }
+
   .ProseMirror ul {
     @apply list-disc list-outside ml-6 my-2 text-gray-700;
   }
+
   .ProseMirror ol {
     @apply list-decimal list-outside ml-6 my-2 text-gray-700;
   }
-  
+
   .ProseMirror:focus {
     @apply outline-none;
   }
+}
 
-  /* 自定義滾動條樣式 */
+/* 自定義滾動條樣式 */
+@layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -80,14 +121,18 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgba(156, 163, 175, 0.5);
     border-radius: 3px;
   }
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background-color: transparent;
   }
+}
