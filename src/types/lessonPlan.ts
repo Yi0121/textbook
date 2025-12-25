@@ -267,160 +267,222 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
 
 export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
     id: 'lesson-math-002',
-    title: '四則運算 - 差異化教學',
+    title: '四則運算 - 教學流程圖',
     topic: '四則混合運算',
-    objectives: '根據學生程度進行差異化教學\\n高分組深入探究\\n低分組鞏固基礎',
+    objectives: '理解運算順序規則\\n能正確計算混合運算\\n應用於生活情境問題',
     difficulty: 'intermediate',
     status: 'draft',
     createdAt: new Date(),
     nodes: [
-        // 1. 課程導入
+        // 步驟 1: 課程導入
         {
-            id: 'intro-video',
-            title: '運算規則動畫',
+            id: 'step1',
+            title: '1. 認識運算符號',
             order: 1,
-            nodeType: 'video',
+            nodeType: 'material',
             agent: AVAILABLE_AGENTS[1],
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['運算順序視覺化'],
+                materials: ['加減乘除符號教學'],
+            },
+            // 三選一：使用特殊的 multiPath 來表示多個並行選項
+            isConditional: true,
+            conditions: {
+                learnedPath: 'step2-video',      // 選項A
+                notLearnedPath: 'step2-game',    // 選項B
+                advancedPath: 'step2-reading',   // 選項C
+                assessmentCriteria: '選擇教學方式',
+                branchType: 'multi-choice',
             },
         },
 
-        // 1.5 LA Agent 學習分析 (新增)
+        // 步驟 2: 教學（三選一）- 平行路徑從 step1 出發，都指向 step3
         {
-            id: 'la-analysis',
-            title: '學習路徑分析',
-            order: 1.5,
-            nodeType: 'agent', // AI Agent
-            agent: AVAILABLE_AGENTS[10], // Learning Observer
-            selectedTools: [AVAILABLE_TOOLS[9]], // 假設：學習歷程分析
-            generatedContent: {
-                materials: ['學生能力畫像', '路徑推薦報告'],
-            },
-        },
-
-        // 2. 前測分流 (基於 LA 分析)
-        {
-            id: 'pre-test',
-            title: '分流診斷',
+            id: 'step2-video',
+            title: '2A. 影片：先乘除後加減',
             order: 2,
+            nodeType: 'video',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[2]],
+            generatedContent: {
+                materials: ['運算順序動畫'],
+            },
+            nextNodeId: 'step3', // 指向步驟3
+        },
+
+        {
+            id: 'step2-game',
+            title: '2B. 遊戲：運算大冒險',
+            order: 2,
+            nodeType: 'external',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[8],
+            selectedTools: [AVAILABLE_TOOLS[1]],
+            generatedContent: {
+                materials: ['互動遊戲'],
+            },
+            nextNodeId: 'step3', // 指向步驟3
+        },
+
+        {
+            id: 'step2-reading',
+            title: '2C. 閱讀：運算規則圖解',
+            order: 2,
+            nodeType: 'material',
+            branchLevel: 'standard',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[0]],
+            generatedContent: {
+                materials: ['圖解教材'],
+            },
+            nextNodeId: 'step3', // 指向步驟3
+        },
+
+        // 步驟 3: 練習
+        {
+            id: 'step3',
+            title: '3. 基礎練習',
+            order: 3,
+            nodeType: 'worksheet',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 5,
+                materials: ['5題基礎運算'],
+            },
+        },
+
+        // 步驟 4: 測驗（檢查點）
+        {
+            id: 'step4-test',
+            title: '4. 學習檢測',
+            order: 4,
             nodeType: 'worksheet',
             agent: AVAILABLE_AGENTS[9],
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 10,
+                materials: ['10題混合運算'],
             },
             isConditional: true,
             conditions: {
-                advancedPath: 'advanced-track',
-                learnedPath: 'standard-track',
-                notLearnedPath: 'remedial-track',
-                assessmentCriteria: 'AI 推薦信度 > 0.8',
-                branchType: 'differentiated',
+                learnedPath: 'step5', // ✓ 80分以上 → 繼續
+                notLearnedPath: 'remedial1', // ✗ 未達標 → 補救
+                assessmentCriteria: '80分以上',
+                branchType: 'remedial',
             },
         },
 
-        // ========== 進階路徑 (Top) ==========
+        // 補救教學分支
         {
-            id: 'advanced-track',
-            title: '進階挑戰',
-            order: 3,
-            nodeType: 'material',
-            branchLevel: 'advanced',
-            agent: AVAILABLE_AGENTS[2],
-            selectedTools: [AVAILABLE_TOOLS[3]],
-            generatedContent: { materials: ['PISA 素養題'] },
-            nextNodeId: 'advanced-puzzle',
-        },
-        {
-            id: 'advanced-puzzle',
-            title: '數學解謎',
-            order: 4,
-            nodeType: 'external',
-            branchLevel: 'advanced',
-            agent: AVAILABLE_AGENTS[2],
-            selectedTools: [AVAILABLE_TOOLS[7]],
-            generatedContent: { materials: ['邏輯推理遊戲'] },
-            nextNodeId: 'advanced-eval',
-        },
-        {
-            id: 'advanced-eval', // 獨立終點
-            title: '進階評量',
+            id: 'remedial1',
+            title: '補救：個別指導',
             order: 5,
-            nodeType: 'worksheet',
-            branchLevel: 'advanced',
-            agent: AVAILABLE_AGENTS[9],
-            selectedTools: [AVAILABLE_TOOLS[8]],
-            generatedContent: { exercises: 5, materials: ['高階思考題'] },
-        },
-
-        // ========== 標準路徑 (Middle) ==========
-        {
-            id: 'standard-track',
-            title: '混合運算',
-            order: 3,
-            nodeType: 'video',
-            branchLevel: 'standard',
-            agent: AVAILABLE_AGENTS[1],
-            selectedTools: [AVAILABLE_TOOLS[0]],
-            generatedContent: { materials: ['觀念圖解'] },
-            nextNodeId: 'ggb-practice',
-        },
-        {
-            id: 'ggb-practice',
-            title: 'GGB 練習',
-            order: 4,
-            nodeType: 'external',
-            branchLevel: 'standard',
-            agent: AVAILABLE_AGENTS[8],
-            selectedTools: [AVAILABLE_TOOLS[1]],
-            generatedContent: { materials: ['運算模擬'] },
-            nextNodeId: 'standard-eval',
-        },
-        {
-            id: 'standard-eval', // 獨立終點
-            title: '標準後測',
-            order: 5,
-            nodeType: 'worksheet',
-            branchLevel: 'standard',
-            agent: AVAILABLE_AGENTS[9],
-            selectedTools: [AVAILABLE_TOOLS[8]],
-            generatedContent: { exercises: 10, materials: ['綜合測驗卷'] },
-        },
-
-        // ========== 補救路徑 (Bottom) ==========
-        {
-            id: 'remedial-track',
-            title: '基礎補強',
-            order: 3,
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: AVAILABLE_AGENTS[7],
             selectedTools: [AVAILABLE_TOOLS[6]],
-            generatedContent: { materials: ['圖解運算卡'] },
-            nextNodeId: 'remedial-game',
+            generatedContent: {
+                materials: ['AI一對一輔導'],
+            },
+            nextNodeId: 'remedial-test',
         },
+
         {
-            id: 'remedial-game',
-            title: '數學遊戲',
-            order: 4,
-            nodeType: 'external',
-            branchLevel: 'remedial',
-            agent: AVAILABLE_AGENTS[10],
-            selectedTools: [AVAILABLE_TOOLS[1]],
-            generatedContent: { materials: ['運算闖關'] },
-            nextNodeId: 'remedial-eval',
-        },
-        {
-            id: 'remedial-eval', // 獨立終點
-            title: '達標檢測',
-            order: 5,
+            id: 'remedial-test',
+            title: '補救：再次測驗',
+            order: 6,
             nodeType: 'worksheet',
             branchLevel: 'remedial',
             agent: AVAILABLE_AGENTS[9],
             selectedTools: [AVAILABLE_TOOLS[8]],
-            generatedContent: { exercises: 8, materials: ['基礎檢核表'] },
+            generatedContent: {
+                exercises: 5,
+                materials: ['簡化版測驗'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'step5', // ✓ 達標 → 繼續
+                notLearnedPath: 'remedial1', // ✗ 再補救
+                assessmentCriteria: '70分以上',
+                branchType: 'remedial',
+            },
+        },
+
+        // 步驟 5: 進階應用
+        {
+            id: 'step5',
+            title: '5. 括號運算',
+            order: 7,
+            nodeType: 'material',
+            agent: AVAILABLE_AGENTS[2],
+            selectedTools: [AVAILABLE_TOOLS[3]],
+            generatedContent: {
+                materials: ['括號優先規則'],
+            },
+        },
+
+        // 步驟 6: 應用題
+        {
+            id: 'step6',
+            title: '6. 生活應用題',
+            order: 8,
+            nodeType: 'video',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[2]],
+            generatedContent: {
+                materials: ['購物情境題'],
+            },
+        },
+
+        // 步驟 7: 總測驗
+        {
+            id: 'step7',
+            title: '7. 總評量',
+            order: 9,
+            nodeType: 'worksheet',
+            agent: AVAILABLE_AGENTS[9],
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 15,
+                materials: ['綜合測驗'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'finish', // ✓ 完成
+                notLearnedPath: 'remedial2', // ✗ 應用題補救
+                assessmentCriteria: '75分以上',
+                branchType: 'remedial',
+            },
+        },
+
+        // 應用題補救
+        {
+            id: 'remedial2',
+            title: '補救：應用題加強',
+            order: 10,
+            nodeType: 'external',
+            branchLevel: 'remedial',
+            agent: AVAILABLE_AGENTS[8],
+            selectedTools: [AVAILABLE_TOOLS[1]],
+            generatedContent: {
+                materials: ['互動情境練習'],
+            },
+            nextNodeId: 'step7',
+        },
+
+        // 完成
+        {
+            id: 'finish',
+            title: '✓ 課程完成',
+            order: 11,
+            nodeType: 'material',
+            agent: AVAILABLE_AGENTS[1],
+            selectedTools: [AVAILABLE_TOOLS[2]],
+            generatedContent: {
+                materials: ['學習成果總結'],
+            },
         },
     ],
 };

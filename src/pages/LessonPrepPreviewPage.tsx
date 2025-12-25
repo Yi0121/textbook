@@ -18,6 +18,7 @@ import '@xyflow/react/dist/style.css';
 import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 import type { LessonNode } from '../types/lessonPlan';
+import dagre from 'dagre';
 
 // 可拖曳資源卡片組件
 function DraggableResource({ id, title, desc, source, color, resourceType }: {
@@ -70,6 +71,65 @@ function DraggableResource({ id, title, desc, source, color, resourceType }: {
 }
 
 type LeftPanelTab = 'agents' | 'video' | 'material' | 'worksheet' | 'external';
+
+// Dagre 自動佈局演算法
+const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+    const dagreGraph = new dagre.graphlib.Graph();
+    dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+    const nodeWidth = 180;   // 再縮小
+    const nodeHeight = 100;  // 再縮小
+
+    // 設定圖形佈局參數
+    dagreGraph.setGraph({
+        rankdir: 'LR',      // 從左到右排列
+        nodesep: 30,        // 同層節點垂直間距（再縮小）
+        ranksep: 120,       // 不同層水平間距（再縮小）
+        edgesep: 15,        // 邊的間距（再縮小）
+        marginx: 15,
+        marginy: 15,
+    });
+
+    // 加入所有節點到 dagre 圖
+    nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    // 加入所有邊到 dagre 圖
+    edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+    });
+
+    // 執行佈局計算
+    dagre.layout(dagreGraph);
+
+    // 應用計算結果到節點位置
+    const layoutedNodes = nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        const lessonNode = node.data.lessonNode as LessonNode;
+
+        let yOffset = 0;
+
+        // 補強路徑往下偏移
+        if (lessonNode.branchLevel === 'remedial') {
+            yOffset = 70;  // 再縮小偏移量
+        }
+        // 進階路徑往上偏移
+        else if (lessonNode.branchLevel === 'advanced') {
+            yOffset = -70;  // 再縮小偏移量
+        }
+
+        return {
+            ...node,
+            position: {
+                x: nodeWithPosition.x - nodeWidth / 2,
+                y: nodeWithPosition.y - nodeHeight / 2 + yOffset,
+            },
+        };
+    });
+
+    return { nodes: layoutedNodes, edges };
+};
 
 function LessonPrepPreviewPageInner() {
     const navigate = useNavigate();
@@ -128,102 +188,92 @@ function LessonPrepPreviewPageInner() {
                         : node.nodeType === 'external' ? 'rgba(168, 85, 247, 0.3)'
                             : 'rgba(79, 70, 229, 0.3)';
 
-        // 計算位置：根據 branchLevel 分流
-        let yPos = 150;
-        if (node.branchLevel === 'advanced') yPos = -50;    // 進階路徑向上 (更開闊)
-        else if (node.branchLevel === 'remedial') yPos = 350; // 補救路徑向下 (更開闊)
-        // standard 維持 150
-
-        // X 軸位置計算優化：將 order 映射為邏輯順序
-        const uniqueOrders = Array.from(new Set(lesson.nodes.map(n => n.order))).sort((a, b) => a - b);
-        const visualRank = uniqueOrders.indexOf(node.order);
-        const xPos = 50 + visualRank * 400; // 寬敞間距
-
         return {
             id: node.id,
             type: 'default',
-            position: { x: xPos, y: yPos },
+            position: { x: 0, y: 0 }, // 初始位置，稍後由 dagre 計算
             data: {
+                lessonNode: node, // 儲存 lessonNode 供佈局函數使用
                 label: (
-                    <div className="px-4 py-3" style={{ width: '280px' }}>
+                    <div className="relative" style={{ width: '170px' }}>
                         {/* 左側連接點（入口） */}
                         <Handle
                             type="target"
                             position={Position.Left}
-                            style={{ background: borderColor, width: 12, height: 12 }}
+                            style={{ background: borderColor, width: 10, height: 10, left: -5 }}
                         />
 
-                        {/* 分支標籤 */}
-                        {node.branchLevel && node.branchLevel !== 'standard' && (
-                            <div className={`absolute -top-3 left-4 px-2 py-0.5 rounded text-xs font-bold text-white ${node.branchLevel === 'advanced' ? 'bg-purple-500' : 'bg-orange-500'
-                                }`}>
-                                {node.branchLevel === 'advanced' ? '🚀 進階挑戰' : '💪 基礎補強'}
-                            </div>
-                        )}
+                        {/* Card 卡片設計 - 極簡版 */}
+                        <div className={`rounded overflow-hidden shadow transition-all ${isSelected ? 'ring-2' : ''
+                            }`}
+                            style={{
+                                background: 'white',
+                                boxShadow: isSelected ? `0 4px 8px ${shadowColor}` : '0 1px 4px rgba(0, 0, 0, 0.08)',
+                                ...(isSelected && { ringColor: borderColor })
+                            }}>
 
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className={`w-7 h-7 ${node.isConditional ? 'bg-orange-500' : config.bg} text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0`}>
-                                {node.isConditional ? '?' : config.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="font-bold text-gray-900 text-sm truncate block">{node.title}</span>
-                                {!isAgent && (
-                                    <span className={`text-xs px-1.5 py-0.5 rounded ${node.nodeType === 'video' ? 'bg-red-100 text-red-700' :
-                                        node.nodeType === 'material' ? 'bg-blue-100 text-blue-700' :
-                                            node.nodeType === 'worksheet' ? 'bg-green-100 text-green-700' :
-                                                'bg-purple-100 text-purple-700'
-                                        }`}>{config.label}</span>
+                            {/* Card Header - 彩色頂部條 */}
+                            <div className={`h-1 ${node.isConditional ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
+                                node.nodeType === 'video' ? 'bg-gradient-to-r from-red-400 to-pink-500' :
+                                    node.nodeType === 'material' ? 'bg-gradient-to-r from-blue-400 to-cyan-500' :
+                                        node.nodeType === 'worksheet' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                                            node.nodeType === 'external' ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
+                                                'bg-gradient-to-r from-indigo-500 to-purple-600'
+                                }`} />
+
+                            {/* Card Body - 極度精簡 */}
+                            <div className="p-2">
+                                {/* 分支標籤 */}
+                                {node.branchLevel && node.branchLevel !== 'standard' && (
+                                    <div className={`absolute -top-1.5 left-2 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white shadow ${node.branchLevel === 'advanced' ? 'bg-gradient-to-r from-purple-500 to-indigo-500' : 'bg-gradient-to-r from-orange-500 to-red-500'
+                                        }`}>
+                                        {node.branchLevel === 'advanced' ? '進階' : '補強'}
+                                    </div>
                                 )}
-                            </div>
-                        </div>
-                        {node.isConditional && (
-                            <div className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded mb-2">
-                                <span className="font-medium">條件檢查點</span>
-                            </div>
-                        )}
-                        {isAgent && (
-                            <div className="text-xs text-gray-600 space-y-1">
-                                <div className="flex items-center gap-1">
-                                    <Settings className="w-3 h-3 flex-shrink-0" />
-                                    <span className="font-medium truncate">{node.agent.nameEn}</span>
+
+                                {/* Icon + Title - 精簡版 */}
+                                <div className="flex items-start gap-1.5 mb-1">
+                                    <div className={`w-6 h-6 ${node.isConditional ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                                        node.nodeType === 'video' ? 'bg-gradient-to-br from-red-400 to-pink-500' :
+                                            node.nodeType === 'material' ? 'bg-gradient-to-br from-blue-400 to-cyan-500' :
+                                                node.nodeType === 'worksheet' ? 'bg-gradient-to-br from-green-400 to-emerald-500' :
+                                                    node.nodeType === 'external' ? 'bg-gradient-to-br from-purple-400 to-pink-500' :
+                                                        'bg-gradient-to-br from-indigo-500 to-purple-600'
+                                        } text-white rounded flex items-center justify-center text-xs font-bold shadow flex-shrink-0`}>
+                                        {node.isConditional ? '?' : config.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-gray-900 text-[11px] leading-tight">{node.title}</h3>
+                                    </div>
                                 </div>
-                                {node.selectedTools.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                        {node.selectedTools.slice(0, 3).map(tool => (
-                                            <span key={tool.id} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs whitespace-nowrap">
-                                                {tool.name.length > 8 ? tool.name.slice(0, 8) + '...' : tool.name}
-                                            </span>
-                                        ))}
-                                        {node.selectedTools.length > 3 && (
-                                            <span className="text-xs text-gray-500">+{node.selectedTools.length - 3}</span>
-                                        )}
+
+                                {/* Content Info - 只顯示教材 */}
+                                {node.generatedContent?.materials && (
+                                    <div className="text-[9px] text-gray-600 bg-gray-50 rounded px-1.5 py-1 truncate">
+                                        📚 {node.generatedContent.materials[0]}
                                     </div>
                                 )}
                             </div>
-                        )}
+                        </div>
 
                         {/* 右側連接點（出口） */}
                         <Handle
                             type="source"
                             position={Position.Right}
-                            style={{ background: borderColor, width: 12, height: 12 }}
+                            style={{ background: borderColor, width: 10, height: 10, right: -5 }}
                         />
                     </div>
                 ),
             },
             style: {
-                background: node.branchLevel === 'remedial' ? '#fff7ed' : (node.branchLevel === 'advanced' ? '#f5f3ff' : 'white'), // Light Orange / Light Purple
-                border: isSelected ? `3px solid ${borderColor}` : `2px solid ${borderColor}`,
-                borderRadius: '12px',
-                boxShadow: isSelected ? `0 8px 16px ${shadowColor}` : '0 4px 6px rgba(0, 0, 0, 0.1)',
+                background: 'transparent',
+                border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                width: '280px',
+                width: '170px',
             },
         };
     };
-
-    const [nodes, setNodes] = useState<Node[]>(lesson.nodes.map((node, idx) => createReactFlowNode(node, idx)));
 
     // 建立連接線（支援條件分支）
     const createEdges = (lessonNodes: LessonNode[]): Edge[] => {
@@ -232,8 +282,9 @@ function LessonPrepPreviewPageInner() {
         lessonNodes.forEach((node, idx) => {
             if (node.isConditional && node.conditions) {
                 // 條件節點：多條路徑分流
+                const isMultiChoice = node.conditions.branchType === 'multi-choice';
 
-                // 1. 標準路徑 (Learned)
+                // 1. 標準路徑 (Learned / Choice A)
                 if (node.conditions.learnedPath) {
                     edges.push({
                         id: `e${node.id}-learned`,
@@ -241,7 +292,7 @@ function LessonPrepPreviewPageInner() {
                         target: node.conditions.learnedPath,
                         type: 'default',
                         animated: true,
-                        label: '➜ 學會',
+                        label: isMultiChoice ? '影片' : '➜ 學會',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
                         style: { stroke: '#3b82f6', strokeWidth: 2 },
                         labelStyle: { fill: '#3b82f6', fontWeight: 600, fontSize: 12 },
@@ -249,7 +300,7 @@ function LessonPrepPreviewPageInner() {
                     });
                 }
 
-                // 2. 補救路徑 (Not Learned) - 強化視覺效果
+                // 2. 補救路徑 (Not Learned / Choice B) - 強化視覺效果
                 if (node.conditions.notLearnedPath) {
                     edges.push({
                         id: `e${node.id}-not-learned`,
@@ -257,15 +308,15 @@ function LessonPrepPreviewPageInner() {
                         target: node.conditions.notLearnedPath,
                         type: 'default',
                         animated: true,
-                        label: '➜ 待加強',
+                        label: isMultiChoice ? '遊戲' : '➜ 待加強',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#ea580c' }, // Deep Orange
-                        style: { stroke: '#ea580c', strokeWidth: 3 }, // 移除虛線，改為粗實線
-                        labelStyle: { fill: '#ea580c', fontWeight: 700, fontSize: 13 },
-                        labelBgStyle: { fill: '#ffedd5', stroke: '#ea580c', strokeWidth: 1 },
+                        style: { stroke: '#ea580c', strokeWidth: isMultiChoice ? 2 : 3 }, // 多選時使用正常粗細
+                        labelStyle: { fill: '#ea580c', fontWeight: isMultiChoice ? 600 : 700, fontSize: isMultiChoice ? 12 : 13 },
+                        labelBgStyle: { fill: '#ffedd5', stroke: isMultiChoice ? 'transparent' : '#ea580c', strokeWidth: isMultiChoice ? 0 : 1 },
                     });
                 }
 
-                // 3. 進階路徑 (Advanced)
+                // 3. 進階路徑 (Advanced / Choice C)
                 if (node.conditions.advancedPath) {
                     edges.push({
                         id: `e${node.id}-advanced`,
@@ -273,9 +324,9 @@ function LessonPrepPreviewPageInner() {
                         target: node.conditions.advancedPath,
                         type: 'default',
                         animated: true,
-                        label: '🚀 推薦進階',
+                        label: isMultiChoice ? '閱讀' : '🚀 推薦進階',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' }, // Purple
-                        style: { stroke: '#a855f7', strokeWidth: 3 },
+                        style: { stroke: '#a855f7', strokeWidth: isMultiChoice ? 2 : 3 },
                         labelStyle: { fill: '#a855f7', fontWeight: 600, fontSize: 12 },
                         labelBgStyle: { fill: '#f3e8ff' },
                     });
@@ -311,7 +362,13 @@ function LessonPrepPreviewPageInner() {
         return edges;
     };
 
-    const [edges, setEdges] = useState<Edge[]>(createEdges(lesson.nodes));
+    // 初始化節點和邊，並使用自動佈局
+    const initialNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
+    const initialEdges = createEdges(lesson.nodes);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges);
+
+    const [nodes, setNodes] = useState<Node[]>(layoutedNodes);
+    const [edges, setEdges] = useState<Edge[]>(layoutedEdges);
 
     const onNodesChange: OnNodesChange = useCallback(
         (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -335,8 +392,11 @@ function LessonPrepPreviewPageInner() {
         });
 
         setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        setNodes(updatedNodes.map((node, idx) => createReactFlowNode(node, idx)));
-        setEdges(createEdges(updatedNodes));
+        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
+        const newEdges = createEdges(updatedNodes);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
     }, [lesson.nodes, createEdges]);
 
     const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -381,8 +441,11 @@ function LessonPrepPreviewPageInner() {
 
         const updatedNodes = [...lesson.nodes, newNode];
         setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        setNodes(updatedNodes.map((node, idx) => createReactFlowNode(node, idx)));
-        setEdges(createEdges(updatedNodes));
+        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
+        const newEdges = createEdges(updatedNodes);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
     };
 
     const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -458,8 +521,11 @@ function LessonPrepPreviewPageInner() {
         if (confirm('確定要刪除此節點嗎？')) {
             const updatedNodes = lesson.nodes.filter(n => n.id !== nodeId).map((n, idx) => ({ ...n, order: idx + 1 }));
             setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-            setNodes(updatedNodes.map((node, idx) => createReactFlowNode(node, idx)));
-            setEdges(createEdges(updatedNodes));
+            const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
+            const newEdges = createEdges(updatedNodes);
+            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+            setNodes(layoutedNodes);
+            setEdges(layoutedEdges);
             setSelectedNodeId(null);
         }
     };
@@ -467,7 +533,11 @@ function LessonPrepPreviewPageInner() {
     const handleUpdateNode = (updatedNode: LessonNode) => {
         const updatedNodes = lesson.nodes.map(n => n.id === updatedNode.id ? updatedNode : n);
         setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        setNodes(updatedNodes.map((node, idx) => createReactFlowNode(node, idx)));
+        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
+        const newEdges = createEdges(updatedNodes);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
     };
 
     const handlePublish = () => {
@@ -514,6 +584,21 @@ function LessonPrepPreviewPageInner() {
                     >
                         <Plus className="w-4 h-4" />
                         新增節點
+                    </button>
+                    <button
+                        onClick={() => {
+                            const newNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
+                            const newEdges = createEdges(lesson.nodes);
+                            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+                            setNodes(layoutedNodes);
+                            setEdges(layoutedEdges);
+                            setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100);
+                        }}
+                        className="px-4 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all flex items-center gap-2"
+                        title="自動排列整齊"
+                    >
+                        <Settings className="w-4 h-4" />
+                        自動排列
                     </button>
                     <button
                         onClick={() => fitView({ padding: 0.2, duration: 500 })}
