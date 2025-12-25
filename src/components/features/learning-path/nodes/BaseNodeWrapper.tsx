@@ -50,10 +50,14 @@ export const BaseNodeWrapper = memo(({
         }
     };
 
+    // 進行中狀態加入呼吸燈動畫
+    const isInProgress = status === 'in_progress';
+
     return (
         <div className={`
       w-[250px] bg-white rounded-lg shadow-sm border-2 transition-all duration-200
       ${getBorderColor()}
+      ${isInProgress && !selected ? 'animate-breathe' : ''}
     `}>
             {/* Input Handle - 左側 */}
             {showTargetHandle && (

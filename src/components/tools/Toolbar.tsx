@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box } from 'lucide-react';
 
 // 引入 Context 和 Hook
@@ -54,6 +54,52 @@ const FixedToolbar = ({
   const [activeSubPanel, setActiveSubPanel] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isAutoHidden, setIsAutoHidden] = useState(false);
+
+  // 自動隱藏 Timer
+  const autoHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const AUTO_HIDE_DELAY = 5000; // 5 秒後自動隱藏
+
+  // 重置自動隱藏 Timer
+  const resetAutoHideTimer = useCallback(() => {
+    // 清除現有 timer
+    if (autoHideTimeoutRef.current) {
+      clearTimeout(autoHideTimeoutRef.current);
+    }
+    // 顯示 Toolbar
+    setIsAutoHidden(false);
+    // 設定新的自動隱藏 timer
+    autoHideTimeoutRef.current = setTimeout(() => {
+      setIsAutoHidden(true);
+    }, AUTO_HIDE_DELAY);
+  }, []);
+
+  // 初始化自動隱藏和清理
+  useEffect(() => {
+    resetAutoHideTimer();
+    return () => {
+      if (autoHideTimeoutRef.current) {
+        clearTimeout(autoHideTimeoutRef.current);
+      }
+    };
+  }, [resetAutoHideTimer]);
+
+  // 監聽全域滑鼠移動事件
+  useEffect(() => {
+    const handleGlobalActivity = () => {
+      resetAutoHideTimer();
+    };
+
+    window.addEventListener('mousemove', handleGlobalActivity);
+    window.addEventListener('touchstart', handleGlobalActivity);
+    window.addEventListener('keydown', handleGlobalActivity);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalActivity);
+      window.removeEventListener('touchstart', handleGlobalActivity);
+      window.removeEventListener('keydown', handleGlobalActivity);
+    };
+  }, [resetAutoHideTimer]);
 
   // 監聽工具改變，如果選到畫筆就自動顯示調色盤
   useEffect(() => {
@@ -110,9 +156,12 @@ const FixedToolbar = ({
 
   return (
     <div
-      className={`fixed bottom-4 md:bottom-6 ${getPositionClass()} transition-all duration-300 z-[100] w-auto max-w-[95vw]`}
+      className={`fixed bottom-4 md:bottom-6 ${getPositionClass()} transition-all duration-300 z-[100] w-auto max-w-[95vw]
+        ${isAutoHidden ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}
+      `}
       onMouseDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
+      onMouseEnter={resetAutoHideTimer}
     >
       {/* === 主工具列 === */}
       <div className="bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 p-1.5 md:p-2 rounded-2xl flex items-center gap-1 md:gap-2 ring-1 ring-black/5 overflow-x-auto scrollbar-hide">
@@ -153,11 +202,10 @@ const FixedToolbar = ({
             {/* 百寶箱按鈕 */}
             <button
               onClick={() => setActiveSubPanel(p => p === 'box' ? null : 'box')}
-              className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all shrink-0 ${
-                activeSubPanel === 'box'
+              className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-lg md:rounded-xl transition-all shrink-0 ${activeSubPanel === 'box'
                   ? 'bg-purple-50 text-purple-600 shadow-sm ring-1 ring-purple-100'
                   : 'text-gray-500 hover:bg-gray-100'
-              }`}
+                }`}
               title="百寶箱"
             >
               <Box className="w-4 h-4 md:w-5 md:h-5" />
