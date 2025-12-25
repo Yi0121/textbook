@@ -494,7 +494,7 @@ function LessonPrepPreviewPageInner() {
                     <div className="p-3 border-b border-gray-200 bg-gray-50">
                         <div className="flex flex-wrap gap-1">
                             {([
-                                { value: 'agents', label: '🤖 AI助教', color: 'indigo' },
+                                { value: 'agents', label: '🤖 AI Agent', color: 'indigo' },
                                 { value: 'video', label: '🎬 影片', color: 'red' },
                                 { value: 'material', label: '📄 教材', color: 'blue' },
                                 { value: 'worksheet', label: '📝 練習', color: 'green' },
@@ -520,7 +520,7 @@ function LessonPrepPreviewPageInner() {
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="搜尋資源或 AI 助教..."
+                                placeholder="搜尋資源或 AI Agent..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -666,7 +666,7 @@ function LessonPrepPreviewPageInner() {
                                     onClick={() => toggleSection('agent')}
                                     className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-colors"
                                 >
-                                    <span className="font-medium text-gray-900">🤖 AI 助教</span>
+                                    <span className="font-medium text-gray-900">🤖 AI Agent</span>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
                                             {selectedNode.agent.name}
@@ -747,7 +747,7 @@ function LessonPrepPreviewPageInner() {
                                             })}
                                         {AVAILABLE_TOOLS.filter(tool => selectedNode.agent.availableTools.includes(tool.id)).length === 0 && (
                                             <div className="text-center py-4 text-sm text-gray-400">
-                                                此 AI 助教無額外功能可選
+                                                此 AI Agent 無額外功能可選
                                             </div>
                                         )}
                                     </div>

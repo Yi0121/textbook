@@ -8,8 +8,15 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Sparkles, List, ArrowRight, ChevronLeft } from 'lucide-react';
+import { BookOpen, Sparkles, List, ArrowRight, ChevronLeft, Rocket, Library, Signal, Lightbulb, X, Clock, Edit } from 'lucide-react';
 import ResourceSelector, { type Resource } from '../components/features/lesson-prep/ResourceSelector';
+
+// Mock 最近草稿資料
+const RECENT_DRAFTS = [
+    { id: 'd1', title: '四則運算基礎', subject: '數學', grade: '五年級', lastEdited: '10 分鐘前', progress: 80 },
+    { id: 'd2', title: '分數加減法', subject: '數學', grade: '四年級', lastEdited: '昨天', progress: 45 },
+    { id: 'd3', title: '幾何圖形辨識', subject: '數學', grade: '三年級', lastEdited: '3 天前', progress: 20 },
+];
 
 export default function LessonPrepPage() {
     const navigate = useNavigate();
@@ -58,41 +65,82 @@ export default function LessonPrepPage() {
 
                 {!showCreateForm ? (
                     /* 選擇入口 */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 快速開始 */}
-                        <button
-                            onClick={() => setShowCreateForm(true)}
-                            className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-300 text-left group"
-                        >
-                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <Sparkles className="w-8 h-8 text-white" />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">🚀 快速開始</h2>
-                            <p className="text-gray-600 mb-4">
-                                輸入課程主題，選擇教學資源，讓 AI 為您規劃完整的教學流程
-                            </p>
-                            <div className="flex items-center gap-2 text-indigo-600 font-medium">
-                                立即開始 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                        </button>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* 快速開始 */}
+                            <button
+                                onClick={() => setShowCreateForm(true)}
+                                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-300 text-left group"
+                            >
+                                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <Sparkles className="w-8 h-8 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Rocket className="w-5 h-5 text-indigo-600" /> 快速開始</h2>
+                                <p className="text-gray-600 mb-4">
+                                    輸入課程主題，選擇教學資源，讓 AI 為您規劃完整的教學流程
+                                </p>
+                                <div className="flex items-center gap-2 text-indigo-600 font-medium">
+                                    立即開始 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                            </button>
 
-                        {/* 查看現有課程 */}
-                        <button
-                            onClick={() => navigate('/lesson-prep/preview')}
-                            className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
-                        >
-                            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <List className="w-8 h-8 text-white" />
+                            {/* 查看現有課程 */}
+                            <button
+                                onClick={() => navigate('/lesson-prep/preview')}
+                                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
+                            >
+                                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <List className="w-8 h-8 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Library className="w-5 h-5 text-purple-600" /> 查看示範課程</h2>
+                                <p className="text-gray-600 mb-4">
+                                    瀏覽和編輯已建立的課程（示範：四則運算）
+                                </p>
+                                <div className="flex items-center gap-2 text-purple-600 font-medium">
+                                    前往查看 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* 最近草稿區塊 */}
+                        <div className="mt-8 bg-white rounded-2xl shadow-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <Clock className="w-5 h-5 text-gray-500" />
+                                    最近草稿
+                                </h3>
+                                <button className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                    查看全部
+                                </button>
                             </div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">📚 查看示範課程</h2>
-                            <p className="text-gray-600 mb-4">
-                                瀏覽和編輯已建立的課程（示範：四則運算）
-                            </p>
-                            <div className="flex items-center gap-2 text-purple-600 font-medium">
-                                前往查看 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            <div className="space-y-3">
+                                {RECENT_DRAFTS.map((draft) => (
+                                    <div
+                                        key={draft.id}
+                                        onClick={() => navigate('/lesson-prep/preview')}
+                                        className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-xl cursor-pointer transition-all group"
+                                    >
+                                        <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                            <Edit className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-gray-900 truncate">{draft.title}</div>
+                                            <div className="text-xs text-gray-500">{draft.subject} • {draft.grade}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xs text-gray-400 mb-1">{draft.lastEdited}</div>
+                                            <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-indigo-500 rounded-full"
+                                                    style={{ width: `${draft.progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </button>
-                    </div>
+                        </div>
+                    </>
                 ) : !showResourceSelector ? (
                     /* 步驟 1：快速開始表單 */
                     <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -105,9 +153,10 @@ export default function LessonPrepPage() {
                             </div>
                             <button
                                 onClick={() => setShowCreateForm(false)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                aria-label="關閉"
                             >
-                                ✕
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
 
@@ -147,19 +196,19 @@ export default function LessonPrepPage() {
                                 </label>
                                 <div className="grid grid-cols-3 gap-3">
                                     {[
-                                        { value: 'basic', label: '基礎', icon: '📘' },
-                                        { value: 'intermediate', label: '中階', icon: '📗' },
-                                        { value: 'advanced', label: '進階', icon: '📕' },
+                                        { value: 'basic', label: '基礎', level: 1 },
+                                        { value: 'intermediate', label: '中階', level: 2 },
+                                        { value: 'advanced', label: '進階', level: 3 },
                                     ].map((item) => (
                                         <button
                                             key={item.value}
                                             onClick={() => setDifficulty(item.value as any)}
                                             className={`px-4 py-3 rounded-xl font-medium transition-all ${difficulty === item.value
-                                                    ? 'bg-indigo-600 text-white shadow-lg'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                ? 'bg-indigo-600 text-white shadow-lg'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                 }`}
                                         >
-                                            <span className="mr-2">{item.icon}</span>
+                                            <Signal className={`w-4 h-4 mr-2 ${difficulty === item.value ? 'text-white' : 'text-gray-500'}`} />
                                             {item.label}
                                         </button>
                                     ))}
@@ -178,8 +227,8 @@ export default function LessonPrepPage() {
                                     onClick={handleContinueToResources}
                                     disabled={!topic.trim()}
                                     className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${!topic.trim()
-                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
                                         }`}
                                 >
                                     下一步：選擇資源
@@ -203,15 +252,16 @@ export default function LessonPrepPage() {
                                     setShowResourceSelector(false);
                                     setShowCreateForm(false);
                                 }}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                aria-label="關閉"
                             >
-                                ✕
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* 課程資訊摘要 */}
                         <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                            <h3 className="font-semibold text-indigo-900 mb-2">📚 {topic}</h3>
+                            <h3 className="font-semibold text-indigo-900 mb-2 flex items-center gap-2"><BookOpen className="w-4 h-4" /> {topic}</h3>
                             <div className="text-sm text-indigo-700">
                                 難度：{difficulty === 'basic' ? '基礎' : difficulty === 'intermediate' ? '中階' : '進階'}
                             </div>
@@ -233,8 +283,8 @@ export default function LessonPrepPage() {
                                 onClick={handleQuickStart}
                                 disabled={isGenerating}
                                 className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isGenerating
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
                                     }`}
                             >
                                 {isGenerating ? (
@@ -258,8 +308,8 @@ export default function LessonPrepPage() {
 
                         {/* 提示 */}
                         <div className="mt-6 p-4 bg-blue-50 rounded-xl">
-                            <p className="text-sm text-blue-800">
-                                💡 <span className="font-medium">AI 將為您：</span>
+                            <p className="text-sm text-blue-800 flex items-center gap-1">
+                                <Lightbulb className="w-4 h-4" /> <span className="font-medium">AI 將為您：</span>
                             </p>
                             <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-6 list-disc">
                                 <li>根據選擇的資源，整合到課程流程中</li>
