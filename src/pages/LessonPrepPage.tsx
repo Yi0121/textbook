@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Sparkles, List, ArrowRight, ChevronLeft, Rocket, Library, Signal, Lightbulb, X, Clock, Edit } from 'lucide-react';
+import { BookOpen, Sparkles, ArrowRight, ChevronLeft, Rocket, Library, Signal, Lightbulb, X, Clock, Edit } from 'lucide-react';
 import ResourceSelector, { type Resource } from '../components/features/lesson-prep/ResourceSelector';
 
 // Mock 最近草稿資料
@@ -84,17 +84,17 @@ export default function LessonPrepPage() {
                                 </div>
                             </button>
 
-                            {/* 查看現有課程 */}
+                            {/* 查看示範課程 */}
                             <button
-                                onClick={() => navigate('/lesson-prep/preview')}
+                                onClick={() => navigate('/lesson-prep/preview?demo=differentiated')}
                                 className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
                             >
                                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                    <List className="w-8 h-8 text-white" />
+                                    <Library className="w-8 h-8 text-white" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Library className="w-5 h-5 text-purple-600" /> 查看示範課程</h2>
+                                <h2 className="text-xl font-bold text-gray-900 mb-2">查看示範課程</h2>
                                 <p className="text-gray-600 mb-4">
-                                    瀏覽和編輯已建立的課程（示範：四則運算）
+                                    四則運算 — 展示差異化教學分支路徑
                                 </p>
                                 <div className="flex items-center gap-2 text-purple-600 font-medium">
                                     前往查看 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
