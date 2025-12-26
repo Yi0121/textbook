@@ -34,7 +34,7 @@ interface NavItem {
 // 教師模式選單
 const TEACHER_NAV: NavItem[] = [
     { path: '/', label: 'AI 助教', icon: MessageSquare },
-    { path: '/class', label: '上課', icon: BookOpen },
+    { path: '/teacher/start-class', label: '上課', icon: BookOpen }, // Update redirect
     { path: '/lesson-prep', label: '備課', icon: Edit3 },
     { path: '/teacher/lesson-progress/lesson-math-001', label: '課程監控', icon: BarChart3 },
     { path: '/analytics/class', label: '學生學習分析', icon: BarChart3 },
@@ -48,7 +48,8 @@ const TEACHER_NAV: NavItem[] = [
 const STUDENT_NAV: NavItem[] = [
     { path: '/', label: 'AI 家教', icon: Sparkles },
     { path: '/class', label: '上課', icon: BookOpen },
-    { path: '/student/learning-path', label: '我的學習路徑', icon: TrendingUp },
+    { path: '/student/learning-path', label: '我的學習路徑', icon: TrendingUp }, // Restored original
+    { path: '/progress', label: '學習進度', icon: BarChart3 }, // New page with distinct icon
     { path: '/my-conversations', label: '對話紀錄', icon: MessageSquare },
     { path: '/assignments', label: '作業', icon: ClipboardList },
     { path: '/learning-suggestions', label: '學習建議', icon: Lightbulb },

@@ -13,6 +13,7 @@ import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
 import type { LessonNode } from '../types/lessonPlan';
 import type { NodeProgress } from '../types/studentProgress';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
+import CircularProgress from '../components/ui/CircularProgress';
 
 export default function StudentLearningPathPage() {
     const lesson = MOCK_GENERATED_LESSON;
@@ -60,23 +61,54 @@ export default function StudentLearningPathPage() {
             <div className="max-w-6xl mx-auto">
                 {/* 頭部 */}
                 <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-2">{lesson.title}</h1>
-                            <p className="text-gray-600">你的學習進度：{studentProgress.overallProgress}%</p>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-4xl font-bold text-indigo-600">{studentProgress.overallProgress}%</div>
-                            <div className="text-sm text-gray-500">整體完成度</div>
-                        </div>
-                    </div>
+                    <div className="flex items-start justify-between gap-6">
+                        <div className="flex-1">
+                            <h1 className="text-2xl font-bold text-gray-900 mb-4">{lesson.title}</h1>
 
-                    {/* 進度條 */}
-                    <div className="mt-4 h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
-                            style={{ width: `${studentProgress.overallProgress}%` }}
-                        />
+                            {/* 統計數據 */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-indigo-50 rounded-xl p-4">
+                                    <div className="text-sm text-indigo-600 font-medium mb-1">已完成</div>
+                                    <div className="text-2xl font-bold text-indigo-900">
+                                        {studentProgress.nodeProgress.filter(n => n.completed).length} / {lesson.nodes.filter(n => !n.id.includes('补强')).length}
+                                    </div>
+                                    <div className="text-xs text-indigo-600 mt-1">個學習節點</div>
+                                </div>
+
+                                <div className="bg-purple-50 rounded-xl p-4">
+                                    <div className="text-sm text-purple-600 font-medium mb-1">平均分數</div>
+                                    <div className="text-2xl font-bold text-purple-900">
+                                        {Math.round(
+                                            studentProgress.nodeProgress
+                                                .filter(n => n.score !== undefined)
+                                                .reduce((acc, n) => acc + (n.score || 0), 0) /
+                                            studentProgress.nodeProgress.filter(n => n.score !== undefined).length
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-purple-600 mt-1">分</div>
+                                </div>
+
+                                <div className="bg-blue-50 rounded-xl p-4">
+                                    <div className="text-sm text-blue-600 font-medium mb-1">學習時間</div>
+                                    <div className="text-2xl font-bold text-blue-900">
+                                        {Math.round(
+                                            studentProgress.nodeProgress.reduce((acc, n) => acc + (n.timeSpent || 0), 0) / 60
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-blue-600 mt-1">分鐘</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 圓形進度圖 */}
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="text-sm text-gray-500">整體進度</div>
+                            <CircularProgress
+                                progress={studentProgress.overallProgress}
+                                size="xl"
+                                color="text-indigo-600"
+                            />
+                        </div>
                     </div>
                 </div>
 
