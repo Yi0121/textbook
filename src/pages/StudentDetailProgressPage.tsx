@@ -10,8 +10,8 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
-import { MOCK_GENERATED_LESSON } from '../types/lessonPlan';
-import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
+import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 
 // 闘關式學習路徑組件（教師視角）
 function QuestPathView({
@@ -19,8 +19,8 @@ function QuestPathView({
     studentProgress,
     currentNodeId
 }: {
-    nodes: typeof MOCK_GENERATED_LESSON.nodes;
-    studentProgress: typeof MOCK_STUDENT_PROGRESS[0]['nodeProgress'];
+    nodes: typeof MOCK_DIFFERENTIATED_LESSON.nodes;
+    studentProgress: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]['nodeProgress'];
     currentNodeId: string;
 }) {
     const getNodeProgress = (nodeId: string) => studentProgress.find(np => np.nodeId === nodeId);
@@ -28,7 +28,7 @@ function QuestPathView({
     return (
         <div className="relative overflow-x-auto pb-4">
             <div className="flex items-center gap-2 min-w-max px-4 py-6">
-                {nodes.filter(n => !n.id.includes('补强')).map((node, idx, arr) => {
+                {nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').filter(n => !n.id.startsWith('step2-') || n.id === 'step2-video').map((node, idx, arr) => {
                     const progress = getNodeProgress(node.id);
                     const isCompleted = progress?.completed;
                     const isCurrent = node.id === currentNodeId;
@@ -41,8 +41,8 @@ function QuestPathView({
                             <div className="flex flex-col items-center">
                                 <div
                                     className={`relative w-16 h-16 rounded-full flex items-center justify-center border-4 transition-all ${isCompleted ? 'bg-green-500 border-green-600 shadow-lg shadow-green-200' :
-                                            isCurrent ? 'bg-blue-500 border-blue-600 animate-pulse shadow-lg shadow-blue-200' :
-                                                'bg-gray-200 border-gray-300'
+                                        isCurrent ? 'bg-blue-500 border-blue-600 animate-pulse shadow-lg shadow-blue-200' :
+                                            'bg-gray-200 border-gray-300'
                                         }`}
                                 >
                                     {isCompleted && <CheckCircle className="w-8 h-8 text-white" />}
@@ -93,8 +93,8 @@ function QuestPathView({
 
 // 成就徽章組件
 function AchievementBadges({ student, lesson }: {
-    student: typeof MOCK_STUDENT_PROGRESS[0];
-    lesson: typeof MOCK_GENERATED_LESSON;
+    student: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0];
+    lesson: typeof MOCK_DIFFERENTIATED_LESSON;
 }) {
     const completedCount = student.nodeProgress.filter(np => np.completed).length;
     const avgScore = student.nodeProgress.filter(np => np.score !== undefined).length > 0
@@ -113,7 +113,7 @@ function AchievementBadges({ student, lesson }: {
         {
             icon: <CheckCircle className="w-6 h-6" />,
             label: '已完成節點',
-            value: `${completedCount}/${lesson.nodes.filter(n => !n.id.includes('补强')).length}`,
+            value: `${completedCount}/${lesson.nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').length}`,
             color: 'from-purple-400 to-pink-500',
             earned: completedCount > 0
         },
@@ -162,8 +162,8 @@ export default function StudentDetailProgressPage() {
     const { lessonId, studentId } = useParams<{ lessonId: string; studentId: string }>();
     const navigate = useNavigate();
 
-    const lesson = MOCK_GENERATED_LESSON;
-    const student = MOCK_STUDENT_PROGRESS.find(s => s.studentId === studentId);
+    const lesson = MOCK_DIFFERENTIATED_LESSON;
+    const student = MOCK_DIFFERENTIATED_STUDENT_PROGRESS.find(s => s.studentId === studentId);
 
     if (!student) {
         return <div className="p-6 text-center text-gray-500">學生資料未找到</div>;
@@ -278,14 +278,14 @@ export default function StudentDetailProgressPage() {
                                 <div
                                     key={node.id}
                                     className={`flex items-center gap-4 p-4 rounded-xl border-2 ${isCompleted ? 'border-green-200 bg-green-50' :
-                                            isCurrent ? 'border-blue-300 bg-blue-50' :
-                                                'border-gray-100 bg-gray-50'
+                                        isCurrent ? 'border-blue-300 bg-blue-50' :
+                                            'border-gray-100 bg-gray-50'
                                         }`}
                                 >
                                     {/* 狀態圖標 */}
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isCompleted ? 'bg-green-500 text-white' :
-                                            isCurrent ? 'bg-blue-500 text-white' :
-                                                'bg-gray-200 text-gray-400'
+                                        isCurrent ? 'bg-blue-500 text-white' :
+                                            'bg-gray-200 text-gray-400'
                                         }`}>
                                         {isCompleted ? <CheckCircle className="w-5 h-5" /> :
                                             isCurrent ? <Zap className="w-5 h-5" /> :

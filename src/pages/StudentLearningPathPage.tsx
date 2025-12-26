@@ -8,16 +8,16 @@
 
 import { useState } from 'react';
 import { BookOpen, Award, Clock } from 'lucide-react';
-import { MOCK_GENERATED_LESSON } from '../types/lessonPlan';
-import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
+import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 import type { LessonNode } from '../types/lessonPlan';
 import type { NodeProgress } from '../types/studentProgress';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
 
 export default function StudentLearningPathPage() {
-    const lesson = MOCK_GENERATED_LESSON;
-    const studentProgress = MOCK_STUDENT_PROGRESS[0]; // 模擬當前學生是張小明
+    const lesson = MOCK_DIFFERENTIATED_LESSON;
+    const studentProgress = MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]; // 模擬當前學生是張小明
 
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -33,19 +33,39 @@ export default function StudentLearningPathPage() {
         return 'locked';
     };
 
-    // 將 lesson nodes 轉換為 Step format（隱藏補強節點）
-    const steps: Step[] = lesson.nodes
-        .filter(node => !node.id.includes('补强'))
-        .map(node => {
-            const progress = getNodeProgress(node.id);
-            return {
-                id: node.id,
-                title: node.title,
-                status: getNodeStatus(node),
-                score: progress?.score,
-                isCheckpoint: node.isConditional,
-            };
+    // 主流程節點 (排除補救分支和平行選項中未選擇的)
+    const getMainPathNodes = () => {
+        const mainSteps = ['step1', 'step3', 'step4-test', 'step5', 'step6', 'step7', 'finish'];
+        const studentPath = studentProgress.nodeProgress.map(np => np.nodeId);
+
+        // 找到學生選擇的步驟2
+        const step2Choice = studentPath.find(id => id.startsWith('step2-'));
+
+        return lesson.nodes.filter(node => {
+            // 主流程節點
+            if (mainSteps.includes(node.id)) return true;
+            // 學生選擇的步驟2
+            if (node.id === step2Choice) return true;
+            // 補救路徑中學生有進度的
+            if (node.branchLevel === 'remedial' && studentPath.includes(node.id)) return true;
+            return false;
         });
+    };
+
+    const visibleNodes = getMainPathNodes();
+
+    // 將 lesson nodes 轉換為 Step format
+    const steps: Step[] = visibleNodes.map(node => {
+        const progress = getNodeProgress(node.id);
+        return {
+            id: node.id,
+            title: node.title,
+            status: getNodeStatus(node),
+            score: progress?.score,
+            isCheckpoint: node.isConditional,
+        };
+    });
+
 
     const formatTime = (seconds?: number) => {
         if (!seconds) return '-';
@@ -66,49 +86,71 @@ export default function StudentLearningPathPage() {
                             <h1 className="text-2xl font-bold text-gray-900 mb-4">{lesson.title}</h1>
 
                             {/* 統計數據 */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="bg-indigo-50 rounded-xl p-4">
-                                    <div className="text-sm text-indigo-600 font-medium mb-1">已完成</div>
-                                    <div className="text-2xl font-bold text-indigo-900">
-                                        {studentProgress.nodeProgress.filter(n => n.completed).length} / {lesson.nodes.filter(n => !n.id.includes('补强')).length}
-                                    </div>
-                                    <div className="text-xs text-indigo-600 mt-1">個學習節點</div>
-                                </div>
+                            {(() => {
+                                // 只計算 visibleNodes 中有進度的節點
+                                const visibleNodeIds = visibleNodes.map(n => n.id);
+                                const relevantProgress = studentProgress.nodeProgress.filter(np =>
+                                    visibleNodeIds.includes(np.nodeId)
+                                );
+                                const completedCount = relevantProgress.filter(n => n.completed).length;
+                                const scoredProgress = relevantProgress.filter(n => n.score !== undefined);
+                                const avgScore = scoredProgress.length > 0
+                                    ? Math.round(scoredProgress.reduce((acc, n) => acc + (n.score || 0), 0) / scoredProgress.length)
+                                    : 0;
+                                const totalTime = Math.round(relevantProgress.reduce((acc, n) => acc + (n.timeSpent || 0), 0) / 60);
 
-                                <div className="bg-purple-50 rounded-xl p-4">
-                                    <div className="text-sm text-purple-600 font-medium mb-1">平均分數</div>
-                                    <div className="text-2xl font-bold text-purple-900">
-                                        {Math.round(
-                                            studentProgress.nodeProgress
-                                                .filter(n => n.score !== undefined)
-                                                .reduce((acc, n) => acc + (n.score || 0), 0) /
-                                            studentProgress.nodeProgress.filter(n => n.score !== undefined).length
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-purple-600 mt-1">分</div>
-                                </div>
+                                return (
+                                    <>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="bg-indigo-50 rounded-xl p-4">
+                                                <div className="text-sm text-indigo-600 font-medium mb-1">已完成</div>
+                                                <div className="text-2xl font-bold text-indigo-900">
+                                                    {completedCount} / {visibleNodes.length}
+                                                </div>
+                                                <div className="text-xs text-indigo-600 mt-1">個學習節點</div>
+                                            </div>
 
-                                <div className="bg-blue-50 rounded-xl p-4">
-                                    <div className="text-sm text-blue-600 font-medium mb-1">學習時間</div>
-                                    <div className="text-2xl font-bold text-blue-900">
-                                        {Math.round(
-                                            studentProgress.nodeProgress.reduce((acc, n) => acc + (n.timeSpent || 0), 0) / 60
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-blue-600 mt-1">分鐘</div>
-                                </div>
-                            </div>
+                                            <div className="bg-purple-50 rounded-xl p-4">
+                                                <div className="text-sm text-purple-600 font-medium mb-1">平均分數</div>
+                                                <div className="text-2xl font-bold text-purple-900">
+                                                    {avgScore || '-'}
+                                                </div>
+                                                <div className="text-xs text-purple-600 mt-1">分</div>
+                                            </div>
+
+                                            <div className="bg-blue-50 rounded-xl p-4">
+                                                <div className="text-sm text-blue-600 font-medium mb-1">學習時間</div>
+                                                <div className="text-2xl font-bold text-blue-900">
+                                                    {totalTime}
+                                                </div>
+                                                <div className="text-xs text-blue-600 mt-1">分鐘</div>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {/* 圓形進度圖 */}
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="text-sm text-gray-500">整體進度</div>
-                            <CircularProgress
-                                progress={studentProgress.overallProgress}
-                                size="xl"
-                                color="text-indigo-600"
-                            />
-                        </div>
+                        {(() => {
+                            const visibleNodeIds = visibleNodes.map(n => n.id);
+                            const relevantProgress = studentProgress.nodeProgress.filter(np =>
+                                visibleNodeIds.includes(np.nodeId)
+                            );
+                            const completedCount = relevantProgress.filter(n => n.completed).length;
+                            const overallProgress = Math.round((completedCount / visibleNodes.length) * 100);
+
+                            return (
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="text-sm text-gray-500">整體進度</div>
+                                    <CircularProgress
+                                        progress={overallProgress}
+                                        size="xl"
+                                        color="text-indigo-600"
+                                    />
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -212,7 +254,7 @@ export default function StudentLearningPathPage() {
                 )}
 
                 {/* 補強提示（如果學生正在補強路徑上）*/}
-                {studentProgress.currentNodeId === 'node-2-补强' && (
+                {(studentProgress.currentNodeId === 'remedial1' || studentProgress.currentNodeId === 'remedial-test' || studentProgress.currentNodeId === 'remedial2') && (
                     <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 animate-fadeIn">
                         <div className="flex items-start gap-3">
                             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -224,9 +266,11 @@ export default function StudentLearningPathPage() {
                                     別擔心！我們準備了額外的練習來幫助你更好地理解這個概念。
                                 </p>
                                 <div className="bg-white rounded-lg p-4 border border-orange-200">
-                                    <h4 className="font-medium text-gray-900 mb-2">基礎運算補強</h4>
+                                    <h4 className="font-medium text-gray-900 mb-2">
+                                        {lesson.nodes.find(n => n.id === studentProgress.currentNodeId)?.title || '補救教學'}
+                                    </h4>
                                     <p className="text-sm text-gray-600 mb-3">
-                                        互動式引導對話 • 5 題練習 • 概念重建
+                                        {lesson.nodes.find(n => n.id === studentProgress.currentNodeId)?.generatedContent?.materials?.join(' • ') || 'AI 個別輔導 • 概念重建'}
                                     </p>
                                     <button className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
                                         開始補強練習

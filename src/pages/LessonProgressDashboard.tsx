@@ -10,11 +10,11 @@
 
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target } from 'lucide-react';
-import { MOCK_GENERATED_LESSON } from '../types/lessonPlan';
-import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
+import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 
 // 進度分布柱狀圖組件
-function ProgressDistributionChart({ students }: { students: typeof MOCK_STUDENT_PROGRESS }) {
+function ProgressDistributionChart({ students }: { students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
     const ranges = [
         { min: 0, max: 25, label: '0-25%', color: 'bg-red-400' },
         { min: 25, max: 50, label: '25-50%', color: 'bg-orange-400' },
@@ -99,7 +99,7 @@ function PieChart({ data }: { data: { label: string; value: number; color: strin
 }
 
 // 節點進度視覺化組件
-function NodeProgressVisual({ nodes, students }: { nodes: typeof MOCK_GENERATED_LESSON.nodes; students: typeof MOCK_STUDENT_PROGRESS }) {
+function NodeProgressVisual({ nodes, students }: { nodes: typeof MOCK_DIFFERENTIATED_LESSON.nodes; students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
     const getCompletionRate = (nodeId: string) => {
         const completed = students.filter(s =>
             s.nodeProgress.find(np => np.nodeId === nodeId && np.completed)
@@ -109,7 +109,7 @@ function NodeProgressVisual({ nodes, students }: { nodes: typeof MOCK_GENERATED_
 
     return (
         <div className="flex items-center justify-between gap-2 overflow-x-auto py-4">
-            {nodes.filter(n => !n.id.includes('补强')).map((node, idx, arr) => {
+            {nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').filter(n => !n.id.startsWith('step2-') || n.id === 'step2-video').map((node, idx, arr) => {
                 const rate = getCompletionRate(node.id);
                 const isLast = idx === arr.length - 1;
 
@@ -156,8 +156,15 @@ function NodeProgressVisual({ nodes, students }: { nodes: typeof MOCK_GENERATED_
 
 export default function LessonProgressDashboard() {
     const navigate = useNavigate();
-    const lesson = MOCK_GENERATED_LESSON;
-    const students = MOCK_STUDENT_PROGRESS;
+    const lesson = MOCK_DIFFERENTIATED_LESSON;
+    const students = MOCK_DIFFERENTIATED_STUDENT_PROGRESS;
+
+    // 主流程節點 (排除補救分支和平行選項)
+    const mainPathNodes = lesson.nodes.filter(n =>
+        (!n.branchLevel || n.branchLevel !== 'remedial') &&
+        (!n.id.startsWith('step2-') || n.id === 'step2-video')
+    );
+    const mainPathNodeIds = mainPathNodes.map(n => n.id);
 
     // 計算條件分支統計
     const getConditionalStats = (nodeId: string) => {
@@ -172,10 +179,23 @@ export default function LessonProgressDashboard() {
         return { learnedCount, remedialCount, pendingCount };
     };
 
-    const conditionalNode = lesson.nodes.find(n => n.isConditional);
-    const avgProgress = Math.round(students.reduce((sum, s) => sum + s.overallProgress, 0) / students.length);
-    const completedCount = students.filter(s => s.overallProgress === 100).length;
-    const needAttentionCount = students.filter(s => s.overallProgress < 50).length;
+    // 找到真正的分支檢查點 (step4-test: 學習檢測)
+    const conditionalNode = lesson.nodes.find(n => n.id === 'step4-test');
+
+    // 計算學生平均進度 (基於 mainPathNodes)
+    const calculateStudentProgress = (student: typeof students[0]) => {
+        const relevantProgress = student.nodeProgress.filter(np =>
+            mainPathNodeIds.includes(np.nodeId)
+        );
+        const completedCount = relevantProgress.filter(n => n.completed).length;
+        return Math.round((completedCount / mainPathNodes.length) * 100);
+    };
+
+    const avgProgress = Math.round(
+        students.reduce((sum, s) => sum + calculateStudentProgress(s), 0) / students.length
+    );
+    const completedCount = students.filter(s => calculateStudentProgress(s) === 100).length;
+    const needAttentionCount = students.filter(s => calculateStudentProgress(s) < 50).length;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
@@ -240,7 +260,7 @@ export default function LessonProgressDashboard() {
                         <div className="flex items-center gap-3">
                             <Clock className="w-8 h-8 opacity-80" />
                             <div>
-                                <div className="text-3xl font-bold">{lesson.nodes.length}</div>
+                                <div className="text-3xl font-bold">{mainPathNodes.length}</div>
                                 <div className="text-sm opacity-90">學習節點</div>
                             </div>
                         </div>
@@ -301,45 +321,48 @@ export default function LessonProgressDashboard() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {students.map((student) => (
-                            <button
-                                key={student.studentId}
-                                onClick={() => navigate(`/teacher/student-progress/${lesson.id}/${student.studentId}`)}
-                                className="flex items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all text-left group bg-gray-50 hover:bg-white"
-                            >
-                                {/* Avatar with progress ring */}
-                                <div className="relative">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center">
-                                        <span className="text-lg font-bold text-white">
-                                            {student.studentName.charAt(0)}
-                                        </span>
+                        {students.map((student) => {
+                            const progress = calculateStudentProgress(student);
+                            return (
+                                <button
+                                    key={student.studentId}
+                                    onClick={() => navigate(`/teacher/student-progress/${lesson.id}/${student.studentId}`)}
+                                    className="flex items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all text-left group bg-gray-50 hover:bg-white"
+                                >
+                                    {/* Avatar with progress ring */}
+                                    <div className="relative">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center">
+                                            <span className="text-lg font-bold text-white">
+                                                {student.studentName.charAt(0)}
+                                            </span>
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-gray-100">
+                                            <span className={`text-xs font-bold ${progress >= 80 ? 'text-green-600' :
+                                                progress >= 50 ? 'text-blue-600' : 'text-orange-600'
+                                                }`}>
+                                                {progress}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-gray-100">
-                                        <span className={`text-xs font-bold ${student.overallProgress >= 80 ? 'text-green-600' :
-                                                student.overallProgress >= 50 ? 'text-blue-600' : 'text-orange-600'
-                                            }`}>
-                                            {student.overallProgress}
-                                        </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-gray-900">{student.studentName}</div>
+                                        <div className="text-sm text-gray-500 truncate">
+                                            目前：{lesson.nodes.find(n => n.id === student.currentNodeId)?.title}
+                                        </div>
+                                        {/* Mini progress bar */}
+                                        <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all ${progress >= 80 ? 'bg-green-500' :
+                                                    progress >= 50 ? 'bg-blue-500' : 'bg-orange-500'
+                                                    }`}
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-900">{student.studentName}</div>
-                                    <div className="text-sm text-gray-500 truncate">
-                                        目前：{lesson.nodes.find(n => n.id === student.currentNodeId)?.title}
-                                    </div>
-                                    {/* Mini progress bar */}
-                                    <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all ${student.overallProgress >= 80 ? 'bg-green-500' :
-                                                    student.overallProgress >= 50 ? 'bg-blue-500' : 'bg-orange-500'
-                                                }`}
-                                            style={{ width: `${student.overallProgress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all flex-shrink-0" />
-                            </button>
-                        ))}
+                                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
