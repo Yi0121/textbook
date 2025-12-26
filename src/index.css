@@ -53,15 +53,145 @@
   }
 }
 
-/* 你的自定義變數 */
+/* ==================== Design Tokens ==================== */
 :root {
+  /* 主題色 - 教師模式 */
+  --color-teacher-primary: #4f46e5;
+  --color-teacher-light: #e0e7ff;
+  --color-teacher-dark: #3730a3;
+
+  /* 主題色 - 學生模式 */
+  --color-student-primary: #9333ea;
+  --color-student-light: #f3e8ff;
+  --color-student-dark: #6b21a8;
+
+  /* 通用色彩 */
   --color-primary: #3b82f6;
   --color-primary-dark: #1d4ed8;
   --color-text-primary: #1f2937;
   --color-text-secondary: #6b7280;
   --color-border: #e5e7eb;
-  --color-card-bg: #f3f4f6;
+  --color-card-bg: #ffffff;
+  --color-page-bg: #f9fafb;
   --color-accent: #8b5cf6;
+
+  /* 間距系統 */
+  --spacing-page-x: 1.5rem;
+  --spacing-page-y: 1.5rem;
+  --spacing-section: 1.5rem;
+  --spacing-card: 1.5rem;
+
+  /* 圓角系統 */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  /* 陰影系統 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Mode 變數 - 完整定義 */
+.dark {
+  /* 主題色 - 教師模式 */
+  --color-teacher-primary: #818cf8;
+  --color-teacher-light: #312e81;
+  --color-teacher-dark: #a5b4fc;
+
+  /* 主題色 - 學生模式 */
+  --color-student-primary: #c084fc;
+  --color-student-light: #581c87;
+  --color-student-dark: #d8b4fe;
+
+  /* 通用色彩 */
+  --color-primary: #60a5fa;
+  --color-primary-dark: #93c5fd;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border: #374151;
+  --color-border-light: #4b5563;
+  --color-card-bg: #1f2937;
+  --color-card-bg-hover: #374151;
+  --color-page-bg: #111827;
+  --color-accent: #a78bfa;
+
+  /* 狀態色彩 */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-info: #38bdf8;
+
+  /* 陰影 - 深色模式調整 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+}
+
+/* ==================== 統一組件類別 ==================== */
+@layer components {
+
+  /* 頁面容器 - 統一寬度與間距 */
+  .page-container {
+    @apply max-w-6xl mx-auto px-4 md:px-6 py-6;
+  }
+
+  /* 寬版頁面容器 */
+  .page-container-wide {
+    @apply max-w-7xl mx-auto px-4 md:px-6 py-6;
+  }
+
+  /* 卡片基礎樣式 */
+  .card-base {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700;
+  }
+
+  /* 卡片 - 帶 padding */
+  .card {
+    @apply card-base p-6;
+  }
+
+  /* 卡片標題 */
+  .card-title {
+    @apply text-lg font-bold text-gray-900 dark:text-white mb-4;
+  }
+
+  /* 區段標題 */
+  .section-title {
+    @apply text-xl font-bold text-gray-900 dark:text-white mb-6;
+  }
+
+  /* 頁面標題 */
+  .page-title {
+    @apply text-2xl md:text-3xl font-bold text-gray-900 dark:text-white;
+  }
+
+  /* 空狀態容器 */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+  }
+
+  /* 統計卡片 */
+  .stat-card {
+    @apply card flex items-center gap-4;
+  }
+
+  .stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-gray-900 dark:text-white;
+  }
+
+  .stat-label {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+  }
 }
 
 /* ProseMirror 編輯器樣式 */
