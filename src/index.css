@@ -136,3 +136,21 @@
     background-color: transparent;
   }
 }
+
+/* ReactFlow 自訂樣式 */
+@layer components {
+  .react-flow-controls-custom button {
+    @apply bg-white border-2 border-gray-200 rounded-lg shadow-md;
+    width: 36px !important;
+    height: 36px !important;
+    margin-bottom: 8px;
+  }
+
+  .react-flow-controls-custom button:hover {
+    @apply bg-gray-50 border-indigo-300;
+  }
+
+  .react-flow-controls-custom button svg {
+    @apply text-gray-700;
+  }
+}

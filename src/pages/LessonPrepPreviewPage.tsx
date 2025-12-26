@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, Handle, Position, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import type { Node, Edge, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp, LayoutGrid, Network } from 'lucide-react';
+import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp, LayoutGrid, Network, ChevronLeft } from 'lucide-react';
 import LessonNodesCards from '../components/ui/LessonNodesCards';
 import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 import type { LessonNode } from '../types/lessonPlan';
@@ -78,17 +78,17 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-    const nodeWidth = 180;   // 再縮小
-    const nodeHeight = 100;  // 再縮小
+    const nodeWidth = 190;   // 增加寬度以容納更大文字
+    const nodeHeight = 110;  // 增加高度
 
-    // 設定圖形佈局參數
+    // 設定圖形佈局參數 - 優化間距避免擁擠
     dagreGraph.setGraph({
         rankdir: 'LR',      // 從左到右排列
-        nodesep: 30,        // 同層節點垂直間距（再縮小）
-        ranksep: 120,       // 不同層水平間距（再縮小）
-        edgesep: 15,        // 邊的間距（再縮小）
-        marginx: 15,
-        marginy: 15,
+        nodesep: 50,        // 同層節點垂直間距（增加以避免重疊）
+        ranksep: 150,       // 不同層水平間距（增加以改善可讀性）
+        edgesep: 30,        // 邊的間距（增加）
+        marginx: 30,        // 增加外邊距
+        marginy: 30,
     });
 
     // 加入所有節點到 dagre 圖
@@ -111,17 +111,19 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 
         let yOffset = 0;
 
-        // 補強路徑往下偏移
+        // 補強路徑往下偏移（增加偏移量）
         if (lessonNode.branchLevel === 'remedial') {
-            yOffset = 70;  // 再縮小偏移量
+            yOffset = 100;
         }
-        // 進階路徑往上偏移
+        // 進階路徑往上偏移（增加偏移量）
         else if (lessonNode.branchLevel === 'advanced') {
-            yOffset = -70;  // 再縮小偏移量
+            yOffset = -100;
         }
 
         return {
             ...node,
+            targetPosition: Position.Left, // 強制左側輸入
+            sourcePosition: Position.Right, // 強制右側輸出
             position: {
                 x: nodeWithPosition.x - nodeWidth / 2,
                 y: nodeWithPosition.y - nodeHeight / 2 + yOffset,
@@ -144,7 +146,7 @@ function LessonPrepPreviewPageInner() {
     // 自動調整視野以顯示所有節點
     useEffect(() => {
         const timer = setTimeout(() => {
-            fitView({ padding: 0.2, duration: 800 });
+            fitView({ padding: 0.1, duration: 800 });
         }, 100); // 稍微延遲確保節點已渲染
         return () => clearTimeout(timer);
     }, [lesson.nodes, fitView]);
@@ -161,6 +163,9 @@ function LessonPrepPreviewPageInner() {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
+    // 左側面板展開/收合狀態
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
     // 將 lesson nodes 轉換為 ReactFlow nodes（水平排列）
     const createReactFlowNode = (node: LessonNode, _idx: number): Node => {
         // 根據節點類型設定顏色和圖標
@@ -173,7 +178,6 @@ function LessonPrepPreviewPageInner() {
         };
 
         const config = nodeTypeConfig[node.nodeType || 'agent'] || nodeTypeConfig.agent;
-        const isAgent = !node.nodeType || node.nodeType === 'agent';
         const isSelected = selectedNodeId === node.id;
 
         // 計算邊框顏色
@@ -197,12 +201,18 @@ function LessonPrepPreviewPageInner() {
             data: {
                 lessonNode: node, // 儲存 lessonNode 供佈局函數使用
                 label: (
-                    <div className="relative" style={{ width: '170px' }}>
+                    <div className="relative" style={{ width: '180px' }}>
                         {/* 左側連接點（入口） */}
                         <Handle
                             type="target"
                             position={Position.Left}
-                            style={{ background: borderColor, width: 10, height: 10, left: -5 }}
+                            style={{
+                                background: '#9ca3af',
+                                width: 12,
+                                height: 12,
+                                border: '2px solid white',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}
                         />
 
                         {/* Card 卡片設計 - 極簡版 */}
@@ -225,9 +235,21 @@ function LessonPrepPreviewPageInner() {
 
                             {/* Card Body - 極度精簡 */}
                             <div className="p-2">
+                                {/* 開始/結束標記 */}
+                                {_idx === 0 && (
+                                    <div className="absolute -top-1.5 left-2 px-2 py-0.5 rounded-full text-[8px] font-bold text-white shadow bg-gradient-to-r from-green-500 to-emerald-600">
+                                        ▶ 開始
+                                    </div>
+                                )}
+                                {_idx === lesson.nodes.length - 1 && !node.isConditional && !node.nextNodeId && (
+                                    <div className="absolute -top-1.5 right-2 px-2 py-0.5 rounded-full text-[8px] font-bold text-white shadow bg-gradient-to-r from-gray-600 to-gray-700">
+                                        ■ 結束
+                                    </div>
+                                )}
+
                                 {/* 分支標籤 */}
                                 {node.branchLevel && node.branchLevel !== 'standard' && (
-                                    <div className={`absolute -top-1.5 left-2 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white shadow ${node.branchLevel === 'advanced' ? 'bg-gradient-to-r from-purple-500 to-indigo-500' : 'bg-gradient-to-r from-orange-500 to-red-500'
+                                    <div className={`absolute -top-1.5 ${_idx === 0 ? 'left-16' : 'left-2'} px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white shadow ${node.branchLevel === 'advanced' ? 'bg-gradient-to-r from-purple-500 to-indigo-500' : 'bg-gradient-to-r from-orange-500 to-red-500'
                                         }`}>
                                         {node.branchLevel === 'advanced' ? '進階' : '補強'}
                                     </div>
@@ -245,13 +267,13 @@ function LessonPrepPreviewPageInner() {
                                         {node.isConditional ? '?' : config.icon}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-900 text-[11px] leading-tight">{node.title}</h3>
+                                        <h3 className="font-bold text-gray-900 text-xs leading-tight">{node.title}</h3>
                                     </div>
                                 </div>
 
                                 {/* Content Info - 只顯示教材 */}
                                 {node.generatedContent?.materials && (
-                                    <div className="text-[9px] text-gray-600 bg-gray-50 rounded px-1.5 py-1 truncate">
+                                    <div className="text-[10px] text-gray-600 bg-gray-50 rounded px-1.5 py-1 truncate">
                                         📚 {node.generatedContent.materials[0]}
                                     </div>
                                 )}
@@ -262,7 +284,13 @@ function LessonPrepPreviewPageInner() {
                         <Handle
                             type="source"
                             position={Position.Right}
-                            style={{ background: borderColor, width: 10, height: 10, right: -5 }}
+                            style={{
+                                background: '#9ca3af',
+                                width: 12,
+                                height: 12,
+                                border: '2px solid white',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}
                         />
                     </div>
                 ),
@@ -272,7 +300,7 @@ function LessonPrepPreviewPageInner() {
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                width: '170px',
+                width: '180px',
             },
         };
     };
@@ -284,7 +312,7 @@ function LessonPrepPreviewPageInner() {
         lessonNodes.forEach((node, idx) => {
             if (node.isConditional && node.conditions) {
                 // 條件節點：多條路徑分流
-                const isMultiChoice = node.conditions.branchType === 'multi-choice';
+                const isMultiChoice = (node.conditions.branchType as string) === 'multi-choice';
 
                 // 1. 標準路徑 (Learned / Choice A)
                 if (node.conditions.learnedPath) {
@@ -292,7 +320,7 @@ function LessonPrepPreviewPageInner() {
                         id: `e${node.id}-learned`,
                         source: node.id,
                         target: node.conditions.learnedPath,
-                        type: 'default',
+                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
                         label: isMultiChoice ? '影片' : '➜ 學會',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
@@ -308,7 +336,7 @@ function LessonPrepPreviewPageInner() {
                         id: `e${node.id}-not-learned`,
                         source: node.id,
                         target: node.conditions.notLearnedPath,
-                        type: 'default',
+                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
                         label: isMultiChoice ? '遊戲' : '➜ 待加強',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#ea580c' }, // Deep Orange
@@ -324,7 +352,7 @@ function LessonPrepPreviewPageInner() {
                         id: `e${node.id}-advanced`,
                         source: node.id,
                         target: node.conditions.advancedPath,
-                        type: 'default',
+                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
                         label: isMultiChoice ? '閱讀' : '🚀 推薦進階',
                         markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' }, // Purple
@@ -339,7 +367,7 @@ function LessonPrepPreviewPageInner() {
                     id: `e${node.id}-next`,
                     source: node.id,
                     target: node.nextNodeId,
-                    type: 'default',
+                    type: 'default', // 改回默認的貝塞爾曲線
                     animated: true,
                     label: '繼續',
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
@@ -353,7 +381,7 @@ function LessonPrepPreviewPageInner() {
                     id: `e${node.id}-${lessonNodes[idx + 1].id}`,
                     source: node.id,
                     target: lessonNodes[idx + 1].id,
-                    type: 'default',
+                    type: 'default', // 改回默認的貝塞爾曲線
                     animated: true,
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
                     style: { stroke: '#6366f1', strokeWidth: 2 },
@@ -622,7 +650,7 @@ function LessonPrepPreviewPageInner() {
                                     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
                                     setNodes(layoutedNodes);
                                     setEdges(layoutedEdges);
-                                    setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100);
+                                    setTimeout(() => fitView({ padding: 0.1, duration: 500 }), 100);
                                 }}
                                 className="px-4 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all flex items-center gap-2"
                                 title="自動排列整齊"
@@ -631,7 +659,7 @@ function LessonPrepPreviewPageInner() {
                                 自動排列
                             </button>
                             <button
-                                onClick={() => fitView({ padding: 0.2, duration: 500 })}
+                                onClick={() => fitView({ padding: 0.1, duration: 500 })}
                                 className="px-4 py-2 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-all flex items-center gap-2"
                                 title="縮放至全覽"
                             >
@@ -651,11 +679,33 @@ function LessonPrepPreviewPageInner() {
             </div>
 
             {/* ReactFlow + 側邊欄 */}
-            <div className="flex-1 flex relative">
+            <div className="flex-1 flex relative overflow-hidden min-h-0">
+
+                {/* 展開按鈕懸浮球 */}
+                {!isSidebarOpen && (
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="absolute left-4 top-4 z-20 p-2 bg-white border border-gray-200 rounded-lg shadow-md hover:bg-gray-50 text-gray-600 transition-all hover:scale-105"
+                        title="展開資源面板"
+                    >
+                        <LayoutGrid className="w-5 h-5" />
+                    </button>
+                )}
+
                 {/* 左側資源面板 - 分類 Tab */}
-                <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+                <div className={`${isSidebarOpen ? 'w-80 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out relative`}>
+
+                    {/* 收合按鈕 */}
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors z-10"
+                        title="收合面板"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+
                     {/* 分類 Tab */}
-                    <div className="p-3 border-b border-gray-200 bg-gray-50">
+                    <div className="p-3 border-b border-gray-200 bg-gray-50 pr-10">
                         <div className="flex flex-wrap gap-1">
                             {([
                                 { value: 'agents', label: '🤖 AI Agent', color: 'indigo' },
@@ -759,7 +809,7 @@ function LessonPrepPreviewPageInner() {
                 </div>
 
                 {/* 主編輯區域 - 根據視圖模式切換 */}
-                <div className="flex-1 overflow-auto">
+                <div className={`flex-1 ${viewMode === 'cards' ? 'overflow-auto' : 'h-full overflow-hidden'}`}>
                     {viewMode === 'cards' ? (
                         /* 卡片視圖 */
                         <LessonNodesCards
@@ -772,7 +822,7 @@ function LessonPrepPreviewPageInner() {
                         />
                     ) : (
                         /* ReactFlow 流程圖視圖 */
-                        <div className="h-full" onDrop={handleDrop} onDragOver={handleDragOver}>
+                        <div className="h-full w-full" onDrop={handleDrop} onDragOver={handleDragOver}>
                             <ReactFlow
                                 nodes={nodes}
                                 edges={edges}
@@ -782,20 +832,33 @@ function LessonPrepPreviewPageInner() {
                                 onEdgeClick={handleEdgeClick}
                                 onConnect={onConnect}
                                 fitView
+                                fitViewOptions={{ padding: 0.1 }}
                                 attributionPosition="bottom-right"
                                 proOptions={{ hideAttribution: true }}
                                 nodesDraggable={true}
                                 nodesConnectable={true}
                                 elementsSelectable={true}
-                                minZoom={0.5}
-                                maxZoom={1.5}
+                                minZoom={0.2}
+                                maxZoom={2}
                             >
                                 <Background />
-                                <Controls />
+                                <Controls
+                                    showInteractive={false}
+                                    position="bottom-left"
+                                    className="react-flow-controls-custom"
+                                />
                                 <MiniMap
                                     nodeColor="#6366f1"
-                                    maskColor="rgba(0, 0, 0, 0.1)"
-                                    style={{ background: 'white' }}
+                                    maskColor="rgba(0, 0, 0, 0.05)"
+                                    position="bottom-left"
+                                    style={{
+                                        background: 'white',
+                                        border: '2px solid #e5e7eb',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                        marginLeft: '60px',
+                                        marginBottom: '12px',
+                                    }}
                                 />
                             </ReactFlow>
                         </div>
