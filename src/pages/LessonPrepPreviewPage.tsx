@@ -1,53 +1,44 @@
 /**
- * LessonPrepPreviewPage - 完整視覺化課程編輯器
- * 
- * 功能：
- * 1. ReactFlow 視覺化顯示
- * 2. 點擊節點編輯（側邊欄）
- * 3. 新增節點
- * 4. 刪除節點
- * 5. 選擇 Agent 與 Tools
- * 6. 發布課程
+ * LessonPrepPreviewPage - 完整視覺化課程編輯器 (Refactored)
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, Handle, Position, useReactFlow, ReactFlowProvider } from '@xyflow/react';
-import type { Node, Edge, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
+import {
+    ReactFlow, Background, Controls, MarkerType,
+    applyNodeChanges, applyEdgeChanges, useReactFlow, ReactFlowProvider,
+    type Node, type Edge, type OnNodesChange, type OnEdgesChange, type Connection
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
-
-import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
-import type { LessonNode } from '../types/lessonPlan';
+import {
+    BookOpen, Send, ArrowLeft, Trash2, X, Search,
+    Maximize, ChevronLeft,
+    Bot, Video, FileText, CheckSquare, Wrench, Layers
+} from 'lucide-react';
 import dagre from 'dagre';
 
-// 可拖曳資源卡片組件
-function DraggableResource({ id, title, desc, source, color, resourceType }: {
-    id: string;
-    title: string;
-    desc: string;
-    source: string;
-    color: string;
+import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
+import type { LessonNode as LessonNodeType } from '../types/lessonPlan';
+import LessonNode from '../components/LessonNode';
+
+// 可拖曳資源卡片組件 (新版)
+function DraggableResource({ id, title, desc, color, resourceType }: {
+    id: string; title: string; desc: string; source: string; color: string;
     resourceType: 'video' | 'material' | 'worksheet' | 'external';
 }) {
     const colorMap: Record<string, string> = {
-        red: 'from-red-50 to-orange-50 border-red-200',
-        blue: 'from-blue-50 to-cyan-50 border-blue-200',
-        green: 'from-green-50 to-emerald-50 border-green-200',
-        purple: 'from-purple-50 to-pink-50 border-purple-200',
+        red: 'border-red-200 bg-red-50 hover:bg-red-100',
+        blue: 'border-blue-200 bg-blue-50 hover:bg-blue-100',
+        green: 'border-green-200 bg-green-50 hover:bg-green-100',
+        purple: 'border-purple-200 bg-purple-50 hover:bg-purple-100',
     };
-    const textColorMap: Record<string, string> = {
-        red: 'text-red-600',
-        blue: 'text-blue-600',
-        green: 'text-green-600',
-        purple: 'text-purple-600',
+    const iconMap: any = {
+        video: Video,
+        material: FileText,
+        worksheet: CheckSquare,
+        external: Wrench,
     };
-    const iconMap: Record<string, string> = {
-        video: '🎥',
-        material: '📄',
-        worksheet: '📝',
-        external: '🔧',
-    };
+    const Icon = iconMap[resourceType];
 
     return (
         <div
@@ -59,71 +50,61 @@ function DraggableResource({ id, title, desc, source, color, resourceType }: {
                 e.dataTransfer.setData('resourceType', resourceType);
                 e.dataTransfer.effectAllowed = 'move';
             }}
-            className={`p-3 bg-gradient-to-br ${colorMap[color]} border-2 rounded-lg cursor-move hover:shadow-md transition-all hover:scale-[1.02]`}
+            className={`
+                group p-3 border rounded-xl cursor-move transition-all duration-200
+                ${colorMap[color]} shadow-sm hover:shadow-md hover:-translate-y-0.5
+            `}
         >
-            <div className="flex items-center gap-2">
-                <span>{iconMap[resourceType]}</span>
-                <div className="font-medium text-sm text-gray-900">{title}</div>
+            <div className="flex items-start gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                    <Icon size={16} className={`text-${color}-500`} />
+                </div>
+                <div>
+                    <div className="font-bold text-sm text-gray-800 leading-tight mb-1">{title}</div>
+                    <div className="text-xs text-gray-500">{desc}</div>
+                </div>
             </div>
-            <div className="text-xs text-gray-600 mt-1">{desc}</div>
-            <div className={`text-xs ${textColorMap[color]} mt-1`}>{source}</div>
         </div>
     );
 }
 
-type LeftPanelTab = 'agents' | 'video' | 'material' | 'worksheet' | 'external';
-
-// Dagre 自動佈局演算法
+// Dagre 自動佈局 (參數調整適配新卡片)
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-    const nodeWidth = 190;   // 增加寬度以容納更大文字
-    const nodeHeight = 110;  // 增加高度
+    // New Node Dimensions
+    const nodeWidth = 240;
+    const nodeHeight = 160;
 
-    // 設定圖形佈局參數 - 優化間距避免擁擠
     dagreGraph.setGraph({
-        rankdir: 'LR',      // 從左到右排列
-        nodesep: 50,        // 同層節點垂直間距（增加以避免重疊）
-        ranksep: 150,       // 不同層水平間距（增加以改善可讀性）
-        edgesep: 30,        // 邊的間距（增加）
-        marginx: 30,        // 增加外邊距
-        marginy: 30,
+        rankdir: 'LR',
+        nodesep: 60,
+        ranksep: 120, // 稍微拉開距離
+        marginx: 50,
+        marginy: 50,
     });
 
-    // 加入所有節點到 dagre 圖
     nodes.forEach((node) => {
         dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
     });
-
-    // 加入所有邊到 dagre 圖
     edges.forEach((edge) => {
         dagreGraph.setEdge(edge.source, edge.target);
     });
 
-    // 執行佈局計算
     dagre.layout(dagreGraph);
 
-    // 應用計算結果到節點位置
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
-        const lessonNode = node.data.lessonNode as LessonNode;
-
+        const lessonNode = node.data.lessonNode as LessonNodeType;
         let yOffset = 0;
 
-        // 補強路徑往下偏移（增加偏移量）
-        if (lessonNode.branchLevel === 'remedial') {
-            yOffset = 100;
-        }
-        // 進階路徑往上偏移（增加偏移量）
-        else if (lessonNode.branchLevel === 'advanced') {
-            yOffset = -100;
-        }
+        // 分支偏移優化
+        if (lessonNode.branchLevel === 'remedial') yOffset = 180;
+        else if (lessonNode.branchLevel === 'advanced') yOffset = -180;
 
         return {
             ...node,
-            targetPosition: Position.Left, // 強制左側輸入
-            sourcePosition: Position.Right, // 強制右側輸出
             position: {
                 x: nodeWithPosition.x - nodeWidth / 2,
                 y: nodeWithPosition.y - nodeHeight / 2 + yOffset,
@@ -134,596 +115,314 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     return { nodes: layoutedNodes, edges };
 };
 
+type LeftPanelTab = 'agents' | 'video' | 'material' | 'worksheet' | 'external';
+
 function LessonPrepPreviewPageInner() {
     const navigate = useNavigate();
-    const [lesson, setLesson] = useState(MOCK_DIFFERENTIATED_LESSON);
-    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-    const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('agents');
-    const [searchQuery, setSearchQuery] = useState('');
-
     const { fitView } = useReactFlow();
 
-    // 自動調整視野以顯示所有節點
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fitView({ padding: 0.1, duration: 800 });
-        }, 100); // 稍微延遲確保節點已渲染
-        return () => clearTimeout(timer);
-    }, [lesson.nodes, fitView]);
+    // State
+    const [lesson, setLesson] = useState(MOCK_DIFFERENTIATED_LESSON);
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<LeftPanelTab>('agents');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [headerVisible, setHeaderVisible] = useState(true);
 
-    // Accordion 狀態 - 右側編輯面板折疊
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-        agent: true,
-        tools: false,
-        condition: false,
-        navigation: false,
-    });
+    // Node Types Definition
+    const nodeTypes = useMemo(() => ({ lessonNode: LessonNode }), []);
 
-    const toggleSection = (section: string) => {
-        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
-
-    // 左側面板展開/收合狀態
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-    // 將 lesson nodes 轉換為 ReactFlow nodes（水平排列）
-    const createReactFlowNode = (node: LessonNode, _idx: number): Node => {
-        // 根據節點類型設定顏色和圖標
-        const nodeTypeConfig: Record<string, { bg: string; icon: string; label: string; border: string; borderSelected: string }> = {
-            agent: { bg: 'bg-indigo-500', icon: '🤖', label: 'AI', border: '#6366f1', borderSelected: '#4f46e5' },
-            video: { bg: 'bg-red-500', icon: '🎥', label: '影片', border: '#ef4444', borderSelected: '#dc2626' },
-            material: { bg: 'bg-blue-500', icon: '📄', label: '教材', border: '#3b82f6', borderSelected: '#2563eb' },
-            worksheet: { bg: 'bg-green-500', icon: '📝', label: '練習', border: '#22c55e', borderSelected: '#16a34a' },
-            external: { bg: 'bg-purple-500', icon: '🔧', label: '工具', border: '#a855f7', borderSelected: '#9333ea' },
-        };
-
-        const config = nodeTypeConfig[node.nodeType || 'agent'] || nodeTypeConfig.agent;
-        const isSelected = selectedNodeId === node.id;
-
-        // 計算邊框顏色
-        const borderColor = node.isConditional
-            ? (isSelected ? '#f97316' : '#fb923c')
-            : (isSelected ? config.borderSelected : config.border);
-
-        // 計算陰影顏色
-        const shadowColor = node.isConditional
-            ? 'rgba(249, 115, 22, 0.3)'
-            : node.nodeType === 'video' ? 'rgba(239, 68, 68, 0.3)'
-                : node.nodeType === 'material' ? 'rgba(59, 130, 246, 0.3)'
-                    : node.nodeType === 'worksheet' ? 'rgba(34, 197, 94, 0.3)'
-                        : node.nodeType === 'external' ? 'rgba(168, 85, 247, 0.3)'
-                            : 'rgba(79, 70, 229, 0.3)';
-
-        return {
+    // Create ReactFlow Nodes
+    const createReactFlowNodes = useCallback((lessonNodes: LessonNodeType[]) => {
+        return lessonNodes.map((node, idx) => ({
             id: node.id,
-            type: 'default',
-            position: { x: 0, y: 0 }, // 初始位置，稍後由 dagre 計算
+            type: 'lessonNode',
+            position: { x: 0, y: 0 },
             data: {
-                lessonNode: node, // 儲存 lessonNode 供佈局函數使用
-                label: (
-                    <div className="relative" style={{ width: '180px' }}>
-                        {/* 左側連接點（入口） */}
-                        <Handle
-                            type="target"
-                            position={Position.Left}
-                            style={{
-                                background: '#9ca3af',
-                                width: 12,
-                                height: 12,
-                                border: '2px solid white',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                            }}
-                        />
-
-                        {/* Card 卡片設計 - 極簡版 */}
-                        <div className={`rounded overflow-hidden shadow transition-all ${isSelected ? 'ring-2' : ''
-                            }`}
-                            style={{
-                                background: 'white',
-                                boxShadow: isSelected ? `0 4px 8px ${shadowColor}` : '0 1px 4px rgba(0, 0, 0, 0.08)',
-                                ...(isSelected && { ringColor: borderColor })
-                            }}>
-
-                            {/* Card Header - 彩色頂部條 */}
-                            <div className={`h-1 ${node.isConditional ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
-                                node.nodeType === 'video' ? 'bg-gradient-to-r from-red-400 to-pink-500' :
-                                    node.nodeType === 'material' ? 'bg-gradient-to-r from-blue-400 to-cyan-500' :
-                                        node.nodeType === 'worksheet' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
-                                            node.nodeType === 'external' ? 'bg-gradient-to-r from-purple-400 to-pink-500' :
-                                                'bg-gradient-to-r from-indigo-500 to-purple-600'
-                                }`} />
-
-                            {/* Card Body - 極度精簡 */}
-                            <div className="p-2">
-                                {/* 開始/結束標記 */}
-                                {_idx === 0 && (
-                                    <div className="absolute -top-1.5 left-2 px-2 py-0.5 rounded-full text-[8px] font-bold text-white shadow bg-gradient-to-r from-green-500 to-emerald-600">
-                                        ▶ 開始
-                                    </div>
-                                )}
-                                {_idx === lesson.nodes.length - 1 && !node.isConditional && !node.nextNodeId && (
-                                    <div className="absolute -top-1.5 right-2 px-2 py-0.5 rounded-full text-[8px] font-bold text-white shadow bg-gradient-to-r from-gray-600 to-gray-700">
-                                        ■ 結束
-                                    </div>
-                                )}
-
-                                {/* 分支標籤 */}
-                                {node.branchLevel && node.branchLevel !== 'standard' && (
-                                    <div className={`absolute -top-1.5 ${_idx === 0 ? 'left-16' : 'left-2'} px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white shadow ${node.branchLevel === 'advanced' ? 'bg-gradient-to-r from-purple-500 to-indigo-500' : 'bg-gradient-to-r from-orange-500 to-red-500'
-                                        }`}>
-                                        {node.branchLevel === 'advanced' ? '進階' : '補強'}
-                                    </div>
-                                )}
-
-                                {/* Icon + Title - 精簡版 */}
-                                <div className="flex items-start gap-1.5 mb-1">
-                                    <div className={`w-6 h-6 ${node.isConditional ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                                        node.nodeType === 'video' ? 'bg-gradient-to-br from-red-400 to-pink-500' :
-                                            node.nodeType === 'material' ? 'bg-gradient-to-br from-blue-400 to-cyan-500' :
-                                                node.nodeType === 'worksheet' ? 'bg-gradient-to-br from-green-400 to-emerald-500' :
-                                                    node.nodeType === 'external' ? 'bg-gradient-to-br from-purple-400 to-pink-500' :
-                                                        'bg-gradient-to-br from-indigo-500 to-purple-600'
-                                        } text-white rounded flex items-center justify-center text-xs font-bold shadow flex-shrink-0`}>
-                                        {node.isConditional ? '?' : config.icon}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-900 text-xs leading-tight">{node.title}</h3>
-                                    </div>
-                                </div>
-
-                                {/* Content Info - 只顯示教材 */}
-                                {node.generatedContent?.materials && (
-                                    <div className="text-[10px] text-gray-600 bg-gray-50 rounded px-1.5 py-1 truncate">
-                                        📚 {node.generatedContent.materials[0]}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* 右側連接點（出口） */}
-                        <Handle
-                            type="source"
-                            position={Position.Right}
-                            style={{
-                                background: '#9ca3af',
-                                width: 12,
-                                height: 12,
-                                border: '2px solid white',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                            }}
-                        />
-                    </div>
-                ),
+                lessonNode: node,
+                isStart: idx === 0,
+                isEnd: idx === lessonNodes.length - 1 && !node.nextNodeId && !node.conditions
             },
-            style: {
-                background: 'transparent',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                width: '180px',
-            },
-        };
-    };
+        }));
+    }, []);
 
-    // 建立連接線（支援條件分支）
-    const createEdges = (lessonNodes: LessonNode[]): Edge[] => {
+    // Create Edges
+    const createEdges = useCallback((lessonNodes: LessonNodeType[]): Edge[] => {
         const edges: Edge[] = [];
-
         lessonNodes.forEach((node, idx) => {
-            if (node.isConditional && node.conditions) {
-                // 條件節點：多條路徑分流
-                const isMultiChoice = (node.conditions.branchType as string) === 'multi-choice';
+            const commonStyle = { strokeWidth: 2 };
 
-                // 1. 標準路徑 (Learned / Choice A)
+            if (node.isConditional && node.conditions) {
+                // Conditional Edges
                 if (node.conditions.learnedPath) {
                     edges.push({
                         id: `e${node.id}-learned`,
                         source: node.id,
                         target: node.conditions.learnedPath,
-                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
-                        label: isMultiChoice ? '影片' : '➜ 學會',
-                        markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
-                        style: { stroke: '#3b82f6', strokeWidth: 2 },
-                        labelStyle: { fill: '#3b82f6', fontWeight: 600, fontSize: 12 },
-                        labelBgStyle: { fill: '#dbeafe' },
+                        label: '通過',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#22c55e' },
+                        style: { ...commonStyle, stroke: '#22c55e' },
+                        labelStyle: { fill: '#22c55e', fontWeight: 700 },
+                        labelBgStyle: { fill: '#f0fdf4' },
                     });
                 }
-
-                // 2. 補救路徑 (Not Learned / Choice B) - 強化視覺效果
                 if (node.conditions.notLearnedPath) {
                     edges.push({
                         id: `e${node.id}-not-learned`,
                         source: node.id,
                         target: node.conditions.notLearnedPath,
-                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
-                        label: isMultiChoice ? '遊戲' : '➜ 待加強',
-                        markerEnd: { type: MarkerType.ArrowClosed, color: '#ea580c' }, // Deep Orange
-                        style: { stroke: '#ea580c', strokeWidth: isMultiChoice ? 2 : 3 }, // 多選時使用正常粗細
-                        labelStyle: { fill: '#ea580c', fontWeight: isMultiChoice ? 600 : 700, fontSize: isMultiChoice ? 12 : 13 },
-                        labelBgStyle: { fill: '#ffedd5', stroke: isMultiChoice ? 'transparent' : '#ea580c', strokeWidth: isMultiChoice ? 0 : 1 },
+                        label: '補強',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#f97316' },
+                        style: { ...commonStyle, stroke: '#f97316', strokeDasharray: '5,5' },
+                        labelStyle: { fill: '#f97316', fontWeight: 700 },
+                        labelBgStyle: { fill: '#fff7ed' },
                     });
                 }
-
-                // 3. 進階路徑 (Advanced / Choice C)
                 if (node.conditions.advancedPath) {
                     edges.push({
                         id: `e${node.id}-advanced`,
                         source: node.id,
                         target: node.conditions.advancedPath,
-                        type: 'default', // 改回默認的貝塞爾曲線
                         animated: true,
-                        label: isMultiChoice ? '閱讀' : '🚀 推薦進階',
-                        markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' }, // Purple
-                        style: { stroke: '#a855f7', strokeWidth: isMultiChoice ? 2 : 3 },
-                        labelStyle: { fill: '#a855f7', fontWeight: 600, fontSize: 12 },
-                        labelBgStyle: { fill: '#f3e8ff' },
+                        label: '進階',
+                        markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
+                        style: { ...commonStyle, stroke: '#a855f7' },
+                        labelStyle: { fill: '#a855f7', fontWeight: 700 },
+                        labelBgStyle: { fill: '#faf5ff' },
                     });
                 }
             } else if (node.nextNodeId) {
-                // 明確指定下一個節點（例：補強節點返回主流程）
                 edges.push({
                     id: `e${node.id}-next`,
                     source: node.id,
                     target: node.nextNodeId,
-                    type: 'default', // 改回默認的貝塞爾曲線
-                    animated: true,
-                    label: '繼續',
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
-                    style: { stroke: '#8b5cf6', strokeWidth: 2 },
-                    labelStyle: { fill: '#8b5cf6', fontWeight: 600, fontSize: 12 },
-                    labelBgStyle: { fill: '#ede9fe' },
+                    type: 'default',
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
+                    style: { ...commonStyle, stroke: '#6366f1' },
                 });
             } else if (idx < lessonNodes.length - 1) {
-                // 普通節點：順序連接到下一個
                 edges.push({
                     id: `e${node.id}-${lessonNodes[idx + 1].id}`,
                     source: node.id,
                     target: lessonNodes[idx + 1].id,
-                    type: 'default', // 改回默認的貝塞爾曲線
-                    animated: true,
-                    markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
-                    style: { stroke: '#6366f1', strokeWidth: 2 },
+                    type: 'default',
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+                    style: { ...commonStyle, stroke: '#94a3b8' },
                 });
             }
         });
-
         return edges;
-    };
-
-    // 初始化節點和邊，並使用自動佈局
-    const initialNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
-    const initialEdges = createEdges(lesson.nodes);
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(initialNodes, initialEdges);
-
-    const [nodes, setNodes] = useState<Node[]>(layoutedNodes);
-    const [edges, setEdges] = useState<Edge[]>(layoutedEdges);
-
-    const onNodesChange: OnNodesChange = useCallback(
-        (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-        []
-    );
-
-    const onEdgesChange: OnEdgesChange = useCallback(
-        (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-        []
-    );
-
-    const onConnect = useCallback((connection: Connection) => {
-        if (!connection.source || !connection.target) return;
-
-        // 更新 lesson 中的節點連接
-        const updatedNodes = lesson.nodes.map(node => {
-            if (node.id === connection.source) {
-                return { ...node, nextNodeId: connection.target };
-            }
-            return node;
-        });
-
-        setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
-        const newEdges = createEdges(updatedNodes);
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
-    }, [lesson.nodes, createEdges]);
-
-    const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
-        setSelectedNodeId(node.id);
     }, []);
 
-    // 刪除連線
-    const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
-        if (window.confirm('確定要刪除這條連線嗎？')) {
-            // 更新 lesson 中的節點連接
-            const updatedNodes = lesson.nodes.map(node => {
-                if (node.id === edge.source) {
-                    return { ...node, nextNodeId: undefined };
-                }
-                // 清除條件分支的連接
-                if (node.conditions) {
-                    const newConditions = { ...node.conditions };
-                    if (newConditions.learnedPath === edge.target) {
-                        newConditions.learnedPath = '';
-                    }
-                    if (newConditions.notLearnedPath === edge.target) {
-                        newConditions.notLearnedPath = '';
-                    }
-                    return { ...node, conditions: newConditions };
-                }
-                return node;
-            });
+    // Initial Layout Effect
+    const [nodes, setNodes] = useState<Node[]>([]);
+    const [edges, setEdges] = useState<Edge[]>([]);
 
-            setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-            setEdges(edges => edges.filter(e => e.id !== edge.id));
-        }
-    }, [lesson.nodes]);
-
-    const handleAddNode = () => {
-        const newNode: LessonNode = {
-            id: `node-${Date.now()}`,
-            title: '新節點',
-            order: lesson.nodes.length + 1,
-            agent: AVAILABLE_AGENTS[0],
-            selectedTools: [],
-        };
-
-        const updatedNodes = [...lesson.nodes, newNode];
-        setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
-        const newEdges = createEdges(updatedNodes);
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+    useEffect(() => {
+        const rfNodes = createReactFlowNodes(lesson.nodes);
+        const rfEdges = createEdges(lesson.nodes);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rfNodes, rfEdges);
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
-    };
 
-    const handleDragOver = useCallback((event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
+        // Delay fitView slightly to ensure rendering
+        setTimeout(() => fitView({ padding: 0.25, duration: 800 }), 100);
+    }, [lesson.nodes, createReactFlowNodes, createEdges, fitView]);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyPress = (e: KeyboardEvent) => {
+            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+            if (e.key === 'h' && !e.ctrlKey && !e.metaKey) {
+                setHeaderVisible(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, []);
+
+    // Handlers
+    const onNodesChange: OnNodesChange = useCallback(changes => setNodes(nds => applyNodeChanges(changes, nds)), []);
+    const onEdgesChange: OnEdgesChange = useCallback(changes => setEdges(eds => applyEdgeChanges(changes, eds)), []);
+    const onConnect = useCallback((connection: Connection) => {
+        if (!connection.source || !connection.target) return;
+        setLesson(prev => ({
+            ...prev,
+            nodes: prev.nodes.map(n => n.id === connection.source ? { ...n, nextNodeId: connection.target } : n)
+        }));
     }, []);
 
     const handleDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
-
         const type = event.dataTransfer.getData('application/reactflow');
-
-        // 計算放置位置（相對於 ReactFlow canvas）
         const reactFlowBounds = (event.target as HTMLElement).getBoundingClientRect();
+
+        // Calculate Position
         const position = {
-            x: event.clientX - reactFlowBounds.left - 140,
+            x: event.clientX - reactFlowBounds.left - 140, // Offset for center
             y: event.clientY - reactFlowBounds.top - 50,
         };
 
-        let newNode: LessonNode;
+        let newNode: LessonNodeType;
+        const baseNode = {
+            id: `node-${Date.now()}`,
+            order: lesson.nodes.length + 1,
+            selectedTools: []
+        };
 
         if (type === 'agent') {
             const agentId = event.dataTransfer.getData('agentId');
             const agent = AVAILABLE_AGENTS.find(a => a.id === agentId);
             if (!agent) return;
-
-            newNode = {
-                id: `node-${Date.now()}`,
-                title: agent.name,
-                order: lesson.nodes.length + 1,
-                nodeType: 'agent',
-                agent,
-                selectedTools: [],
-            };
+            newNode = { ...baseNode, title: agent.name, nodeType: 'agent', agent };
         } else if (type === 'resource') {
             const resourceTitle = event.dataTransfer.getData('resourceTitle');
-            const resourceType = event.dataTransfer.getData('resourceType') as 'video' | 'material' | 'worksheet' | 'external';
-            if (!resourceTitle) return;
+            const resourceType = event.dataTransfer.getData('resourceType') as any;
+            newNode = { ...baseNode, title: resourceTitle, nodeType: resourceType, agent: AVAILABLE_AGENTS[0] };
+        } else return;
 
-            // 資源使用預設 Agent（第一個）
-            newNode = {
-                id: `node-${Date.now()}`,
-                title: resourceTitle,
-                order: lesson.nodes.length + 1,
-                nodeType: resourceType,
-                agent: AVAILABLE_AGENTS[0],
-                selectedTools: [],
-            };
-        } else {
-            return;
-        }
+        // Add Node
+        const updatedLessonNodes = [...lesson.nodes, newNode];
+        setLesson(prev => ({ ...prev, nodes: updatedLessonNodes }));
 
-        const updatedNodes = [...lesson.nodes, newNode];
-        setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-
-        // 創建新節點時使用自訂位置
-        const newReactFlowNode = {
-            ...createReactFlowNode(newNode, updatedNodes.length - 1),
+        // Optimistic UI update for node position
+        const newRfNode = {
+            id: newNode.id,
+            type: 'lessonNode',
             position,
+            data: { lessonNode: newNode, isStart: false, isEnd: true }
         };
-
-        setNodes([...nodes, newReactFlowNode]);
-        // 不自動連線，讓用戶自己決定順序
-        // setEdges(createEdges(updatedNodes));
+        setNodes(nds => [...nds, newRfNode]);
     }, [lesson.nodes, nodes]);
 
-    const handleDeleteNode = (nodeId: string) => {
-        if (lesson.nodes.length <= 1) {
-            alert('至少需要保留一個節點！');
-            return;
-        }
-
-        if (confirm('確定要刪除此節點嗎？')) {
-            const updatedNodes = lesson.nodes.filter(n => n.id !== nodeId).map((n, idx) => ({ ...n, order: idx + 1 }));
-            setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-            const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
-            const newEdges = createEdges(updatedNodes);
-            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
-            setNodes(layoutedNodes);
-            setEdges(layoutedEdges);
-            setSelectedNodeId(null);
-        }
-    };
-
-    const handleUpdateNode = (updatedNode: LessonNode) => {
-        const updatedNodes = lesson.nodes.map(n => n.id === updatedNode.id ? updatedNode : n);
-        setLesson(prev => ({ ...prev, nodes: updatedNodes }));
-        const newNodes = updatedNodes.map((node, idx) => createReactFlowNode(node, idx));
-        const newEdges = createEdges(updatedNodes);
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
-    };
-
-    const handlePublish = () => {
-        if (confirm(`確定要發布課程「${lesson.title}」給學生嗎？`)) {
-            localStorage.setItem('publishedLesson', JSON.stringify({
-                ...lesson,
-                status: 'published',
-                publishedAt: new Date(),
-            }));
-            alert('課程已發布！學生現在可以看到學習任務。');
-            navigate('/');
-        }
-    };
-
+    // UI Components
     const selectedNode = lesson.nodes.find(n => n.id === selectedNodeId);
 
+    // Sidebar Tabs Config
+    const SIDEBAR_TABS = [
+        { id: 'agents', label: 'AI Agent', icon: Bot, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { id: 'video', label: '影片', icon: Video, color: 'text-red-600', bg: 'bg-red-50' },
+        { id: 'material', label: '教材', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { id: 'worksheet', label: '練習', icon: CheckSquare, color: 'text-green-600', bg: 'bg-green-50' },
+        { id: 'external', label: '工具', icon: Wrench, color: 'text-purple-600', bg: 'bg-purple-50' },
+    ];
+
     return (
-        <div className="h-screen flex flex-col bg-gray-50">
-            {/* 頂部工具列 */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/lesson-prep')}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="返回備課工作台"
-                    >
+        <div className="h-screen w-screen flex bg-gray-50 overflow-hidden relative font-sans">
+
+            {/* Top Hover Trigger Area */}
+            <div
+                className="absolute top-0 left-0 right-0 h-20 z-10"
+                onMouseEnter={() => setHeaderVisible(true)}
+            />
+
+            {/* Floating Glass Header */}
+            <div
+                className={`absolute top-4 right-4 z-20 flex items-center justify-between pointer-events-none transition-all duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-24'}`}
+                style={{ left: isSidebarOpen ? '320px' : '80px' }}
+            >
+                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-white/50 px-6 py-3 rounded-2xl flex items-center gap-4 pointer-events-auto">
+                    <button onClick={() => navigate('/lesson-prep')} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                         <ArrowLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <BookOpen className="w-6 h-6 text-indigo-600" />
-                            <h1 className="text-xl font-bold text-gray-900">{lesson.title}</h1>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            {lesson.nodes.length} 個節點 • {lesson.difficulty === 'basic' ? '基礎' : lesson.difficulty === 'intermediate' ? '中階' : '進階'}
-                        </p>
+                        <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-indigo-600" />
+                            {lesson.title}
+                        </h1>
+                        <p className="text-xs text-gray-500 font-medium">Draft • {lesson.nodes.length} Nodes</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-
-                    <button
-                        onClick={handleAddNode}
-                        className="px-4 py-2 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-all flex items-center gap-2"
-                    >
-                        <Plus className="w-4 h-4" />
-                        新增節點
-                    </button>
+                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-white/50 p-2 rounded-2xl flex items-center gap-2 pointer-events-auto">
                     <button
                         onClick={() => {
-                            const newNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
-                            const newEdges = createEdges(lesson.nodes);
-                            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
-                            setNodes(layoutedNodes);
-                            setEdges(layoutedEdges);
-                            setTimeout(() => fitView({ padding: 0.1, duration: 500 }), 100);
+                            const updatedNodes = getLayoutedElements(
+                                createReactFlowNodes(lesson.nodes),
+                                createEdges(lesson.nodes)
+                            ).nodes;
+                            setNodes(updatedNodes);
+                            setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 100);
                         }}
-                        className="px-4 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all flex items-center gap-2"
-                        title="自動排列整齊"
+                        className="p-2.5 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors"
+                        title="自動排版並適應畫面"
                     >
-                        <Settings className="w-4 h-4" />
-                        自動排列
+                        <Maximize className="w-5 h-5" />
                     </button>
+                    <div className="h-6 w-px bg-gray-200 mx-1" />
                     <button
-                        onClick={() => fitView({ padding: 0.1, duration: 500 })}
-                        className="px-4 py-2 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-all flex items-center gap-2"
-                        title="縮放至全覽"
+                        onClick={() => selectedNodeId && setLesson(prev => ({
+                            ...prev,
+                            nodes: prev.nodes.filter(n => n.id !== selectedNodeId)
+                        }))}
+                        disabled={!selectedNodeId}
+                        className="p-2.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                     >
-                        <Maximize className="w-4 h-4" />
-                        全覽
+                        <Trash2 className="w-5 h-5" />
                     </button>
-                    <button
-                        onClick={handlePublish}
-                        className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg"
-                    >
+                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
                         <Send className="w-4 h-4" />
-                        發布課程
+                        發布
                     </button>
                 </div>
             </div>
 
-            {/* ReactFlow + 側邊欄 */}
-            <div className="flex-1 flex relative overflow-hidden min-h-0">
+            {/* Left Sidebar - Icon Rail + Drawer */}
+            <div className="flex h-full z-30">
+                {/* Icon Rail */}
+                <div className="w-14 bg-white border-r border-gray-100 flex flex-col items-center pt-20 pb-6 gap-3 z-40 shadow-sm">
+                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 mb-4">
+                        <Layers size={24} />
+                    </div>
+                    {SIDEBAR_TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id as any); setIsSidebarOpen(true); }}
+                            className={`
+                                w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 relative group
+                                ${activeTab === tab.id ? `${tab.bg} ${tab.color} shadow-sm` : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}
+                            `}
+                        >
+                            <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
 
-                {/* 展開按鈕懸浮球 */}
-                {!isSidebarOpen && (
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="absolute left-4 top-4 z-20 p-2 bg-white border border-gray-200 rounded-lg shadow-md hover:bg-gray-50 text-gray-600 transition-all hover:scale-105"
-                        title="展開資源面板"
-                    >
-                        <ChevronDown className="w-5 h-5 rotate-90" />
-                    </button>
-                )}
+                            {/* Tooltip */}
+                            <div className="absolute left-12 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-50">
+                                {tab.label}
+                            </div>
+                        </button>
+                    ))}
+                </div>
 
-                {/* 左側資源面板 - 分類 Tab */}
-                <div className={`${isSidebarOpen ? 'w-80 translate-x-0 opacity-100' : 'w-0 -translate-x-full opacity-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out relative`}>
-
-                    {/* 收合按鈕 */}
-                    <button
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors z-10"
-                        title="收合面板"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    {/* 分類 Tab */}
-                    <div className="p-3 border-b border-gray-200 bg-gray-50 pr-10">
-                        <div className="flex flex-wrap gap-1">
-                            {([
-                                { value: 'agents', label: '🤖 AI Agent', color: 'indigo' },
-                                { value: 'video', label: '🎬 影片', color: 'red' },
-                                { value: 'material', label: '📄 教材', color: 'blue' },
-                                { value: 'worksheet', label: '📝 練習', color: 'green' },
-                                { value: 'external', label: '🔧 工具', color: 'purple' },
-                            ] as const).map(tab => (
-                                <button
-                                    key={tab.value}
-                                    onClick={() => setLeftPanelTab(tab.value)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${leftPanelTab === tab.value
-                                        ? `bg-${tab.color}-600 text-white shadow-md`
-                                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                {/* Drawer Panel */}
+                <div className={`${isSidebarOpen ? 'w-60 translate-x-0' : 'w-0 -translate-x-full opacity-0'} bg-white border-r border-gray-100 transition-all duration-300 flex flex-col relative pt-16`}>
+                    <div className="p-5 border-b border-gray-50 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-800 text-lg">
+                            {SIDEBAR_TABS.find(t => t.id === activeTab)?.label}
+                        </h2>
+                        <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-gray-100 rounded">
+                            <ChevronLeft size={18} className="text-gray-400" />
+                        </button>
                     </div>
 
-                    {/* 搜尋列 */}
-                    <div className="p-3 border-b border-gray-200">
+                    <div className="p-4 border-b border-gray-50">
                         <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="搜尋資源或 AI Agent..."
+                                placeholder="搜尋元件..."
+                                className="w-full bg-gray-50 pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    {/* 內容區域 */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                        <p className="text-xs text-gray-500 mb-3">拖曳到畫布以新增節點</p>
-
-                        {/* Agents */}
-                        {leftPanelTab === 'agents' && AVAILABLE_AGENTS
-                            .filter(agent =>
-                                !searchQuery ||
-                                agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                agent.description.toLowerCase().includes(searchQuery.toLowerCase())
-                            )
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-panel">
+                        {/* Agents Content */}
+                        {activeTab === 'agents' && AVAILABLE_AGENTS
+                            .filter(a => a.name.includes(searchQuery))
                             .map(agent => (
                                 <div
                                     key={agent.id}
@@ -731,411 +430,225 @@ function LessonPrepPreviewPageInner() {
                                     onDragStart={(e) => {
                                         e.dataTransfer.setData('application/reactflow', 'agent');
                                         e.dataTransfer.setData('agentId', agent.id);
-                                        e.dataTransfer.effectAllowed = 'move';
                                     }}
-                                    className="p-3 bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg cursor-move hover:shadow-md transition-all hover:scale-[1.02]"
+                                    className="p-3 bg-white border border-indigo-100 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 cursor-move transition-all group"
                                 >
-                                    <div className="font-medium text-sm text-gray-900 mb-1">{agent.name}</div>
-                                    <div className="text-xs text-indigo-600 mb-1">{agent.nameEn}</div>
-                                    <div className="text-xs text-gray-600 line-clamp-2">{agent.description}</div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                            <Bot size={16} />
+                                        </div>
+                                        <div className="font-bold text-gray-800 text-sm">{agent.name}</div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{agent.description}</p>
                                 </div>
-                            ))}
+                            ))
+                        }
 
-                        {/* 影片資源 */}
-                        {leftPanelTab === 'video' && (
+                        {/* Other Resources */}
+                        {activeTab === 'video' && (
                             <>
-                                <DraggableResource id="video-1" title="四則運算基礎概念" desc="3分鐘動畫講解" source="YouTube" color="red" resourceType="video" />
-                                <DraggableResource id="video-2" title="混合運算實例解說" desc="實際案例演示" source="Khan Academy" color="red" resourceType="video" />
-                                <DraggableResource id="video-3" title="運算順序口訣" desc="幫助記憶的歌曲" source="YouTube" color="red" resourceType="video" />
+                                <DraggableResource id="v1" title="四則運算基礎" desc="3min 動畫講解" source="YouTube" color="red" resourceType="video" />
+                                <DraggableResource id="v2" title="進階應用範例" desc="生活情境題" source="Khan Academy" color="red" resourceType="video" />
                             </>
                         )}
-
-                        {/* 教材資源 */}
-                        {leftPanelTab === 'material' && (
+                        {activeTab === 'material' && (
                             <>
-                                <DraggableResource id="material-1" title="四則運算教學簡報" desc="PowerPoint 15張" source="本地資源庫" color="blue" resourceType="material" />
-                                <DraggableResource id="material-2" title="數學概念圖解 PDF" desc="視覺化圖解" source="本地資源庫" color="blue" resourceType="material" />
-                                <DraggableResource id="material-3" title="運算規則海報" desc="可列印海報" source="本地資源庫" color="blue" resourceType="material" />
+                                <DraggableResource id="m1" title="教學簡報 PDF" desc="共 15 頁" source="Local" color="blue" resourceType="material" />
                             </>
                         )}
-
-                        {/* 學習單 */}
-                        {leftPanelTab === 'worksheet' && (
+                        {activeTab === 'worksheet' && (
                             <>
-                                <DraggableResource id="worksheet-1" title="基礎運算練習單" desc="20題基礎練習" source="題庫系統" color="green" resourceType="worksheet" />
-                                <DraggableResource id="worksheet-2" title="進階挑戰題組" desc="10題進階混合運算" source="題庫系統" color="green" resourceType="worksheet" />
-                                <DraggableResource id="worksheet-3" title="生活應用題" desc="15題情境題" source="題庫系統" color="green" resourceType="worksheet" />
+                                <DraggableResource id="w1" title="基礎練習卷" desc="20 題選擇" source="ExamSystem" color="green" resourceType="worksheet" />
                             </>
                         )}
-
-                        {/* 外部工具 */}
-                        {leftPanelTab === 'external' && (
+                        {activeTab === 'external' && (
                             <>
-                                <DraggableResource id="external-1" title="GeoGebra 互動元件" desc="動態數學工具" source="GeoGebra" color="purple" resourceType="external" />
-                                <DraggableResource id="external-2" title="Wolfram Alpha" desc="數學運算引擎" source="Wolfram" color="purple" resourceType="external" />
-                                <DraggableResource id="external-3" title="Desmos 計算機" desc="圖形計算機" source="Desmos" color="purple" resourceType="external" />
+                                <DraggableResource id="e1" title="GeoGebra 画板" desc="互動幾何" source="GGB" color="purple" resourceType="external" />
                             </>
                         )}
                     </div>
                 </div>
+            </div>
 
-                {/* 主編輯區域 - ReactFlow 流程圖 */}
-                <div className="flex-1 h-full overflow-hidden">
-                    <div className="h-full w-full" onDrop={handleDrop} onDragOver={handleDragOver}>
-                        <ReactFlow
-                            nodes={nodes}
-                            edges={edges}
-                            onNodesChange={onNodesChange}
-                            onEdgesChange={onEdgesChange}
-                            onNodeClick={handleNodeClick}
-                            onEdgeClick={handleEdgeClick}
-                            onConnect={onConnect}
-                            fitView
-                            fitViewOptions={{ padding: 0.1 }}
-                            attributionPosition="bottom-right"
-                            proOptions={{ hideAttribution: true }}
-                            nodesDraggable={true}
-                            nodesConnectable={true}
-                            elementsSelectable={true}
-                            minZoom={0.2}
-                            maxZoom={2}
-                        >
-                            <Background />
-                            <Controls
-                                showInteractive={false}
-                                position="bottom-left"
-                                className="react-flow-controls-custom"
-                            />
-                            <MiniMap
-                                nodeColor="#6366f1"
-                                maskColor="rgba(0, 0, 0, 0.05)"
-                                position="bottom-left"
-                                style={{
-                                    background: 'white',
-                                    border: '2px solid #e5e7eb',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                    marginLeft: '60px',
-                                    marginBottom: '12px',
-                                }}
-                            />
-                        </ReactFlow>
-                    </div>
+            {/* Main Canvas Area */}
+            <div className="flex-1 relative h-full bg-slate-50">
+                <div className="absolute inset-y-0 left-0 right-0" onDrop={handleDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}>
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        nodeTypes={nodeTypes}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+                        fitView
+                        fitViewOptions={{
+                            padding: 0.25,
+                            includeHiddenNodes: false,
+                            minZoom: 0.3,
+                            maxZoom: 1.2
+                        }}
+                        attributionPosition="bottom-right"
+                        minZoom={0.2}
+                        maxZoom={1.5}
+                        proOptions={{ hideAttribution: true }}
+                    >
+                        <Background color="#e2e8f0" gap={24} size={1} />
+                        <Controls
+                            position="bottom-center"
+                            showInteractive={false}
+                        />
+                    </ReactFlow>
                 </div>
+            </div>
 
-                {/* 編輯側邊欄 */}
-                {selectedNode && (
-                    <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto">
-                        <div className="p-4 space-y-3">
-                            {/* 標題與預覽 */}
-                            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                                <h2 className="text-lg font-bold text-gray-900">編輯節點</h2>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => alert('預覽功能即將上線！將跳轉至學生學習體驗預覽。')}
-                                        className="p-2 bg-indigo-100 text-indigo-600 hover:bg-indigo-200 rounded-lg transition-colors"
-                                        title="預覽學生體驗"
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setSelectedNodeId(null)}
-                                        className="p-2 hover:bg-gray-100 rounded-lg"
-                                    >
-                                        <X className="w-5 h-5 text-gray-500" />
-                                    </button>
+            {/* Right Logic Sidebar - Fixed Width */}
+            {selectedNode && (
+                <div className="w-[360px] bg-white border-l-2 border-indigo-100 shadow-2xl h-full z-40 overflow-y-auto absolute right-0 top-0 bottom-0 animate-in slide-in-from-right duration-300">
+                    <div className="sticky top-0 bg-white/95 backdrop-blur z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                            <Layers size={18} className="text-indigo-500" />
+                            屬性設定
+                        </h2>
+                        <button onClick={() => setSelectedNodeId(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <X size={20} className="text-gray-400" />
+                        </button>
+                    </div>
+
+                    <div className="p-6 space-y-6 scrollbar-panel">
+                        {/* Title Input */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Node Title</label>
+                            <input
+                                type="text"
+                                value={selectedNode.title}
+                                onChange={e => setLesson(prev => ({
+                                    ...prev,
+                                    nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, title: e.target.value } : n)
+                                }))}
+                                className="w-full text-lg font-bold text-gray-800 border-b-2 border-gray-200 focus:border-indigo-500 bg-transparent py-2 focus:outline-none transition-colors"
+                            />
+                        </div>
+
+                        {/* Agent Selection - Simplified */}
+                        {selectedNode.nodeType === 'agent' && (
+                            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                                        <Bot size={20} />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-indigo-900">{selectedNode.agent.name}</div>
+                                        <div className="text-xs text-indigo-700 opacity-80">{selectedNode.agent.nameEn}</div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {AVAILABLE_TOOLS.filter(t => selectedNode.agent.availableTools.includes(t.id)).slice(0, 3).map(tool => (
+                                        <span key={tool.id} className="text-[10px] px-2 py-1 bg-white border border-indigo-100 rounded-full text-indigo-600">
+                                            {tool.name}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
+                        )}
 
-                            {/* 節點標題 - 永遠展開 */}
-                            <div className="bg-gray-50 rounded-xl p-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    📝 節點名稱
+                        {/* Conditional Logic Section */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${selectedNode.isConditional ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                                    條件分支 (Conditional)
                                 </label>
                                 <input
-                                    type="text"
-                                    value={selectedNode.title}
-                                    onChange={(e) => handleUpdateNode({ ...selectedNode, title: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                    type="checkbox"
+                                    className="toggle toggle-sm"
+                                    checked={selectedNode.isConditional || false}
+                                    onChange={e => setLesson(prev => ({
+                                        ...prev,
+                                        nodes: prev.nodes.map(n => n.id === selectedNode.id ? {
+                                            ...n,
+                                            isConditional: e.target.checked,
+                                            conditions: e.target.checked ? { learnedPath: '', notLearnedPath: '' } : undefined
+                                        } : n)
+                                    }))}
                                 />
                             </div>
 
-                            {/* Accordion: AI 助教 */}
-                            <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                <button
-                                    onClick={() => toggleSection('agent')}
-                                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-colors"
-                                >
-                                    <span className="font-medium text-gray-900">🤖 AI Agent</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
-                                            {selectedNode.agent.name}
-                                        </span>
-                                        {expandedSections.agent ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                            {selectedNode.isConditional && (
+                                <div className="pl-4 border-l-2 border-orange-100 space-y-4 py-2">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                                            通過路徑 (Target)
+                                        </label>
+                                        <select
+                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-green-100"
+                                            value={selectedNode.conditions?.learnedPath || ''}
+                                            onChange={e => setLesson(prev => ({
+                                                ...prev,
+                                                nodes: prev.nodes.map(n => n.id === selectedNode.id ? {
+                                                    ...n,
+                                                    conditions: { ...n.conditions!, learnedPath: e.target.value }
+                                                } : n)
+                                            }))}
+                                        >
+                                            <option value="">選擇節點...</option>
+                                            {lesson.nodes.filter(n => n.id !== selectedNode.id).map(n => (
+                                                <option key={n.id} value={n.id}>{n.title}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                </button>
-                                {expandedSections.agent && (
-                                    <div className="p-4 space-y-2 border-t border-gray-100 animate-fadeIn">
-                                        {AVAILABLE_AGENTS.map(agent => {
-                                            const isSelected = selectedNode.agent.id === agent.id;
-                                            return (
-                                                <div
-                                                    key={agent.id}
-                                                    onClick={() => handleUpdateNode({ ...selectedNode, agent, selectedTools: [] })}
-                                                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${isSelected
-                                                        ? 'border-indigo-500 bg-indigo-50 shadow-md'
-                                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        {isSelected && <span className="text-indigo-600">✓</span>}
-                                                        <span className="font-medium text-sm text-gray-900">{agent.name}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-orange-600 flex items-center gap-1">
+                                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                                            補救路徑 (Remedial)
+                                        </label>
+                                        <select
+                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-100"
+                                            value={selectedNode.conditions?.notLearnedPath || ''}
+                                            onChange={e => setLesson(prev => ({
+                                                ...prev,
+                                                nodes: prev.nodes.map(n => n.id === selectedNode.id ? {
+                                                    ...n,
+                                                    conditions: { ...n.conditions!, notLearnedPath: e.target.value }
+                                                } : n)
+                                            }))}
+                                        >
+                                            <option value="">選擇補強節點...</option>
+                                            {lesson.nodes.filter(n => n.id !== selectedNode.id).map(n => (
+                                                <option key={n.id} value={n.id}>{n.title}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Accordion: 教學功能 */}
-                            <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                <button
-                                    onClick={() => toggleSection('tools')}
-                                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors"
-                                >
-                                    <span className="font-medium text-gray-900">⚙️ 教學功能</span>
-                                    <div className="flex items-center gap-2">
-                                        {selectedNode.selectedTools.length > 0 && (
-                                            <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                                                已選 {selectedNode.selectedTools.length} 項
-                                            </span>
-                                        )}
-                                        {expandedSections.tools ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-                                    </div>
-                                </button>
-                                {expandedSections.tools && (
-                                    <div className="p-4 space-y-2 border-t border-gray-100 animate-fadeIn">
-                                        {AVAILABLE_TOOLS
-                                            .filter(tool => selectedNode.agent.availableTools.includes(tool.id))
-                                            .map(tool => {
-                                                const isSelected = selectedNode.selectedTools.some(t => t.id === tool.id);
-                                                return (
-                                                    <div
-                                                        key={tool.id}
-                                                        onClick={() => {
-                                                            const newTools = isSelected
-                                                                ? selectedNode.selectedTools.filter(t => t.id !== tool.id)
-                                                                : [...selectedNode.selectedTools, tool];
-                                                            handleUpdateNode({ ...selectedNode, selectedTools: newTools });
-                                                        }}
-                                                        className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${isSelected
-                                                            ? 'border-purple-500 bg-purple-50'
-                                                            : 'border-gray-200 bg-white hover:border-gray-300'
-                                                            }`}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-medium text-sm text-gray-900">{tool.name}</span>
-                                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'bg-purple-500 border-purple-500' : 'border-gray-300'
-                                                                }`}>
-                                                                {isSelected && <span className="text-white text-xs">✓</span>}
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-xs text-gray-500 mt-1">{tool.description}</p>
-                                                    </div>
-                                                );
-                                            })}
-                                        {AVAILABLE_TOOLS.filter(tool => selectedNode.agent.availableTools.includes(tool.id)).length === 0 && (
-                                            <div className="text-center py-4 text-sm text-gray-400">
-                                                此 AI Agent 無額外功能可選
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Accordion: 條件分支 */}
-                            <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                <button
-                                    onClick={() => toggleSection('condition')}
-                                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 transition-colors"
-                                >
-                                    <span className="font-medium text-gray-900">🎯 條件分支</span>
-                                    <div className="flex items-center gap-2">
-                                        {selectedNode.isConditional && (
-                                            <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
-                                                檢查點
-                                            </span>
-                                        )}
-                                        {expandedSections.condition ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-                                    </div>
-                                </button>
-                                {expandedSections.condition && (
-                                    <div className="p-4 space-y-3 border-t border-gray-100 animate-fadeIn">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-gray-700">設為學習檢查點</label>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedNode.isConditional || false}
-                                                onChange={(e) => handleUpdateNode({
-                                                    ...selectedNode,
-                                                    isConditional: e.target.checked,
-                                                    conditions: e.target.checked ? {
-                                                        learnedPath: '',
-                                                        notLearnedPath: '',
-                                                        assessmentCriteria: '完成度 ≥ 80%'
-                                                    } : undefined
-                                                })}
-                                                className="w-5 h-5 text-indigo-600 rounded"
-                                            />
-                                        </div>
-
-                                        {selectedNode.isConditional && (
-                                            <div className="space-y-3 bg-orange-50 p-3 rounded-lg">
-                                                <p className="text-xs text-orange-700">
-                                                    根據學生學習成果，系統將自動選擇不同的學習路徑
-                                                </p>
-
-                                                {/* 學會路徑 */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                        ✓ 學會後進入
-                                                    </label>
-                                                    <select
-                                                        value={selectedNode.conditions?.learnedPath || ''}
-                                                        onChange={(e) => handleUpdateNode({
-                                                            ...selectedNode,
-                                                            conditions: {
-                                                                ...selectedNode.conditions!,
-                                                                learnedPath: e.target.value
-                                                            }
-                                                        })}
-                                                        className="w-full px-2 py-1.5 text-sm border border-green-300 rounded bg-white"
-                                                    >
-                                                        <option value="">選擇下一個節點</option>
-                                                        {lesson.nodes
-                                                            .filter(n => n.id !== selectedNode.id)
-                                                            .map(node => (
-                                                                <option key={node.id} value={node.id}>
-                                                                    {node.title}
-                                                                </option>
-                                                            ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* 未學會路徑 */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                        ✗ 未學會則進行
-                                                    </label>
-                                                    <select
-                                                        value={selectedNode.conditions?.notLearnedPath || ''}
-                                                        onChange={(e) => handleUpdateNode({
-                                                            ...selectedNode,
-                                                            conditions: {
-                                                                ...selectedNode.conditions!,
-                                                                notLearnedPath: e.target.value
-                                                            }
-                                                        })}
-                                                        className="w-full px-2 py-1.5 text-sm border border-red-300 rounded bg-white"
-                                                    >
-                                                        <option value="">選擇補強節點</option>
-                                                        {lesson.nodes
-                                                            .filter(n => n.id !== selectedNode.id)
-                                                            .map(node => (
-                                                                <option key={node.id} value={node.id}>
-                                                                    {node.title}
-                                                                </option>
-                                                            ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* 評估標準 */}
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                        評估標準
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={selectedNode.conditions?.assessmentCriteria || ''}
-                                                        onChange={(e) => handleUpdateNode({
-                                                            ...selectedNode,
-                                                            conditions: {
-                                                                ...selectedNode.conditions!,
-                                                                assessmentCriteria: e.target.value
-                                                            }
-                                                        })}
-                                                        placeholder="例：完成度 ≥ 80%"
-                                                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Accordion: 下一個節點 */}
-                            {!selectedNode.isConditional && (
-                                <div className="border border-gray-200 rounded-xl overflow-hidden">
-                                    <button
-                                        onClick={() => toggleSection('navigation')}
-                                        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 transition-colors"
-                                    >
-                                        <span className="font-medium text-gray-900">🔗 下一個節點</span>
-                                        <div className="flex items-center gap-2">
-                                            {selectedNode.nextNodeId && (
-                                                <span className="text-xs text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded-full">
-                                                    已設定
-                                                </span>
-                                            )}
-                                            {expandedSections.navigation ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-                                        </div>
-                                    </button>
-                                    {expandedSections.navigation && (
-                                        <div className="p-4 space-y-3 border-t border-gray-100">
-                                            <select
-                                                value={selectedNode.nextNodeId || ''}
-                                                onChange={(e) => handleUpdateNode({
-                                                    ...selectedNode,
-                                                    nextNodeId: e.target.value || undefined
-                                                })}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                            >
-                                                <option value="">自動（順序下一個）</option>
-                                                {lesson.nodes
-                                                    .filter(n => n.id !== selectedNode.id)
-                                                    .map(node => (
-                                                        <option key={node.id} value={node.id}>
-                                                            {node.title}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                            <p className="text-xs text-gray-500">
-                                                可自由指定下一個節點，不受順序限制
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             )}
+                        </div>
 
-                            {/* 刪除按鈕 */}
+                        {/* Delete Button */}
+                        <div className="pt-6 border-t border-gray-100">
                             <button
-                                onClick={() => handleDeleteNode(selectedNode.id)}
-                                className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 mt-4"
+                                onClick={() => {
+                                    if (confirm('Delete this node?')) {
+                                        setLesson(prev => ({
+                                            ...prev,
+                                            nodes: prev.nodes.filter(n => n.id !== selectedNode.id)
+                                        }));
+                                        setSelectedNodeId(null);
+                                    }
+                                }}
+                                className="w-full py-3 rounded-xl border border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 font-medium transition-colors flex items-center justify-center gap-2"
                             >
-                                <Trash2 className="w-4 h-4" />
-                                刪除此節點
+                                <Trash2 size={16} /> 移除此節點
                             </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
 
-// 包裹在 ReactFlowProvider 中以啟用 useReactFlow
 export default function LessonPrepPreviewPage() {
     return (
         <ReactFlowProvider>

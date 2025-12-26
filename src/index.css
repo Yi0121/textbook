@@ -265,22 +265,88 @@
   .scrollbar-thin::-webkit-scrollbar-track {
     background-color: transparent;
   }
+
+  /* Premium Scrollbar for Panels */
+  .scrollbar-panel::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(168, 85, 247, 0.6));
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scrollbar-panel::-webkit-scrollbar-track {
+    background-color: rgba(243, 244, 246, 0.8);
+    border-radius: 5px;
+    margin: 8px 0;
+  }
 }
 
 /* ReactFlow 自訂樣式 */
 @layer components {
-  .react-flow-controls-custom button {
-    @apply bg-white border-2 border-gray-200 rounded-lg shadow-md;
+
+  /* 控制元件容器 */
+  .react-flow__controls {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 8px 16px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .react-flow__controls button {
     width: 36px !important;
     height: 36px !important;
-    margin-bottom: 8px;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
   }
 
-  .react-flow-controls-custom button:hover {
-    @apply bg-gray-50 border-indigo-300;
+  .react-flow__controls button:hover {
+    background: #eef2ff !important;
+    border-color: #c7d2fe !important;
+    transform: scale(1.05);
   }
 
-  .react-flow-controls-custom button svg {
-    @apply text-gray-700;
+  .react-flow__controls button svg {
+    width: 18px !important;
+    height: 18px !important;
+    fill: #6b7280 !important;
+  }
+
+  .react-flow__controls button:hover svg {
+    fill: #6366f1 !important;
+  }
+
+  /* MiniMap 樣式 */
+  .react-flow__minimap {
+    border-radius: 16px !important;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .react-flow__minimap-mask {
+    fill: rgba(99, 102, 241, 0.1);
   }
 }
