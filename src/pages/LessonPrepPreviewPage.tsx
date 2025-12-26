@@ -15,8 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, Handle, Position, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import type { Node, Edge, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp, LayoutGrid, Network, ChevronLeft } from 'lucide-react';
-import LessonNodesCards from '../components/ui/LessonNodesCards';
+import { BookOpen, Send, ArrowLeft, Settings, Plus, Trash2, X, Search, Maximize, Eye, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
+
 import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 import type { LessonNode } from '../types/lessonPlan';
 import dagre from 'dagre';
@@ -140,7 +140,7 @@ function LessonPrepPreviewPageInner() {
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('agents');
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'flow' | 'cards'>('cards'); // 默認使用卡片視圖
+
     const { fitView } = useReactFlow();
 
     // 自動調整視野以顯示所有節點
@@ -608,31 +608,6 @@ function LessonPrepPreviewPageInner() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* 視圖切換 */}
-                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                        <button
-                            onClick={() => setViewMode('cards')}
-                            className={`px-3 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${viewMode === 'cards'
-                                ? 'bg-white text-indigo-600 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            title="卡片視圖"
-                        >
-                            <LayoutGrid className="w-4 h-4" />
-                            卡片
-                        </button>
-                        <button
-                            onClick={() => setViewMode('flow')}
-                            className={`px-3 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${viewMode === 'flow'
-                                ? 'bg-white text-indigo-600 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            title="流程圖視圖"
-                        >
-                            <Network className="w-4 h-4" />
-                            流程圖
-                        </button>
-                    </div>
 
                     <button
                         onClick={handleAddNode}
@@ -641,33 +616,29 @@ function LessonPrepPreviewPageInner() {
                         <Plus className="w-4 h-4" />
                         新增節點
                     </button>
-                    {viewMode === 'flow' && (
-                        <>
-                            <button
-                                onClick={() => {
-                                    const newNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
-                                    const newEdges = createEdges(lesson.nodes);
-                                    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
-                                    setNodes(layoutedNodes);
-                                    setEdges(layoutedEdges);
-                                    setTimeout(() => fitView({ padding: 0.1, duration: 500 }), 100);
-                                }}
-                                className="px-4 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all flex items-center gap-2"
-                                title="自動排列整齊"
-                            >
-                                <Settings className="w-4 h-4" />
-                                自動排列
-                            </button>
-                            <button
-                                onClick={() => fitView({ padding: 0.1, duration: 500 })}
-                                className="px-4 py-2 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-all flex items-center gap-2"
-                                title="縮放至全覽"
-                            >
-                                <Maximize className="w-4 h-4" />
-                                全覽
-                            </button>
-                        </>
-                    )}
+                    <button
+                        onClick={() => {
+                            const newNodes = lesson.nodes.map((node, idx) => createReactFlowNode(node, idx));
+                            const newEdges = createEdges(lesson.nodes);
+                            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(newNodes, newEdges);
+                            setNodes(layoutedNodes);
+                            setEdges(layoutedEdges);
+                            setTimeout(() => fitView({ padding: 0.1, duration: 500 }), 100);
+                        }}
+                        className="px-4 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all flex items-center gap-2"
+                        title="自動排列整齊"
+                    >
+                        <Settings className="w-4 h-4" />
+                        自動排列
+                    </button>
+                    <button
+                        onClick={() => fitView({ padding: 0.1, duration: 500 })}
+                        className="px-4 py-2 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-all flex items-center gap-2"
+                        title="縮放至全覽"
+                    >
+                        <Maximize className="w-4 h-4" />
+                        全覽
+                    </button>
                     <button
                         onClick={handlePublish}
                         className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg"
@@ -688,7 +659,7 @@ function LessonPrepPreviewPageInner() {
                         className="absolute left-4 top-4 z-20 p-2 bg-white border border-gray-200 rounded-lg shadow-md hover:bg-gray-50 text-gray-600 transition-all hover:scale-105"
                         title="展開資源面板"
                     >
-                        <LayoutGrid className="w-5 h-5" />
+                        <ChevronDown className="w-5 h-5 rotate-90" />
                     </button>
                 )}
 
@@ -808,61 +779,48 @@ function LessonPrepPreviewPageInner() {
                     </div>
                 </div>
 
-                {/* 主編輯區域 - 根據視圖模式切換 */}
-                <div className={`flex-1 ${viewMode === 'cards' ? 'overflow-auto' : 'h-full overflow-hidden'}`}>
-                    {viewMode === 'cards' ? (
-                        /* 卡片視圖 */
-                        <LessonNodesCards
-                            nodes={lesson.nodes}
-                            selectedNodeId={selectedNodeId}
-                            onNodeClick={(nodeId) => setSelectedNodeId(nodeId)}
-                            onNodeDelete={handleDeleteNode}
-                            onAddNode={handleAddNode}
-                            className="bg-gray-50"
-                        />
-                    ) : (
-                        /* ReactFlow 流程圖視圖 */
-                        <div className="h-full w-full" onDrop={handleDrop} onDragOver={handleDragOver}>
-                            <ReactFlow
-                                nodes={nodes}
-                                edges={edges}
-                                onNodesChange={onNodesChange}
-                                onEdgesChange={onEdgesChange}
-                                onNodeClick={handleNodeClick}
-                                onEdgeClick={handleEdgeClick}
-                                onConnect={onConnect}
-                                fitView
-                                fitViewOptions={{ padding: 0.1 }}
-                                attributionPosition="bottom-right"
-                                proOptions={{ hideAttribution: true }}
-                                nodesDraggable={true}
-                                nodesConnectable={true}
-                                elementsSelectable={true}
-                                minZoom={0.2}
-                                maxZoom={2}
-                            >
-                                <Background />
-                                <Controls
-                                    showInteractive={false}
-                                    position="bottom-left"
-                                    className="react-flow-controls-custom"
-                                />
-                                <MiniMap
-                                    nodeColor="#6366f1"
-                                    maskColor="rgba(0, 0, 0, 0.05)"
-                                    position="bottom-left"
-                                    style={{
-                                        background: 'white',
-                                        border: '2px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                        marginLeft: '60px',
-                                        marginBottom: '12px',
-                                    }}
-                                />
-                            </ReactFlow>
-                        </div>
-                    )}
+                {/* 主編輯區域 - ReactFlow 流程圖 */}
+                <div className="flex-1 h-full overflow-hidden">
+                    <div className="h-full w-full" onDrop={handleDrop} onDragOver={handleDragOver}>
+                        <ReactFlow
+                            nodes={nodes}
+                            edges={edges}
+                            onNodesChange={onNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            onNodeClick={handleNodeClick}
+                            onEdgeClick={handleEdgeClick}
+                            onConnect={onConnect}
+                            fitView
+                            fitViewOptions={{ padding: 0.1 }}
+                            attributionPosition="bottom-right"
+                            proOptions={{ hideAttribution: true }}
+                            nodesDraggable={true}
+                            nodesConnectable={true}
+                            elementsSelectable={true}
+                            minZoom={0.2}
+                            maxZoom={2}
+                        >
+                            <Background />
+                            <Controls
+                                showInteractive={false}
+                                position="bottom-left"
+                                className="react-flow-controls-custom"
+                            />
+                            <MiniMap
+                                nodeColor="#6366f1"
+                                maskColor="rgba(0, 0, 0, 0.05)"
+                                position="bottom-left"
+                                style={{
+                                    background: 'white',
+                                    border: '2px solid #e5e7eb',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                    marginLeft: '60px',
+                                    marginBottom: '12px',
+                                }}
+                            />
+                        </ReactFlow>
+                    </div>
                 </div>
 
                 {/* 編輯側邊欄 */}
