@@ -219,17 +219,63 @@ function LessonPrepPreviewPageInner() {
     // Initial Layout Effect
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
+    const [isInitialized, setIsInitialized] = useState(false);
 
+    // 初始化佈局（只執行一次）
     useEffect(() => {
+        if (isInitialized) return;
+
         const rfNodes = createReactFlowNodes(lesson.nodes);
         const rfEdges = createEdges(lesson.nodes);
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rfNodes, rfEdges);
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
+        setIsInitialized(true);
 
-        // Delay fitView slightly to ensure rendering
         setTimeout(() => fitView({ padding: 0.25, duration: 800 }), 100);
-    }, [lesson.nodes, createReactFlowNodes, createEdges, fitView]);
+    }, [isInitialized, lesson.nodes, createReactFlowNodes, createEdges, fitView]);
+
+    // 資料同步：當 lesson.nodes 變更時，只更新節點的 data（不改變位置）
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        setNodes(prevNodes => {
+            // 檢查是否有節點被新增或刪除
+            const lessonNodeIds = new Set(lesson.nodes.map(n => n.id));
+            const currentNodeIds = new Set(prevNodes.map(n => n.id));
+
+            const hasAddedNodes = lesson.nodes.some(n => !currentNodeIds.has(n.id));
+            const hasRemovedNodes = prevNodes.some(n => !lessonNodeIds.has(n.id));
+
+            if (hasAddedNodes || hasRemovedNodes) {
+                // 節點數量變化時重新佈局
+                const rfNodes = createReactFlowNodes(lesson.nodes);
+                const rfEdges = createEdges(lesson.nodes);
+                const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rfNodes, rfEdges);
+                setEdges(layoutedEdges);
+                return layoutedNodes;
+            }
+
+            // 只更新現有節點的 data
+            return prevNodes.map(node => {
+                const lessonNode = lesson.nodes.find(n => n.id === node.id);
+                if (lessonNode) {
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            lessonNode
+                        }
+                    };
+                }
+                return node;
+            });
+        });
+
+        // 同步 edges（條件分支可能變化）
+        setEdges(createEdges(lesson.nodes));
+    }, [lesson.nodes, isInitialized, createReactFlowNodes, createEdges]);
+
 
     // Keyboard Shortcuts
     useEffect(() => {
@@ -502,66 +548,108 @@ function LessonPrepPreviewPageInner() {
                 </div>
             </div>
 
-            {/* Right Logic Sidebar - Fixed Width */}
+            {/* Right Logic Sidebar - Simplified */}
             {selectedNode && (
-                <div className="w-[360px] bg-white border-l-2 border-indigo-100 shadow-2xl h-full z-40 overflow-y-auto absolute right-0 top-0 bottom-0 animate-in slide-in-from-right duration-300">
-                    <div className="sticky top-0 bg-white/95 backdrop-blur z-10 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <h2 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                            <Layers size={18} className="text-indigo-500" />
-                            屬性設定
+                <div className="w-80 bg-white border-l border-gray-200 shadow-lg h-full z-40 overflow-y-auto absolute right-0 top-0 bottom-0">
+                    {/* Header */}
+                    <div className="sticky top-0 bg-white z-10 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                            <Layers size={16} className="text-indigo-500" />
+                            編輯節點
                         </h2>
-                        <button onClick={() => setSelectedNodeId(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                            <X size={20} className="text-gray-400" />
+                        <button onClick={() => setSelectedNodeId(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                            <X size={18} className="text-gray-400" />
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-6 scrollbar-panel">
-                        {/* Title Input */}
+                    <div className="p-4 space-y-4">
+                        {/* Title */}
+                        <input
+                            type="text"
+                            value={selectedNode.title}
+                            onChange={e => setLesson(prev => ({
+                                ...prev,
+                                nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, title: e.target.value } : n)
+                            }))}
+                            className="w-full text-base font-bold text-gray-800 border-b-2 border-gray-200 focus:border-indigo-500 bg-transparent py-2 focus:outline-none"
+                            placeholder="節點名稱"
+                        />
+
+                        {/* Agent - Dropdown */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Node Title</label>
-                            <input
-                                type="text"
-                                value={selectedNode.title}
-                                onChange={e => setLesson(prev => ({
-                                    ...prev,
-                                    nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, title: e.target.value } : n)
-                                }))}
-                                className="w-full text-lg font-bold text-gray-800 border-b-2 border-gray-200 focus:border-indigo-500 bg-transparent py-2 focus:outline-none transition-colors"
-                            />
+                            <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                <Bot size={12} /> AI Agent
+                            </label>
+                            <select
+                                value={selectedNode.agent.id}
+                                onChange={e => {
+                                    const agent = AVAILABLE_AGENTS.find(a => a.id === e.target.value);
+                                    if (agent) {
+                                        setLesson(prev => ({
+                                            ...prev,
+                                            nodes: prev.nodes.map(n => n.id === selectedNode.id
+                                                ? { ...n, agent, selectedTools: [] }
+                                                : n
+                                            )
+                                        }));
+                                    }
+                                }}
+                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                            >
+                                {AVAILABLE_AGENTS.map(agent => (
+                                    <option key={agent.id} value={agent.id}>{agent.name}</option>
+                                ))}
+                            </select>
                         </div>
 
-                        {/* Agent Selection - Simplified */}
-                        {selectedNode.nodeType === 'agent' && (
-                            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-                                        <Bot size={20} />
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-indigo-900">{selectedNode.agent.name}</div>
-                                        <div className="text-xs text-indigo-700 opacity-80">{selectedNode.agent.nameEn}</div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {AVAILABLE_TOOLS.filter(t => selectedNode.agent.availableTools.includes(t.id)).slice(0, 3).map(tool => (
-                                        <span key={tool.id} className="text-[10px] px-2 py-1 bg-white border border-indigo-100 rounded-full text-indigo-600">
-                                            {tool.name}
-                                        </span>
-                                    ))}
+                        {/* Tools - Compact Checkboxes */}
+                        {AVAILABLE_TOOLS.filter(t => selectedNode.agent.availableTools.includes(t.id)).length > 0 && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                    <Wrench size={12} /> 教學功能
+                                </label>
+                                <div className="space-y-1.5">
+                                    {AVAILABLE_TOOLS
+                                        .filter(tool => selectedNode.agent.availableTools.includes(tool.id))
+                                        .map(tool => {
+                                            const isSelected = selectedNode.selectedTools?.some(t => t.id === tool.id);
+                                            return (
+                                                <label
+                                                    key={tool.id}
+                                                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected || false}
+                                                        onChange={() => {
+                                                            const newTools = isSelected
+                                                                ? selectedNode.selectedTools.filter(t => t.id !== tool.id)
+                                                                : [...(selectedNode.selectedTools || []), tool];
+                                                            setLesson(prev => ({
+                                                                ...prev,
+                                                                nodes: prev.nodes.map(n => n.id === selectedNode.id
+                                                                    ? { ...n, selectedTools: newTools }
+                                                                    : n
+                                                                )
+                                                            }));
+                                                        }}
+                                                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700">{tool.name}</span>
+                                                </label>
+                                            );
+                                        })}
                                 </div>
                             </div>
                         )}
 
-                        {/* Conditional Logic Section */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${selectedNode.isConditional ? 'bg-orange-500' : 'bg-gray-300'}`} />
-                                    條件分支 (Conditional)
-                                </label>
+                        {/* Divider */}
+                        <div className="border-t border-gray-100 pt-4">
+                            {/* Conditional Toggle */}
+                            <label className="flex items-center justify-between cursor-pointer">
+                                <span className="text-sm font-medium text-gray-700">條件分支</span>
                                 <input
                                     type="checkbox"
-                                    className="toggle toggle-sm"
                                     checked={selectedNode.isConditional || false}
                                     onChange={e => setLesson(prev => ({
                                         ...prev,
@@ -571,18 +659,16 @@ function LessonPrepPreviewPageInner() {
                                             conditions: e.target.checked ? { learnedPath: '', notLearnedPath: '' } : undefined
                                         } : n)
                                     }))}
+                                    className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                 />
-                            </div>
+                            </label>
 
                             {selectedNode.isConditional && (
-                                <div className="pl-4 border-l-2 border-orange-100 space-y-4 py-2">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-green-600 flex items-center gap-1">
-                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                                            通過路徑 (Target)
-                                        </label>
+                                <div className="mt-3 space-y-3">
+                                    <div>
+                                        <label className="text-xs text-green-600 font-medium">✓ 通過後</label>
                                         <select
-                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-green-100"
+                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                                             value={selectedNode.conditions?.learnedPath || ''}
                                             onChange={e => setLesson(prev => ({
                                                 ...prev,
@@ -598,14 +684,10 @@ function LessonPrepPreviewPageInner() {
                                             ))}
                                         </select>
                                     </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-orange-600 flex items-center gap-1">
-                                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                                            補救路徑 (Remedial)
-                                        </label>
+                                    <div>
+                                        <label className="text-xs text-orange-600 font-medium">✗ 補救路徑</label>
                                         <select
-                                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-100"
+                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                                             value={selectedNode.conditions?.notLearnedPath || ''}
                                             onChange={e => setLesson(prev => ({
                                                 ...prev,
@@ -615,7 +697,7 @@ function LessonPrepPreviewPageInner() {
                                                 } : n)
                                             }))}
                                         >
-                                            <option value="">選擇補強節點...</option>
+                                            <option value="">選擇補強...</option>
                                             {lesson.nodes.filter(n => n.id !== selectedNode.id).map(n => (
                                                 <option key={n.id} value={n.id}>{n.title}</option>
                                             ))}
@@ -625,23 +707,44 @@ function LessonPrepPreviewPageInner() {
                             )}
                         </div>
 
-                        {/* Delete Button */}
-                        <div className="pt-6 border-t border-gray-100">
-                            <button
-                                onClick={() => {
-                                    if (confirm('Delete this node?')) {
-                                        setLesson(prev => ({
-                                            ...prev,
-                                            nodes: prev.nodes.filter(n => n.id !== selectedNode.id)
-                                        }));
-                                        setSelectedNodeId(null);
-                                    }
-                                }}
-                                className="w-full py-3 rounded-xl border border-red-100 text-red-500 hover:bg-red-50 hover:text-red-700 font-medium transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Trash2 size={16} /> 移除此節點
-                            </button>
-                        </div>
+                        {/* Next Node (非條件分支時) */}
+                        {!selectedNode.isConditional && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                    → 下一節點
+                                </label>
+                                <select
+                                    value={selectedNode.nextNodeId || ''}
+                                    onChange={e => setLesson(prev => ({
+                                        ...prev,
+                                        nodes: prev.nodes.map(n => n.id === selectedNode.id
+                                            ? { ...n, nextNodeId: e.target.value || undefined }
+                                            : n
+                                        )
+                                    }))}
+                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                                >
+                                    <option value="">自動（下一個節點）</option>
+                                    {lesson.nodes.filter(n => n.id !== selectedNode.id).map(n => (
+                                        <option key={n.id} value={n.id}>{n.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Delete */}
+                        <button
+                            onClick={() => {
+                                setLesson(prev => ({
+                                    ...prev,
+                                    nodes: prev.nodes.filter(n => n.id !== selectedNode.id)
+                                }));
+                                setSelectedNodeId(null);
+                            }}
+                            className="w-full py-2 text-red-500 hover:bg-red-50 rounded-lg text-sm font-medium flex items-center justify-center gap-1"
+                        >
+                            <Trash2 size={14} /> 刪除節點
+                        </button>
                     </div>
                 </div>
             )}

@@ -203,4 +203,21 @@ const LessonNode = ({ data, selected }: NodeProps<CustomNode>) => {
     );
 };
 
-export default memo(LessonNode);
+// 自定義比較函數：確保 lessonNode 資料變更時能重新渲染
+const areEqual = (prevProps: NodeProps<CustomNode>, nextProps: NodeProps<CustomNode>) => {
+    const prevNode = prevProps.data.lessonNode;
+    const nextNode = nextProps.data.lessonNode;
+
+    // 比較關鍵欄位
+    return (
+        prevProps.selected === nextProps.selected &&
+        prevNode.id === nextNode.id &&
+        prevNode.title === nextNode.title &&
+        prevNode.agent?.id === nextNode.agent?.id &&
+        prevNode.isConditional === nextNode.isConditional &&
+        prevNode.nodeType === nextNode.nodeType &&
+        prevNode.selectedTools?.length === nextNode.selectedTools?.length
+    );
+};
+
+export default memo(LessonNode, areEqual);

@@ -10,3 +10,7 @@ export { useTheme } from './useTheme';
 export { useViewportZoom } from './useViewportZoom';
 export { useWhiteboardControl } from './useWhiteboardControl';
 
+// Agent Hooks (抽離自 AgentContext.tsx)
+export { useTeacherAgents } from './useTeacherAgents';
+export { useStudentAgents } from './useStudentAgents';
+export { useAnalyticsAgents } from './useAnalyticsAgents';
