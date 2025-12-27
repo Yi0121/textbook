@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Send,
     Sparkles,
@@ -10,10 +11,11 @@ import {
     CheckCircle,
     Bot,
     User,
+    BookOpen,
 } from 'lucide-react';
 import { useTeacherAgents } from '../../context/AgentContext';
 import { useUI } from '../../context/UIContext';
-import { useTeacherAIChat } from '../../hooks/useTeacherAIChat';
+import { useTeacherAIChat, type ChatMessage } from '../../hooks/useTeacherAIChat';
 
 interface TeacherAgentPanelProps {
     className?: string;
@@ -29,12 +31,14 @@ const PROMPT_EXAMPLES = [
 ];
 
 export default function TeacherAgentPanel({ className = '', onClose }: TeacherAgentPanelProps) {
+    const navigate = useNavigate();
     const teacher = useTeacherAgents();
     const ui = useUI();
     const {
         messages,
         sendMessage,
-        isProcessing
+        isProcessing,
+        handleOptionClick,
     } = useTeacherAIChat();
 
     const [input, setInput] = useState('');
@@ -46,25 +50,11 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // 初始化歡迎訊息 (如果 Hook 沒有提供歷史紀錄)
-    useEffect(() => {
-        if (messages.length === 0) {
-            // 注意：這裡我們不直接 setMessages (因為它來自 Hook)，而是依賴 UI 渲染層加上歡迎訊息，
-            // 或者我們可以發送一個不經過 LLM 的本地歡迎訊息。
-            // 為了簡化，我們可以在這裡是直接調用 Hook 的 setMessages，但通常更好的做法是 UI 渲染時處理空的狀態，
-            // 不過為了與舊版行為一致，我們這裡手動插入一則歡迎訊息到本地狀態（如果我們要完全控制）。
-            // 
-            // 修正策略：useTeacherAIChat 暴露 setMessages，我們可以在這裡用。
-            // 但如果我們切換頁面回來，messages 還在嗎？目前 Hook 是 local state，每次 mount 都是新的。
-            // 所以每次打開面板都會看到歡迎訊息是合理的。
-        }
-    }, [messages.length]);
-
     // 合併歡迎訊息與聊天訊息
     const displayMessages = messages.length > 0 ? messages : [{
         id: 'welcome',
-        role: 'assistant',
-        content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫這個班級推薦學習路徑\n• 生成練習題\n• 進行分組\n\n我會幫你完成並帶你到對應的工作台！',
+        role: 'assistant' as const,
+        content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫我備課\n• 推薦學習路徑\n• 生成練習題\n\n我會幫你完成！',
         timestamp: Date.now(),
     }];
 
@@ -75,21 +65,145 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         setInput('');
     };
 
-    // 跳轉到備課工作台
-    const navigateToWorkspace = () => {
-        // 關閉側邊欄
+    // 跳轉到備課編輯器
+    const navigateToLessonPreview = () => {
+        if (onClose) onClose();
+        navigate('/lesson-prep/preview');
+    };
+
+    // 跳轉到學習路徑
+    const navigateToLearningPath = () => {
         if (onClose) onClose();
         ui.setQuizPanelOpen(false);
         ui.setSidebarOpen(false);
-
-        // 開啟 Dashboard（會自動顯示 AI 學習路徑 Tab）
         ui.setDashboardOpen(true);
     };
 
     // 使用快捷提示
     const handleQuickPrompt = (text: string) => {
-        setInput(text);
-        inputRef.current?.focus();
+        sendMessage(text);
+    };
+
+    // 渲染選項按鈕
+    const renderOptions = (msg: ChatMessage) => {
+        if (!msg.options || msg.options.length === 0) return null;
+
+        return (
+            <div className="mt-2 flex flex-wrap gap-2">
+                {msg.options.map((opt) => (
+                    <button
+                        key={opt.id}
+                        onClick={() => handleOptionClick(opt.id, opt.label)}
+                        className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 
+                                   text-xs rounded-full transition-colors border border-indigo-200"
+                    >
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+        );
+    };
+
+    // 渲染課綱選擇
+    const renderCurriculumMatches = (msg: ChatMessage) => {
+        if (!msg.curriculumMatches || msg.curriculumMatches.length === 0) return null;
+
+        return (
+            <div className="mt-2 space-y-2">
+                {msg.curriculumMatches.map((unit) => (
+                    <button
+                        key={unit.code}
+                        onClick={() => handleOptionClick(unit.code, `${unit.code} ${unit.title}`)}
+                        className="w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 
+                                   rounded-lg border border-blue-200 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                            <div>
+                                <span className="text-xs text-blue-600 font-mono">{unit.code}</span>
+                                <span className="text-sm text-gray-800 ml-2">{unit.title}</span>
+                                {unit.description && (
+                                    <div className="text-xs text-gray-500">{unit.description}</div>
+                                )}
+                            </div>
+                        </div>
+                    </button>
+                ))}
+                <button
+                    onClick={() => handleOptionClick('skip', '跳過')}
+                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    跳過，使用自訂主題
+                </button>
+            </div>
+        );
+    };
+
+    // 渲染教學法選擇
+    const renderPedagogyMethods = (msg: ChatMessage) => {
+        if (!msg.pedagogyMethods || msg.pedagogyMethods.length === 0) return null;
+
+        return (
+            <div className="mt-2 grid grid-cols-1 gap-2">
+                {msg.pedagogyMethods.map((method) => (
+                    <button
+                        key={method.id}
+                        onClick={() => handleOptionClick(method.id, method.name)}
+                        className="text-left px-3 py-2 bg-white hover:bg-gray-50 
+                                   rounded-lg border border-gray-200 transition-all hover:shadow-sm"
+                        style={{ borderLeftColor: method.color, borderLeftWidth: '3px' }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg">{method.icon}</span>
+                            <div>
+                                <div className="font-medium text-sm text-gray-900">{method.name}</div>
+                                <div className="text-xs text-gray-500">{method.description}</div>
+                            </div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        );
+    };
+
+    // 渲染導航按鈕
+    const renderNavigateButton = (msg: ChatMessage) => {
+        if (msg.action?.type !== 'navigate') return null;
+
+        const target = msg.action.target;
+
+        if (target === 'lesson-preview') {
+            return (
+                <button
+                    onClick={navigateToLessonPreview}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 
+                               bg-gradient-to-r from-indigo-600 to-purple-600 
+                               hover:from-indigo-700 hover:to-purple-700
+                               text-white text-sm font-medium rounded-lg transition-all shadow-sm"
+                >
+                    <Sparkles className="w-4 h-4" />
+                    進入視覺化編輯器
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            );
+        }
+
+        if (target === 'learning-path') {
+            return (
+                <button
+                    onClick={navigateToLearningPath}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 
+                               bg-indigo-600 hover:bg-indigo-700
+                               text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                >
+                    <GitBranch className="w-4 h-4" />
+                    查看學習路徑
+                    <ArrowRight className="w-4 h-4" />
+                </button>
+            );
+        }
+
+        return null;
     };
 
     if (!teacher.isReady) {
@@ -105,7 +219,7 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         <div className={`flex flex-col h-full ${className}`}>
             {/* 訊息列表 */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {displayMessages.map((msg: any) => (
+                {displayMessages.map((msg) => (
                     <div
                         key={msg.id}
                         className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
@@ -127,19 +241,19 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             </div>
 
-                            {/* 行動按鈕 */}
-                            {msg.action?.type === 'navigate' && (
-                                <button
-                                    onClick={navigateToWorkspace}
-                                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 
-                           text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                                >
-                                    <GitBranch className="w-4 h-4" />
-                                    前往 AI 學習路徑
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
-                            )}
+                            {/* 選項按鈕 */}
+                            {msg.role === 'assistant' && renderOptions(msg)}
 
+                            {/* 課綱選擇 */}
+                            {msg.role === 'assistant' && renderCurriculumMatches(msg)}
+
+                            {/* 教學法選擇 */}
+                            {msg.role === 'assistant' && renderPedagogyMethods(msg)}
+
+                            {/* 導航按鈕 */}
+                            {msg.role === 'assistant' && renderNavigateButton(msg)}
+
+                            {/* 生成完成標記 */}
                             {msg.action?.type === 'generate' && (
                                 <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 text-xs rounded-full">
                                     <CheckCircle className="w-3.5 h-3.5" />
