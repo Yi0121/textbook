@@ -15,6 +15,7 @@ import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
+import GlobalAIAssistant from './GlobalAIAssistant';
 import { type UserRole } from '../../config/toolConfig';
 
 // Context Providers
@@ -96,6 +97,9 @@ export default function AppLayout() {
                         <Outlet context={{ userRole, setUserRole }} />
                     </main>
                 </div>
+
+                {/* 全局 AI 助教按鈕 */}
+                <GlobalAIAssistant />
             </div>
         </AppProviders>
     );
