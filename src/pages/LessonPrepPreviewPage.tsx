@@ -449,7 +449,9 @@ function LessonPrepPreviewPageInner() {
         const baseNode = {
             id: `node-${Date.now()}`,
             order: lesson.nodes.length + 1,
-            selectedTools: []
+            selectedTools: [],
+            // 根據當前展開的階段自動設定 stage 屬性
+            stage: expandedStage || undefined,  // 如果在階段視圖內，設定對應的 stage
         };
 
         if (type === 'agent') {
@@ -475,7 +477,7 @@ function LessonPrepPreviewPageInner() {
             data: { lessonNode: newNode, isStart: false, isEnd: true }
         };
         setNodes(nds => [...nds, newRfNode]);
-    }, [lesson.nodes, nodes]);
+    }, [lesson.nodes, nodes, expandedStage]);
 
     // UI Components
     const selectedNode = lesson.nodes.find(n => n.id === selectedNodeId);
