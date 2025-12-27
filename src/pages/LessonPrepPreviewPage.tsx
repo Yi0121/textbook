@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import dagre from 'dagre';
 
-import { MOCK_DIFFERENTIATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
+import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 import type { LessonNode as LessonNodeType } from '../types/lessonPlan';
 import LessonNode from '../components/LessonNode';
 
@@ -121,8 +121,8 @@ function LessonPrepPreviewPageInner() {
     const navigate = useNavigate();
     const { fitView } = useReactFlow();
 
-    // State
-    const [lesson, setLesson] = useState(MOCK_DIFFERENTIATED_LESSON);
+    // State - 使用 APOS 版本的課程資料
+    const [lesson, setLesson] = useState(MOCK_GENERATED_LESSON);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<LeftPanelTab>('agents');
     const [searchQuery, setSearchQuery] = useState('');

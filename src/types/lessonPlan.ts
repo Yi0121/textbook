@@ -264,80 +264,267 @@ export const findAgentById = (id: string) => AVAILABLE_AGENTS.find(a => a.id ===
 /** 根據 ID 查找 Tool */
 export const findToolById = (id: string) => AVAILABLE_TOOLS.find(t => t.id === id);
 
-// ==================== Mock 生成的課程 ====================
+// ==================== Mock 生成的課程 (APOS 理論) ====================
 
 export const MOCK_GENERATED_LESSON: LessonPlan = {
-    id: 'lesson-math-001',
-    title: '國小五年級四則運算',
-    topic: '國小五年級四則運算',
-    objectives: '理解加減乘除運算順序\n能正確計算混合運算\n解決生活中的數學問題',
+    id: 'lesson-apos-001',
+    title: '二元一次方程式 - APOS 教學流程',
+    topic: '二元一次方程式',
+    objectives: '理解二元一次方程式的意義\n能用代入消去法或加減消去法解聯立方程\n應用於生活情境問題',
     difficulty: 'intermediate',
     status: 'draft',
     createdAt: new Date(),
     nodes: [
+        // ============ Stage 1: Action (行動階段) ============
+        // 透過具體操作理解概念
         {
-            id: 'node-1',
-            title: '基礎運算複習',
+            id: 'action-intro',
+            title: '📋 情境導入',
             order: 1,
+            nodeType: 'video',
             agent: findAgentById('content-generator'),
-            selectedTools: [AVAILABLE_TOOLS[0], AVAILABLE_TOOLS[2]],
+            selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['教學影片 3分鐘', '圖解說明 5張'],
-                exercises: 10,
-                interactions: ['AI 對話輔導'],
+                materials: ['3分鐘動畫：雞兔同籠問題'],
+                interactions: ['實際情境引導'],
             },
         },
         {
-            id: 'node-2',
-            title: '混合運算順序',
+            id: 'action-explore',
+            title: '🔢 Action：具體操作',
             order: 2,
-            agent: findAgentById('multi-solution'),
-            selectedTools: [AVAILABLE_TOOLS[3]],
-            generatedContent: {
-                materials: ['範例題組 3題'],
-                exercises: 8,
-                interactions: ['多重解題策略展示'],
-            },
-            isConditional: true,
-            conditions: {
-                learnedPath: 'node-3',
-                notLearnedPath: 'node-2-补强',
-                assessmentCriteria: '完成度 ≥ 75% 且理解度評分 ≥ 70%',
-            },
-        },
-        {
-            id: 'node-2-补强',
-            title: '基礎運算補強',
-            order: 3,
-            agent: findAgentById('conjecture'),
-            selectedTools: [AVAILABLE_TOOLS[6]],
-            generatedContent: {
-                materials: ['互動式引導對話'],
-                exercises: 5,
-                interactions: ['蘇格拉底提問', '概念重建'],
-            },
-            nextNodeId: 'node-3',
-        },
-        {
-            id: 'node-3',
-            title: 'GeoGebra 互動練習',
-            order: 4,
+            nodeType: 'external',
             agent: findAgentById('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[4]],
             generatedContent: {
-                materials: ['GeoGebra 互動元件 2個'],
-                exercises: 5,
-                interactions: ['動態操作', '即時反饋'],
+                materials: ['GeoGebra 互動元件：變數滑桿', '代入不同數值觀察結果'],
+                exercises: 3,
+                interactions: ['拖曳滑桿調整 x, y 值', '觀察等式成立條件'],
             },
         },
         {
-            id: 'node-4',
-            title: '綜合評量',
+            id: 'action-check',
+            title: '🧪 Action 檢測',
+            order: 3,
+            nodeType: 'worksheet',
+            agent: findAgentById('grader'),
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 5,
+                materials: ['代入數值驗證題'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'process-explain',
+                notLearnedPath: 'action-remedial',
+                assessmentCriteria: '正確率 ≥ 70%',
+                branchType: 'remedial',
+            },
+        },
+        {
+            id: 'action-remedial',
+            title: '🔄 Action 補強',
+            order: 4,
+            nodeType: 'material',
+            branchLevel: 'remedial',
+            agent: findAgentById('conjecture'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['AI 一對一重新引導', '更多具體例子'],
+                interactions: ['蘇格拉底提問'],
+            },
+            nextNodeId: 'action-check',
+        },
+
+        // ============ Stage 2: Process (過程階段) ============
+        // 將步驟內化為心智過程
+        {
+            id: 'process-explain',
+            title: '⚙️ Process：代入消去法',
             order: 5,
+            nodeType: 'video',
+            agent: findAgentById('apos-construction'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['代入消去法動畫 5分鐘', '步驟分解說明'],
+                interactions: ['AI 引導學生說出步驟'],
+            },
+        },
+        {
+            id: 'process-practice',
+            title: '✏️ Process：解題練習',
+            order: 6,
+            nodeType: 'worksheet',
+            agent: findAgentById('multi-solution'),
+            selectedTools: [AVAILABLE_TOOLS[3], AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 8,
+                materials: ['代入法練習 4題', '加減消去法練習 4題'],
+                interactions: ['即時解題回饋', '多重解法展示'],
+            },
+        },
+        {
+            id: 'process-check',
+            title: '🧪 Process 檢測',
+            order: 7,
+            nodeType: 'worksheet',
+            agent: findAgentById('grader'),
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 6,
+                materials: ['過程步驟評估'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'object-abstract',
+                notLearnedPath: 'process-remedial',
+                assessmentCriteria: '正確率 ≥ 75% 且能說明步驟',
+                branchType: 'remedial',
+            },
+        },
+        {
+            id: 'process-remedial',
+            title: '🔄 Process 補強',
+            order: 8,
+            nodeType: 'material',
+            branchLevel: 'remedial',
+            agent: findAgentById('reasoning'),
+            selectedTools: [AVAILABLE_TOOLS[7]],
+            generatedContent: {
+                materials: ['逐步推論引導', '錯誤類型分析'],
+                interactions: ['邏輯步驟驗證', 'AI 個別指導'],
+            },
+            nextNodeId: 'process-check',
+        },
+
+        // ============ Stage 3: Object (物件階段) ============
+        // 將過程視為可操作的整體物件
+        {
+            id: 'object-abstract',
+            title: '📦 Object：方程式作為物件',
+            order: 9,
+            nodeType: 'video',
+            agent: findAgentById('apos-construction'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['將方程式視為「可操作的對象」', '變換、組合、比較'],
+                interactions: ['概念抽象化引導'],
+            },
+        },
+        {
+            id: 'object-transform',
+            title: '🔧 Object：方程式變換',
+            order: 10,
+            nodeType: 'external',
+            agent: findAgentById('technical-support'),
+            selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[5]],
+            generatedContent: {
+                materials: ['GeoGebra 代數視窗', 'Wolfram 驗算'],
+                exercises: 5,
+                interactions: ['方程式等價變換', '組合多個方程式'],
+            },
+        },
+        {
+            id: 'object-check',
+            title: '🧪 Object 檢測',
+            order: 11,
+            nodeType: 'worksheet',
+            agent: findAgentById('grader'),
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 5,
+                materials: ['判斷等價方程組', '選擇最佳解法'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'schema-integrate',
+                notLearnedPath: 'object-remedial',
+                assessmentCriteria: '正確率 ≥ 80%',
+                branchType: 'remedial',
+            },
+        },
+        {
+            id: 'object-remedial',
+            title: '🔄 Object 補強',
+            order: 12,
+            nodeType: 'material',
+            branchLevel: 'remedial',
+            agent: findAgentById('conjecture'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['物件觀點重建', '比較不同方程式的關係'],
+            },
+            nextNodeId: 'object-check',
+        },
+
+        // ============ Stage 4: Schema (基模階段) ============
+        // 整合為概念網絡結構
+        {
+            id: 'schema-integrate',
+            title: '🧠 Schema：概念整合',
+            order: 13,
+            nodeType: 'material',
+            agent: findAgentById('apos-construction'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['心智圖：聯立方程式知識結構', '連結一元一次方程式'],
+                interactions: ['概念網絡建構'],
+            },
+        },
+        {
+            id: 'schema-apply',
+            title: '🌍 Schema：生活應用',
+            order: 14,
+            nodeType: 'worksheet',
+            agent: findAgentById('creativity'),
+            selectedTools: [AVAILABLE_TOOLS[3]],
+            generatedContent: {
+                exercises: 5,
+                materials: ['雞兔同籠問題', '購物找零問題', '速度距離時間問題'],
+                interactions: ['情境建模', '多元解法探索'],
+            },
+        },
+        {
+            id: 'schema-final',
+            title: '📝 總評量',
+            order: 15,
+            nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 15,
+                materials: ['綜合能力測驗'],
+            },
+            isConditional: true,
+            conditions: {
+                learnedPath: 'complete',
+                notLearnedPath: 'schema-remedial',
+                assessmentCriteria: '總分 ≥ 80 分',
+                branchType: 'remedial',
+            },
+        },
+        {
+            id: 'schema-remedial',
+            title: '🔄 弱點加強',
+            order: 16,
+            nodeType: 'material',
+            branchLevel: 'remedial',
+            agent: findAgentById('realtime-advisor'),
+            selectedTools: [AVAILABLE_TOOLS[6]],
+            generatedContent: {
+                materials: ['根據錯題分析個別弱點', 'AI 推薦複習路徑'],
+            },
+            nextNodeId: 'schema-final',
+        },
+        {
+            id: 'complete',
+            title: '✓ 學習完成',
+            order: 17,
+            nodeType: 'material',
+            agent: findAgentById('content-generator'),
+            selectedTools: [AVAILABLE_TOOLS[2]],
+            generatedContent: {
+                materials: ['學習成果總結', 'APOS 歷程回顧', '能力Badge獲得'],
             },
         },
     ],
