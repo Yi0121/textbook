@@ -102,11 +102,12 @@ const LessonNode = ({ data, selected }: NodeProps<CustomNode>) => {
 
     return (
         <div className="relative group">
-            {/* Input Handle */}
+            {/* Input Handle - 優化版：更大、更明顯、有 hover 效果 */}
             <Handle
                 type="target"
                 position={Position.Left}
-                className="!w-3 !h-3 !bg-gray-400 border-2 border-white transition-colors group-hover:!bg-indigo-500"
+                className="!w-4 !h-4 !bg-indigo-400 border-2 border-white transition-all duration-200 group-hover:!bg-indigo-600 hover:!scale-150 hover:!border-indigo-200 shadow-sm cursor-crosshair"
+                style={{ left: -8 }}
             />
 
             {/* Main Card - 緊湊版 */}
@@ -186,11 +187,12 @@ const LessonNode = ({ data, selected }: NodeProps<CustomNode>) => {
                 </div>
             )}
 
-            {/* Output Handle */}
+            {/* Output Handle - 優化版：更大、更明顯、有hover 效果 */}
             <Handle
                 type="source"
                 position={Position.Right}
-                className="!w-3 !h-3 !bg-gray-400 border-2 border-white transition-colors group-hover:!bg-indigo-500"
+                className="!w-4 !h-4 !bg-indigo-400 border-2 border-white transition-all duration-200 group-hover:!bg-indigo-600 hover:!scale-150 hover:!border-indigo-200 shadow-sm cursor-crosshair"
+                style={{ right: -8 }}
             />
         </div>
     );
