@@ -42,6 +42,8 @@ export interface LessonNode {
         exercises?: number;
         interactions?: string[];
     };
+    // APOS 階段標記（用於階層式導航）
+    stage?: 'A' | 'P' | 'O' | 'S';  // Action, Process, Object, Schema
     // 條件分支（用於學習檢查點）
     isConditional?: boolean;
     conditions?: {
@@ -68,6 +70,52 @@ export interface LessonPlan {
     publishedAt?: Date;
     status: 'draft' | 'published';
 }
+
+// ==================== APOS 階段定義 ====================
+
+export interface APOSStage {
+    id: 'A' | 'P' | 'O' | 'S';
+    name: string;
+    nameZh: string;
+    description: string;
+    color: string;
+    icon: string;
+}
+
+export const APOS_STAGES: Record<'A' | 'P' | 'O' | 'S', APOSStage> = {
+    A: {
+        id: 'A',
+        name: 'Action',
+        nameZh: '行動階段',
+        description: '學生透過動手操作與具體範例理解數學概念',
+        color: 'red',
+        icon: '🏃'
+    },
+    P: {
+        id: 'P',
+        name: 'Process',
+        nameZh: '過程階段',
+        description: '引導學生將操作步驟內化為可重複的心智程序',
+        color: 'blue',
+        icon: '⚙️'
+    },
+    O: {
+        id: 'O',
+        name: 'Object',
+        nameZh: '物件階段',
+        description: '將數學過程視為可操作的整體對象並進行變換',
+        color: 'green',
+        icon: '📦'
+    },
+    S: {
+        id: 'S',
+        name: 'Schema',
+        nameZh: '基模階段',
+        description: '整合多個概念形成結構化的知識網絡與應用',
+        color: 'purple',
+        icon: '🧠'
+    },
+};
 
 // ==================== Mock Agents (基於 Agent List.csv) ====================
 
@@ -281,6 +329,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'action-intro',
             title: '📋 情境導入',
             order: 1,
+            stage: 'A',
             nodeType: 'video',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
@@ -293,6 +342,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'action-explore',
             title: '🔢 Action：具體操作',
             order: 2,
+            stage: 'A',
             nodeType: 'external',
             agent: findAgentById('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[4]],
@@ -306,6 +356,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'action-check',
             title: '🧪 Action 檢測',
             order: 3,
+            stage: 'A',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
@@ -325,6 +376,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'action-remedial',
             title: '🔄 Action 補強',
             order: 4,
+            stage: 'A',
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('conjecture'),
@@ -342,6 +394,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'process-explain',
             title: '⚙️ Process：代入消去法',
             order: 5,
+            stage: 'P',
             nodeType: 'video',
             agent: findAgentById('apos-construction'),
             selectedTools: [AVAILABLE_TOOLS[6]],
@@ -354,6 +407,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'process-practice',
             title: '✏️ Process：解題練習',
             order: 6,
+            stage: 'P',
             nodeType: 'worksheet',
             agent: findAgentById('multi-solution'),
             selectedTools: [AVAILABLE_TOOLS[3], AVAILABLE_TOOLS[8]],
@@ -367,6 +421,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'process-check',
             title: '🧪 Process 檢測',
             order: 7,
+            stage: 'P',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
@@ -386,6 +441,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'process-remedial',
             title: '🔄 Process 補強',
             order: 8,
+            stage: 'P',
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('reasoning'),
@@ -403,6 +459,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'object-abstract',
             title: '📦 Object：方程式作為物件',
             order: 9,
+            stage: 'O',
             nodeType: 'video',
             agent: findAgentById('apos-construction'),
             selectedTools: [AVAILABLE_TOOLS[6]],
@@ -415,6 +472,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'object-transform',
             title: '🔧 Object：方程式變換',
             order: 10,
+            stage: 'O',
             nodeType: 'external',
             agent: findAgentById('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[5]],
@@ -428,6 +486,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'object-check',
             title: '🧪 Object 檢測',
             order: 11,
+            stage: 'O',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
@@ -447,6 +506,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'object-remedial',
             title: '🔄 Object 補強',
             order: 12,
+            stage: 'O',
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('conjecture'),
@@ -463,6 +523,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'schema-integrate',
             title: '🧠 Schema：概念整合',
             order: 13,
+            stage: 'S',
             nodeType: 'material',
             agent: findAgentById('apos-construction'),
             selectedTools: [AVAILABLE_TOOLS[6]],
@@ -475,6 +536,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'schema-apply',
             title: '🌍 Schema：生活應用',
             order: 14,
+            stage: 'S',
             nodeType: 'worksheet',
             agent: findAgentById('creativity'),
             selectedTools: [AVAILABLE_TOOLS[3]],
@@ -488,6 +550,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'schema-final',
             title: '📝 總評量',
             order: 15,
+            stage: 'S',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
@@ -507,6 +570,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'schema-remedial',
             title: '🔄 弱點加強',
             order: 16,
+            stage: 'S',
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('realtime-advisor'),
@@ -520,6 +584,7 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             id: 'complete',
             title: '✓ 學習完成',
             order: 17,
+            stage: 'S',
             nodeType: 'material',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],

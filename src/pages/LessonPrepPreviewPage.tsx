@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import dagre from 'dagre';
 
-import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
+import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, AVAILABLE_TOOLS, APOS_STAGES } from '../types/lessonPlan';
 import type { LessonNode as LessonNodeType } from '../types/lessonPlan';
 import LessonNode from '../components/LessonNode';
+import StageNode from '../components/StageNode';
 
 // 可拖曳資源卡片組件 (新版)
 function DraggableResource({ id, title, desc, color, resourceType }: {
@@ -129,8 +130,14 @@ function LessonPrepPreviewPageInner() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [headerVisible, setHeaderVisible] = useState(true);
 
+    // ===== NEW: APOS Stage Expansion State =====
+    const [expandedStage, setExpandedStage] = useState<'A' | 'P' | 'O' | 'S' | null>(null);
+
     // Node Types Definition
-    const nodeTypes = useMemo(() => ({ lessonNode: LessonNode }), []);
+    const nodeTypes = useMemo(() => ({
+        lessonNode: LessonNode,
+        stageNode: StageNode,
+    }), []);
 
     // Create ReactFlow Nodes
     const createReactFlowNodes = useCallback((lessonNodes: LessonNodeType[]) => {
@@ -216,6 +223,107 @@ function LessonPrepPreviewPageInner() {
         return edges;
     }, []);
 
+    // ===== NEW: Group Nodes by Stage =====
+    const groupNodesByStage = useCallback((lessonNodes: LessonNodeType[]) => {
+        return {
+            A: lessonNodes.filter(n => n.stage === 'A'),
+            P: lessonNodes.filter(n => n.stage === 'P'),
+            O: lessonNodes.filter(n => n.stage === 'O'),
+            S: lessonNodes.filter(n => n.stage === 'S'),
+        };
+    }, []);
+
+    // ===== NEW: Create StageNodes for Main View =====
+    const createStageNodes = useCallback(() => {
+        const grouped = groupNodesByStage(lesson.nodes);
+        const stages: ('A' | 'P' | 'O' | 'S')[] = ['A', 'P', 'O', 'S'];
+
+        // 圓形佈局位置（讓循環路徑更清晰）
+        const positions = [
+            { x: 200, y: 50 },   // A (左上)
+            { x: 550, y: 50 },   // P (右上)
+            { x: 650, y: 350 },  // O (右下)
+            { x: 100, y: 350 },  // S (左下)
+        ];
+
+        return stages.map((stageId, idx) => ({
+            id: `stage-${stageId}`,
+            type: 'stageNode',
+            position: positions[idx],
+            data: {
+                stage: APOS_STAGES[stageId],
+                nodeCount: grouped[stageId].length,
+                isExpanded: expandedStage === stageId,
+            },
+        }));
+    }, [lesson.nodes, expandedStage, groupNodesByStage]);
+
+    // ===== NEW: Create StageEdges (APOS Cycle) =====
+    const createStageEdges = useCallback((): Edge[] => {
+        return [
+            // 1. Interiorization: A → P (Actions 內化為 Processes)
+            {
+                id: 'stage-A-P',
+                source: 'stage-A',
+                target: 'stage-P',
+                label: '內化',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
+                style: { strokeWidth: 3, stroke: '#6366f1' },
+                labelStyle: { fill: '#6366f1', fontWeight: 600, fontSize: 12 },
+                labelBgStyle: { fill: '#f0f4ff', padding: 4 },
+            },
+            // 2. Encapsulation: P → O (Processes 封裝為 Objects)
+            {
+                id: 'stage-P-O',
+                source: 'stage-P',
+                target: 'stage-O',
+                label: '封裝',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#22c55e' },
+                style: { strokeWidth: 3, stroke: '#22c55e' },
+                labelStyle: { fill: '#22c55e', fontWeight: 600, fontSize: 12 },
+                labelBgStyle: { fill: '#f0fdf4', padding: 4 },
+            },
+            // 3. De-encapsulation: O → P (Objects 解封裝回 Processes，雙向)
+            {
+                id: 'stage-O-P',
+                source: 'stage-O',
+                target: 'stage-P',
+                label: '解封裝',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#f97316' },
+                style: { strokeWidth: 2, stroke: '#f97316', strokeDasharray: '5,5' },
+                labelStyle: { fill: '#f97316', fontWeight: 600, fontSize: 12 },
+                labelBgStyle: { fill: '#fff7ed', padding: 4 },
+            },
+            // 4. Coordination: P → S (Processes 協調整合為 Schema)
+            {
+                id: 'stage-P-S',
+                source: 'stage-P',
+                target: 'stage-S',
+                label: '整合',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' },
+                style: { strokeWidth: 3, stroke: '#a855f7' },
+                labelStyle: { fill: '#a855f7', fontWeight: 600, fontSize: 12 },
+                labelBgStyle: { fill: '#faf5ff', padding: 4 },
+            },
+            // 5. Reversal/Application: S → A (Schema 回到新的 Actions，完成循環)
+            {
+                id: 'stage-S-A',
+                source: 'stage-S',
+                target: 'stage-A',
+                label: '應用',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
+                style: { strokeWidth: 2, stroke: '#8b5cf6', strokeDasharray: '8,4' },
+                labelStyle: { fill: '#8b5cf6', fontWeight: 600, fontSize: 12 },
+                labelBgStyle: { fill: '#f5f3ff', padding: 4 },
+            },
+        ];
+    }, []);
+
     // Initial Layout Effect
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
@@ -225,15 +333,19 @@ function LessonPrepPreviewPageInner() {
     useEffect(() => {
         if (isInitialized) return;
 
-        const rfNodes = createReactFlowNodes(lesson.nodes);
-        const rfEdges = createEdges(lesson.nodes);
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rfNodes, rfEdges);
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
+        // 初始狀態：顯示 APOS 主視圖
+        const stageNodes = createStageNodes();
+        const stageEdges = createStageEdges();
+
+        setNodes(stageNodes);
         setIsInitialized(true);
 
-        setTimeout(() => fitView({ padding: 0.25, duration: 800 }), 100);
-    }, [isInitialized, lesson.nodes, createReactFlowNodes, createEdges, fitView]);
+        // 延遲設置 edges，確保 nodes 已經完全渲染
+        setTimeout(() => {
+            setEdges(stageEdges);
+            fitView({ padding: 0.25, duration: 800 });
+        }, 100);
+    }, [isInitialized, createStageNodes, createStageEdges, fitView]);
 
     // 資料同步：當 lesson.nodes 變更時，只更新節點的 data（不改變位置）
     useEffect(() => {
@@ -275,6 +387,28 @@ function LessonPrepPreviewPageInner() {
         // 同步 edges（條件分支可能變化）
         setEdges(createEdges(lesson.nodes));
     }, [lesson.nodes, isInitialized, createReactFlowNodes, createEdges]);
+
+    // ===== NEW: 當 expandedStage 變更時，切換顯示的節點 =====
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        if (expandedStage === null) {
+            // 返回主視圖：顯示 4 個階段節點
+            setNodes(createStageNodes());
+            setEdges(createStageEdges());
+            setTimeout(() => fitView({ padding: 0.3, duration: 500 }), 100);
+        } else {
+            // 顯示該階段的詳細節點
+            const grouped = groupNodesByStage(lesson.nodes);
+            const stageNodes = grouped[expandedStage];
+            const rfNodes = createReactFlowNodes(stageNodes);
+            const rfEdges = createEdges(stageNodes);
+            const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rfNodes, rfEdges);
+            setNodes(layoutedNodes);
+            setEdges(layoutedEdges);
+            setTimeout(() => fitView({ padding: 0.25, duration: 500 }), 100);
+        }
+    }, [expandedStage, isInitialized, createStageNodes, groupNodesByStage, createReactFlowNodes, createEdges, fitView]);
 
 
     // Keyboard Shortcuts
@@ -383,6 +517,25 @@ function LessonPrepPreviewPageInner() {
                 </div>
 
                 <div className="bg-white/90 backdrop-blur-md shadow-sm border border-white/50 p-2 rounded-2xl flex items-center gap-2 pointer-events-auto">
+                    {/* NEW: Back to Main View Button */}
+                    {expandedStage !== null && (
+                        <>
+                            <button
+                                onClick={() => setExpandedStage(null)}
+                                className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                                title="返回 APOS 主視圖"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                返回主視圖
+                            </button>
+                            <div className="flex items-center gap-2 px-3">
+                                <span className="text-2xl">{APOS_STAGES[expandedStage].icon}</span>
+                                <span className="font-bold text-gray-700">{APOS_STAGES[expandedStage].nameZh}</span>
+                            </div>
+                            <div className="h-6 w-px bg-gray-200 mx-1" />
+                        </>
+                    )}
+
                     <button
                         onClick={() => {
                             const updatedNodes = getLayoutedElements(
@@ -526,7 +679,15 @@ function LessonPrepPreviewPageInner() {
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
-                        onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+                        onNodeClick={(_, node) => {
+                            // 處理階段節點點擊
+                            if (node.type === 'stageNode') {
+                                const stageId = node.id.replace('stage-', '') as ('A' | 'P' | 'O' | 'S');
+                                setExpandedStage(stageId);
+                            } else {
+                                setSelectedNodeId(node.id);
+                            }
+                        }}
                         fitView
                         fitViewOptions={{
                             padding: 0.25,
