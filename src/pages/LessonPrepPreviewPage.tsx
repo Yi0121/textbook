@@ -68,21 +68,21 @@ function DraggableResource({ id, title, desc, color, resourceType }: {
     );
 }
 
-// Dagre 自動佈局 (參數調整適配新卡片)
+// Dagre 自動佈局 - 緊湊版
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-    // New Node Dimensions
-    const nodeWidth = 240;
-    const nodeHeight = 160;
+    // 節點尺寸 - 更緊湊
+    const nodeWidth = 200;
+    const nodeHeight = 120;
 
     dagreGraph.setGraph({
-        rankdir: 'LR',
-        nodesep: 60,
-        ranksep: 120, // 稍微拉開距離
-        marginx: 50,
-        marginy: 50,
+        rankdir: 'LR',      // 左到右
+        nodesep: 40,        // 同層節點間距（縮小）
+        ranksep: 80,        // 層級間距（縮小）
+        marginx: 30,
+        marginy: 30,
     });
 
     nodes.forEach((node) => {
@@ -99,9 +99,9 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
         const lessonNode = node.data.lessonNode as LessonNodeType;
         let yOffset = 0;
 
-        // 分支偏移優化
-        if (lessonNode.branchLevel === 'remedial') yOffset = 180;
-        else if (lessonNode.branchLevel === 'advanced') yOffset = -180;
+        // 補救節點明確下移（更大偏移讓主流程清晰）
+        if (lessonNode.branchLevel === 'remedial') yOffset = 200;
+        else if (lessonNode.branchLevel === 'advanced') yOffset = -200;
 
         return {
             ...node,

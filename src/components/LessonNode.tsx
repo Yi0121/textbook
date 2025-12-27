@@ -109,73 +109,66 @@ const LessonNode = ({ data, selected }: NodeProps<CustomNode>) => {
                 className="!w-3 !h-3 !bg-gray-400 border-2 border-white transition-colors group-hover:!bg-indigo-500"
             />
 
-            {/* Main Card */}
+            {/* Main Card - 緊湊版 */}
             <div
                 className={`
-                    w-[220px] rounded-xl overflow-hidden shadow-sm transition-all duration-200 ease-in-out
+                    w-[180px] rounded-xl overflow-hidden shadow-sm transition-all duration-200 ease-in-out
                     border-2 ${selected ? config.borderSelected : config.border}
-                    ${selected ? 'shadow-lg scale-[1.02]' : 'hover:shadow-md hover:-translate-y-1'}
+                    ${selected ? 'shadow-lg scale-[1.02]' : 'hover:shadow-md hover:-translate-y-0.5'}
                     bg-white
                 `}
             >
                 {/* Header Strip */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${config.headerGradient}`} />
+                <div className={`h-1 w-full bg-gradient-to-r ${config.headerGradient}`} />
 
                 {/* Content Body */}
-                <div className="p-3">
+                <div className="p-2">
                     {/* Top Labels */}
-                    <div className="flex items-center justify-between mb-2">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-gradient-to-r ${config.headerGradient} opacity-90`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded text-white bg-gradient-to-r ${config.headerGradient} opacity-90`}>
                             {config.label}
                         </span>
 
                         {/* Branch Level Indicators */}
                         {branchLevel === 'remedial' && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-orange-500 shadow-sm">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded text-white bg-orange-500 shadow-sm">
                                 補強
                             </span>
                         )}
                         {branchLevel === 'advanced' && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-purple-500 shadow-sm">
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded text-white bg-purple-500 shadow-sm">
                                 進階
                             </span>
                         )}
                     </div>
 
                     {/* Main Info */}
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2">
                         <div className={`
-                            w-10 h-10 rounded-lg flex items-center justify-center shrink-0
+                            w-8 h-8 rounded-lg flex items-center justify-center shrink-0
                             ${config.iconBg} ${config.iconColor}
                         `}>
-                            <Icon size={20} />
+                            <Icon size={16} />
                         </div>
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-gray-800 text-sm leading-tight line-clamp-2 mb-1">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="font-bold text-gray-800 text-xs leading-tight line-clamp-2">
                                 {title}
                             </h3>
                             {lessonNode.agent && (
-                                <div className="text-[10px] text-gray-500 flex items-center gap-1">
-                                    <Bot size={10} />
+                                <div className="text-[9px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                    <Bot size={9} />
                                     <span className="truncate">{lessonNode.agent.name}</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Content Preview Pills */}
+                    {/* Content Preview - 只顯示一行 */}
                     {lessonNode.generatedContent?.materials && lessonNode.generatedContent.materials.length > 0 && (
-                        <div className="mt-3 pt-2 border-t border-gray-100 flex flex-wrap gap-1">
-                            {lessonNode.generatedContent.materials.slice(0, 1).map((m, i) => (
-                                <span key={i} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded truncate max-w-full">
-                                    {m}
-                                </span>
-                            ))}
-                            {lessonNode.generatedContent.materials.length > 1 && (
-                                <span className="text-[10px] px-1.5 py-0.5 bg-gray-50 text-gray-400 rounded">
-                                    +{lessonNode.generatedContent.materials.length - 1}
-                                </span>
-                            )}
+                        <div className="mt-1.5 pt-1.5 border-t border-gray-100">
+                            <span className="text-[9px] px-1 py-0.5 bg-gray-100 text-gray-600 rounded truncate block">
+                                {lessonNode.generatedContent.materials[0]}
+                            </span>
                         </div>
                     )}
                 </div>
