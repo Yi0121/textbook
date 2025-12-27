@@ -22,6 +22,7 @@ const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
 const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
+const LessonPrepChatPage = lazy(() => import('./pages/LessonPrepChatPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
 const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboard'));
 const StudentDetailProgressPage = lazy(() => import('./pages/StudentDetailProgressPage'));
@@ -49,6 +50,11 @@ export const router = createBrowserRouter([
     {
         path: '/lesson-prep/preview',
         element: withSuspense(LessonPrepPreviewPage),
+    },
+    // 對話式備課（獨立於 AppLayout）
+    {
+        path: '/lesson-prep/chat',
+        element: withSuspense(LessonPrepChatPage),
     },
     // 標準布局頁面
     {

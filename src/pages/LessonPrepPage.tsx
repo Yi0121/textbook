@@ -69,15 +69,15 @@ export default function LessonPrepPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* 快速開始 */}
                             <button
-                                onClick={() => setShowCreateForm(true)}
+                                onClick={() => navigate('/lesson-prep/chat')}
                                 className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-300 text-left group"
                             >
                                 <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <Sparkles className="w-8 h-8 text-white" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Rocket className="w-5 h-5 text-indigo-600" /> 快速開始</h2>
+                                <h2 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Rocket className="w-5 h-5 text-indigo-600" /> AI 對話備課</h2>
                                 <p className="text-gray-600 mb-4">
-                                    輸入課程主題，選擇教學資源，讓 AI 為您規劃完整的教學流程
+                                    透過 AI 對話，快速設定課程主題、章節、教學法，自動規劃教學流程
                                 </p>
                                 <div className="flex items-center gap-2 text-indigo-600 font-medium">
                                     立即開始 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

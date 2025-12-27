@@ -22,6 +22,7 @@ interface TeacherAgentPanelProps {
 
 // 預設提示範例
 const PROMPT_EXAMPLES = [
+    { icon: Sparkles, text: '幫我備課', category: 'lesson-prep' },
     { icon: GitBranch, text: '幫這個班級推薦學習路徑', category: 'learning-path' },
     { icon: FileText, text: '生成 10 題二次方程式練習', category: 'exercise' },
     { icon: Users, text: '把全班分成 5 組進行合作學習', category: 'grouping' },
