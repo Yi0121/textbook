@@ -26,10 +26,89 @@ export interface Tool {
     category: '教材' | '互動' | '評量' | '分析';
 }
 
-// ==================== 課程節點 ====================
+// ==================== 新架構：三層教學設計系統 ====================
 
+/**
+ * Layer 3: 教學資源綁定（最底層）
+ * 定義具體的教學資源與生成該資源的 AI Agent
+ */
+export interface ResourceBinding {
+    id: string;
+    resourceType: 'video' | 'material' | 'worksheet' | 'interactive' | 'external';
+    agent: Agent;
+    tools: Tool[];
+    generatedContent?: {
+        materials?: string[];
+        exercises?: number;
+        interactions?: string[];
+    };
+    isDefault?: boolean;  // 是否為預設資源選項
+}
+
+/**
+ * 條件分支流程控制
+ * 三種明確的分支語意：
+ * - checkpoint: 學習檢查點（學會/未學會 → 補救後回歸）
+ * - multi-choice: 多選一教學資源（選項匯流到同一節點）
+ * - differentiation: 能力分組（不同路徑有不同終點）
+ */
+export type FlowControlType = 'checkpoint' | 'multi-choice' | 'differentiation';
+
+export interface FlowPath {
+    id: string;
+    label: string;              // 例如：「✓ 學會」、「選項A：影片」、「基礎組」
+    nextActivityId: string;     // 指向下一個 Activity 的 ID
+    condition?: string;         // 條件描述（checkpoint 和 differentiation 使用）
+}
+
+export interface ConditionalFlow {
+    type: FlowControlType;
+    criteria?: string;          // 評估標準（例如：「正確率 ≥ 80%」）
+    paths: FlowPath[];          // 所有可能的分支路徑
+}
+
+/**
+ * Layer 2: 教學活動節點（中階）
+ * 定義課程中的具體教學活動（導入、教學、練習、評量等）
+ */
+export type ActivityType = 'intro' | 'teaching' | 'practice' | 'checkpoint' | 'remedial' | 'application';
+
+export interface ActivityNode {
+    id: string;
+    type: ActivityType;
+    title: string;
+    order: number;
+    resources: ResourceBinding[];    // 可配置多個資源選項（例如：影片、遊戲、閱讀材料）
+    flowControl?: ConditionalFlow;   // 條件分支控制（可選）
+    estimatedMinutes?: number;       // 預估活動時間
+    description?: string;            // 活動說明
+}
+
+/**
+ * Layer 1: APOS 階段節點（頂層）
+ * 代表高階的認知發展階段（Action, Process, Object, Schema）
+ */
+export interface APOSStageNode {
+    id: string;
+    stage: 'A' | 'P' | 'O' | 'S';
+    goal: string;                    // 該階段的認知目標
+    description: string;             // 階段說明
+    activities: ActivityNode[];      // 包含的所有教學活動
+    estimatedMinutes?: number;       // 預估總時間
+}
+
+// ==================== 舊架構（保留相容性）====================
+
+/**
+ * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
+ * 此型別保留用於向後相容，未來版本將移除
+ */
 export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external';
 
+/**
+ * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
+ * 此型別保留用於向後相容，未來版本將移除
+ */
 export interface LessonNode {
     id: string;
     title: string;
@@ -65,7 +144,14 @@ export interface LessonPlan {
     topic: string;
     objectives: string;
     difficulty: 'basic' | 'intermediate' | 'advanced';
-    nodes: LessonNode[];
+
+    // 新架構：使用 APOS 階段組織（推薦）
+    stages?: APOSStageNode[];
+
+    // 舊架構：平鋪式節點列表（保留相容性）
+    /** @deprecated 請使用 stages 欄位，採用新的三層架構 */
+    nodes?: LessonNode[];
+
     createdAt: Date;
     publishedAt?: Date;
     status: 'draft' | 'published';
