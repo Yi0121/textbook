@@ -10,7 +10,7 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 
 // 闘關式學習路徑組件（教師視角）
@@ -19,7 +19,7 @@ function QuestPathView({
     studentProgress,
     currentNodeId
 }: {
-    nodes: typeof MOCK_DIFFERENTIATED_LESSON.nodes;
+    nodes: LessonNode[];
     studentProgress: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]['nodeProgress'];
     currentNodeId: string;
 }) {
@@ -113,7 +113,7 @@ function AchievementBadges({ student, lesson }: {
         {
             icon: <CheckCircle className="w-6 h-6" />,
             label: '已完成節點',
-            value: `${completedCount}/${lesson.nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').length}`,
+            value: `${completedCount}/${(lesson.nodes || []).filter(n => !n.branchLevel || n.branchLevel !== 'remedial').length}`,
             color: 'from-purple-400 to-pink-500',
             earned: completedCount > 0
         },
@@ -255,7 +255,7 @@ export default function StudentDetailProgressPage() {
                         學習路徑進度
                     </h2>
                     <QuestPathView
-                        nodes={lesson.nodes}
+                        nodes={lesson.nodes || []}
                         studentProgress={student.nodeProgress}
                         currentNodeId={student.currentNodeId}
                     />
@@ -269,7 +269,7 @@ export default function StudentDetailProgressPage() {
                     </h2>
 
                     <div className="space-y-3">
-                        {lesson.nodes.map((node) => {
+                        {(lesson.nodes || []).map((node) => {
                             const progress = student.nodeProgress.find(np => np.nodeId === node.id);
                             const isCompleted = progress?.completed;
                             const isCurrent = node.id === student.currentNodeId;

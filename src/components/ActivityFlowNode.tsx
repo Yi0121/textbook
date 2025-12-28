@@ -36,8 +36,8 @@ const getActivityIcon = (type: ActivityNodeType['type']) => {
 /**
  * 依據活動類型取得樣式
  */
-const getActivityStyles = (type: ActivityNodeType['type'], stageColor: string) => {
-    const baseStyles = {
+const getActivityStyles = (type: ActivityNodeType['type'], _stageColor: string) => {
+    const baseStyles: Record<ActivityNodeType['type'], { bg: string; border: string; accent: string; iconBg: string }> = {
         intro: { bg: 'bg-purple-50', border: 'border-purple-200', accent: 'text-purple-600', iconBg: 'bg-purple-100' },
         teaching: { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'text-blue-600', iconBg: 'bg-blue-100' },
         practice: { bg: 'bg-green-50', border: 'border-green-200', accent: 'text-green-600', iconBg: 'bg-green-100' },

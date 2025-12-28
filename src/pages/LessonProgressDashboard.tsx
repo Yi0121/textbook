@@ -10,7 +10,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 
 // 進度分布柱狀圖組件
@@ -99,7 +99,7 @@ function PieChart({ data }: { data: { label: string; value: number; color: strin
 }
 
 // 節點進度視覺化組件
-function NodeProgressVisual({ nodes, students }: { nodes: typeof MOCK_DIFFERENTIATED_LESSON.nodes; students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
+function NodeProgressVisual({ nodes, students }: { nodes: LessonNode[]; students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
     const getCompletionRate = (nodeId: string) => {
         const completed = students.filter(s =>
             s.nodeProgress.find(np => np.nodeId === nodeId && np.completed)
@@ -160,7 +160,7 @@ export default function LessonProgressDashboard() {
     const students = MOCK_DIFFERENTIATED_STUDENT_PROGRESS;
 
     // 主流程節點 (排除補救分支和平行選項)
-    const mainPathNodes = lesson.nodes.filter(n =>
+    const mainPathNodes = (lesson.nodes || []).filter(n =>
         (!n.branchLevel || n.branchLevel !== 'remedial') &&
         (!n.id.startsWith('step2-') || n.id === 'step2-video')
     );
@@ -180,7 +180,7 @@ export default function LessonProgressDashboard() {
     };
 
     // 找到真正的分支檢查點 (step4-test: 學習檢測)
-    const conditionalNode = lesson.nodes.find(n => n.id === 'step4-test');
+    const conditionalNode = (lesson.nodes || []).find(n => n.id === 'step4-test');
 
     // 計算學生平均進度 (基於 mainPathNodes)
     const calculateStudentProgress = (student: typeof students[0]) => {
@@ -305,7 +305,7 @@ export default function LessonProgressDashboard() {
                         <TrendingUp className="w-5 h-5 text-blue-600" />
                         學習路徑節點完成率
                     </h2>
-                    <NodeProgressVisual nodes={lesson.nodes} students={students} />
+                    <NodeProgressVisual nodes={lesson.nodes || []} students={students} />
                 </div>
 
                 {/* 學生列表 */}
@@ -347,7 +347,7 @@ export default function LessonProgressDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <div className="font-semibold text-gray-900">{student.studentName}</div>
                                         <div className="text-sm text-gray-500 truncate">
-                                            目前：{lesson.nodes.find(n => n.id === student.currentNodeId)?.title}
+                                            目前：{(lesson.nodes || []).find(n => n.id === student.currentNodeId)?.title}
                                         </div>
                                         {/* Mini progress bar */}
                                         <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">

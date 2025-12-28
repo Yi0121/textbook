@@ -127,8 +127,9 @@ export default function MyLearningPathPage() {
     // 建立邊線（簡化版，根據學生實際路徑）
     const createStudentEdges = (): Edge[] => {
         const edges: Edge[] = [];
+        const safeNodes = lesson.nodes || [];
 
-        lesson.nodes.forEach((node, idx) => {
+        safeNodes.forEach((node, idx) => {
             const progress = getNodeProgress(node.id);
 
             // 條件節點的路徑（根據學生實際走的路徑）
@@ -165,12 +166,12 @@ export default function MyLearningPathPage() {
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
                     style: { stroke: '#6366f1', strokeWidth: 2 },
                 });
-            } else if (idx < lesson.nodes.length - 1) {
+            } else if (idx < safeNodes.length - 1) {
                 // 順序連接
                 edges.push({
-                    id: `e${node.id}-${lesson.nodes[idx + 1].id}`,
+                    id: `e${node.id}-${safeNodes[idx + 1].id}`,
                     source: node.id,
-                    target: lesson.nodes[idx + 1].id,
+                    target: safeNodes[idx + 1].id,
                     type: 'smoothstep',
                     animated: true,
                     markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' },
@@ -182,7 +183,7 @@ export default function MyLearningPathPage() {
         return edges;
     };
 
-    const [nodes] = useState<Node[]>(lesson.nodes.map((node, idx) => createStudentNode(node, idx)));
+    const [nodes] = useState<Node[]>((lesson.nodes || []).map((node, idx) => createStudentNode(node, idx)));
     const [edges] = useState<Edge[]>(createStudentEdges());
 
     return (
@@ -229,7 +230,7 @@ export default function MyLearningPathPage() {
                     <Controls />
                     <MiniMap
                         nodeColor={(node) => {
-                            const lessonNode = lesson.nodes.find(n => n.id === node.id);
+                            const lessonNode = (lesson.nodes || []).find(n => n.id === node.id);
                             if (!lessonNode) return '#d1d5db';
                             const status = getNodeStatus(lessonNode);
                             return status === 'completed' ? '#10b981' : status === 'current' ? '#6366f1' : '#d1d5db';
