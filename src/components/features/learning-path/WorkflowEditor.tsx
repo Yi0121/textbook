@@ -42,7 +42,7 @@ import { AdaptiveExerciseNode } from './nodes/AdaptiveExerciseNode';
 import { LearningAnalyticsNode } from './nodes/LearningAnalyticsNode';
 import { AIGroupingNode } from './nodes/AIGroupingNode';
 
-import { useLearningPathStore } from '../../../stores';
+import { useLearningPathStore, useLessonUIStore } from '../../../stores';
 import { generateLessonPrepWorkflow } from '../../../services/ai/learningPathService';
 import { getLayoutedElements } from '../../../utils/layout';
 import { savePath } from '../../../utils/learningPathStorage';
@@ -76,14 +76,14 @@ const FlowEditorInternal = () => {
   const {
     currentStudentId,
     studentPaths,
-    isGenerating,
     addNode,
     updateNode,
     deleteNode,
     addEdge: storeAddEdge,
     updateNodePosition,
-    setGenerating,
   } = useLearningPathStore();
+
+  const { isGenerating, setGenerating } = useLessonUIStore();
 
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);

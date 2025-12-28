@@ -28,10 +28,6 @@ interface LearningPathState {
     // 學習記錄快取
     learningRecords: Map<string, StudentLearningRecord>;
 
-    // 編輯器狀態
-    isEditorOpen: boolean;
-    isGenerating: boolean;
-
     // 節點庫
     nodeTemplates: NodeTemplate[];
 }
@@ -62,11 +58,6 @@ interface LearningPathActions {
 
     // AI 推薦
     setAIRecommendation: (studentId: string, recommendation: StudentLearningPath['aiRecommendation']) => void;
-    setGenerating: (isGenerating: boolean) => void;
-
-    // 編輯器
-    openEditor: (studentId: string) => void;
-    closeEditor: () => void;
 
     // 學習記錄
     loadLearningRecord: (record: StudentLearningRecord) => void;
@@ -93,8 +84,6 @@ const initialState: LearningPathState = {
     studentPaths: new Map(),
     currentStudentId: null,
     learningRecords: new Map(),
-    isEditorOpen: false,
-    isGenerating: false,
     nodeTemplates: defaultNodeTemplates,
 };
 
@@ -371,20 +360,6 @@ export const useLearningPathStore = create<LearningPathStore>()(
                 }, false, 'setAIRecommendation');
             },
 
-            setGenerating: (isGenerating) => {
-                set({ isGenerating }, false, 'setGenerating');
-            },
-
-            // ==================== 編輯器 ====================
-
-            openEditor: (studentId) => {
-                set({ isEditorOpen: true, currentStudentId: studentId }, false, 'openEditor');
-            },
-
-            closeEditor: () => {
-                set({ isEditorOpen: false }, false, 'closeEditor');
-            },
-
             // ==================== 學習記錄 ====================
 
             loadLearningRecord: (record) => {
@@ -394,6 +369,8 @@ export const useLearningPathStore = create<LearningPathStore>()(
                     return { learningRecords: newRecords };
                 }, false, 'loadLearningRecord');
             },
+
+
 
             // ==================== 工具方法 ====================
 
@@ -422,5 +399,3 @@ export const selectCurrentNodes = (state: LearningPathStore) =>
 export const selectCurrentEdges = (state: LearningPathStore) =>
     selectCurrentPath(state)?.edges ?? [];
 
-export const selectIsGenerating = (state: LearningPathStore) =>
-    state.isGenerating;
