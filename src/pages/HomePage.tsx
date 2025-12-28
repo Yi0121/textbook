@@ -27,9 +27,27 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { type UserRole } from '../config/toolConfig';
-import MarkdownMessage from '../components/ui/MarkdownMessage';
+import {
+    TextMessage,
+    OptionsMessage,
+    CurriculumMatchesMessage,
+    PedagogySelectMessage,
+    SummaryMessage,
+} from '../components/features/chat/ChatMessages';
 import { useTeacherAIChat } from '../hooks/useTeacherAIChat';
 import { useStudentAIChat } from '../hooks/useStudentAIChat';
+import type { ChatMessage as TeacherChatMessage } from '../hooks/useTeacherAIChat';
+import type { ChatMessage as StudentChatMessage } from '../hooks/useStudentAIChat';
+import type { CurriculumUnit } from '../data/curriculum108Math';
+import type { PedagogyMethod } from '../data/pedagogyMethods';
+
+// 定義一個包含所有可能欄位的擴展訊息類型
+type ExtendedChatMessage = TeacherChatMessage & Partial<StudentChatMessage> & {
+    options?: { id: string; label: string; icon?: string }[];
+    curriculumMatches?: CurriculumUnit[];
+    pedagogyMethods?: PedagogyMethod[];
+    type?: string;
+};
 
 interface OutletContextType {
     userRole: UserRole;
@@ -75,12 +93,19 @@ export default function HomePage() {
     const studentChat = useStudentAIChat();
 
     // 根據角色使用對應的 Chat
+    // 根據角色使用對應的 Chat
+    const activeChat = isTeacher ? teacherChat : studentChat;
     const {
         messages,
         setMessages,
         sendMessage,
         isProcessing
-    } = isTeacher ? teacherChat : studentChat;
+    } = activeChat;
+
+    // 只有老師模式有選項點擊功能，學生模式給一個空函數避免錯誤
+    const handleOptionClick = isTeacher
+        ? teacherChat.handleOptionClick
+        : (_id: string, _label: string) => { };
 
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -144,12 +169,50 @@ export default function HomePage() {
                             </div>
 
                             {/* 訊息內容 */}
-                            <div className={`max-w-[75%] ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
-                                <MarkdownMessage
-                                    content={msg.content}
-                                    role={msg.role === 'user' ? 'user' : 'ai'}
-                                    userRole={userRole === 'all' ? 'student' : userRole}
-                                />
+                            <div className={`max-w-[85%] ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
+                                {(() => {
+                                    // 強制轉型以處理聯合類型問題
+                                    const extendedMsg = msg as ExtendedChatMessage;
+
+                                    if (msg.role === 'user') {
+                                        return <TextMessage content={msg.content} isUser={true} />;
+                                    }
+
+                                    return (
+                                        <>
+                                            {/* 根據訊息類型渲染不同組件 */}
+                                            {extendedMsg.options ? (
+                                                extendedMsg.type === 'summary' ? (
+                                                    <SummaryMessage
+                                                        content={msg.content}
+                                                        options={extendedMsg.options}
+                                                        onSelect={handleOptionClick}
+                                                    />
+                                                ) : (
+                                                    <OptionsMessage
+                                                        content={msg.content}
+                                                        options={extendedMsg.options}
+                                                        onSelect={handleOptionClick}
+                                                    />
+                                                )
+                                            ) : extendedMsg.curriculumMatches ? (
+                                                <CurriculumMatchesMessage
+                                                    content={msg.content}
+                                                    matches={extendedMsg.curriculumMatches}
+                                                    onSelect={handleOptionClick}
+                                                />
+                                            ) : extendedMsg.pedagogyMethods ? (
+                                                <PedagogySelectMessage
+                                                    content={msg.content}
+                                                    methods={extendedMsg.pedagogyMethods}
+                                                    onSelect={handleOptionClick}
+                                                />
+                                            ) : (
+                                                <TextMessage content={msg.content} isUser={false} />
+                                            )}
+                                        </>
+                                    );
+                                })()}
 
                                 {/* 確認按鈕：學習路徑導航 */}
                                 {msg.action?.type === 'navigate' && msg.action.target === 'learning-path' && (
@@ -317,6 +380,6 @@ export default function HomePage() {
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

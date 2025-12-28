@@ -378,8 +378,9 @@ export function useTeacherAIChat() {
                 `✅ **課程規劃完成！**\n\n已根據「${data.topic}」主題與「${data.pedagogy?.name || '四學'}」教學法生成課程流程。\n\n👉 點擊下方按鈕進入視覺化編輯器`,
                 { type: 'navigate', target: 'lesson-preview', data }
             );
+            setIsProcessing(false);
         }, 2000);
-    }, [addAssistantMessage]);
+    }, [addAssistantMessage, setIsProcessing]);
 
     // ==================== 發送訊息主函數 ====================
 
@@ -401,6 +402,36 @@ export function useTeacherAIChat() {
         }
 
         setIsProcessing(true);
+
+        // 5. 特殊指令：一鍵生成 APOS 代數教材
+        if (input.includes('產生代數的教材') && input.includes('APOS')) {
+            setIsProcessing(true);
+
+            // 模擬思考
+            setTimeout(() => {
+                // 設定資料
+                lessonPrepDataRef.current = {
+                    topic: '乘法公式 (代數)',
+                    sessions: 2,
+                    objectives: ['理解乘法公式的幾何意義', '熟練(a+b)²、(a-b)²、(a+b)(a-b)公式', '能應用乘法公式進行運算'],
+                    pedagogy: PEDAGOGY_METHODS.find(p => p.id === 'apos') || PEDAGOGY_METHODS[0],
+                    curriculumUnit: { code: 'A-8-1', title: '乘法公式', description: '二次方乘法公式的幾何意義與運算。' }
+                };
+
+                setLessonPrepStep('confirm');
+
+                addAssistantMessage(
+                    '⚡ 收到快速指令！已為您準備好「代數 - 乘法公式」教材規劃（基於 APOS 教學法）：\n\n📚 主題：乘法公式\n📐 教學法：APOS (Action-Process-Object-Schema)\n⏱️ 堂數：2 堂課\n\n正在為您生成詳細內容...',
+                );
+
+                // 自動觸發生成
+                setTimeout(() => {
+                    generateLessonPlan();
+                }, 1500);
+            }, 500);
+
+            return;
+        }
 
         try {
             const intent = parseIntent(input);
@@ -487,7 +518,10 @@ export function useTeacherAIChat() {
             console.error(error);
             addAssistantMessage('❌ 抱歉，處理您的請求時發生錯誤，請稍後再試。');
         } finally {
-            setIsProcessing(false);
+            // 注意：對於一鍵生成，我們在內部控制 setIsProcessing(false)，這裡只針對非一鍵生成的情況
+            if (!input.includes('產生代數的教材')) {
+                setIsProcessing(false);
+            }
         }
     }, [isProcessing, lessonPrepStep, handleLessonPrepInput, startLessonPrepFlow, addAssistantMessage, teacher, lpState, lpDispatch]);
 

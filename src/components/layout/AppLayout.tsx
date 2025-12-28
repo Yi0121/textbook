@@ -11,7 +11,7 @@
  * - 行動：側邊欄隱藏，透過 Hamburger 開啟
  */
 
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
@@ -25,6 +25,7 @@ import { AppProviders } from '../../context/IndexContext';
 const MOBILE_BREAKPOINT = 768;
 
 export default function AppLayout() {
+    const location = useLocation();
     const [userRole, setUserRole] = useState<UserRole>('teacher');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -98,8 +99,8 @@ export default function AppLayout() {
                     </main>
                 </div>
 
-                {/* 全局 AI 助教按鈕 */}
-                <GlobalAIAssistant />
+                {/* 全局 AI 助教按鈕 (首頁隱藏) */}
+                {location.pathname !== '/' && <GlobalAIAssistant />}
             </div>
         </AppProviders>
     );
