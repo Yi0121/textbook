@@ -29,8 +29,8 @@ function TextMessage({ content, isUser }: { content: string; isUser: boolean }) 
     return (
         <div
             className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white ml-auto'
-                    : 'bg-white border border-gray-200 shadow-sm'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white ml-auto'
+                : 'bg-white border border-gray-200 shadow-sm'
                 }`}
         >
             <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
@@ -174,8 +174,8 @@ function SummaryMessage({
                         key={opt.id}
                         onClick={() => onSelect(opt.id, opt.label)}
                         className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${opt.id === 'confirm-yes'
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         {opt.label}
@@ -322,7 +322,7 @@ export default function LessonPrepChatPage() {
     useEffect(() => {
         if (isGenerating) {
             const timer = setTimeout(() => {
-                navigate('/lesson-prep/preview');
+                navigate('/lesson-prep/preview/lesson-apos-001');
             }, 2000);
             return () => clearTimeout(timer);
         }

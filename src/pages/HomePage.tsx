@@ -165,7 +165,7 @@ export default function HomePage() {
                                 {/* 確認按鈕：課程預覽導航（視覺化編輯） */}
                                 {msg.action?.type === 'navigate' && msg.action.target === 'lesson-preview' && (
                                     <button
-                                        onClick={() => navigate('/lesson-prep/preview')}
+                                        onClick={() => navigate('/lesson-prep/preview/lesson-apos-001')}
                                         className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
                                     >
                                         <Edit3 className="w-4 h-4" />

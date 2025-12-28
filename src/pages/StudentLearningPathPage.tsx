@@ -6,9 +6,10 @@
  * - 看不到：Agent、Tools、教學設計細節
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { BookOpen, Award, Clock } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
+import { MOCK_DIFFERENTIATED_LESSON, MOCK_GENERATED_LESSON } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
 import type { LessonNode } from '../types/lessonPlan';
 import type { NodeProgress } from '../types/studentProgress';
@@ -16,7 +17,15 @@ import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
 
 export default function StudentLearningPathPage() {
-    const lesson = MOCK_DIFFERENTIATED_LESSON;
+    const { lessonId } = useParams<{ lessonId: string }>();
+
+    // 根據 ID 選擇課程資料
+    const lesson = useMemo(() => {
+        if (lessonId === 'lesson-math-002') return MOCK_DIFFERENTIATED_LESSON;
+        if (lessonId === 'lesson-apos-001') return MOCK_GENERATED_LESSON; // 對應 APOS 範例
+        return MOCK_DIFFERENTIATED_LESSON; // 預設
+    }, [lessonId]);
+
     const studentProgress = MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]; // 模擬當前學生是張小明
 
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -41,7 +50,7 @@ export default function StudentLearningPathPage() {
         // 找到學生選擇的步驟2
         const step2Choice = studentPath.find(id => id.startsWith('step2-'));
 
-        return lesson.nodes.filter(node => {
+        return (lesson.nodes || []).filter(node => {
             // 主流程節點
             if (mainSteps.includes(node.id)) return true;
             // 學生選擇的步驟2
@@ -73,7 +82,7 @@ export default function StudentLearningPathPage() {
         return `${mins} 分鐘`;
     };
 
-    const selectedNode = lesson.nodes.find(n => n.id === selectedNodeId);
+    const selectedNode = (lesson.nodes || []).find(n => n.id === selectedNodeId);
     const selectedProgress = selectedNodeId ? getNodeProgress(selectedNodeId) : undefined;
 
     return (
@@ -267,10 +276,10 @@ export default function StudentLearningPathPage() {
                                 </p>
                                 <div className="bg-white rounded-lg p-4 border border-orange-200">
                                     <h4 className="font-medium text-gray-900 mb-2">
-                                        {lesson.nodes.find(n => n.id === studentProgress.currentNodeId)?.title || '補救教學'}
+                                        {(lesson.nodes || []).find(n => n.id === studentProgress.currentNodeId)?.title || '補救教學'}
                                     </h4>
                                     <p className="text-sm text-gray-600 mb-3">
-                                        {lesson.nodes.find(n => n.id === studentProgress.currentNodeId)?.generatedContent?.materials?.join(' • ') || 'AI 個別輔導 • 概念重建'}
+                                        {(lesson.nodes || []).find(n => n.id === studentProgress.currentNodeId)?.generatedContent?.materials?.join(' • ') || 'AI 個別輔導 • 概念重建'}
                                     </p>
                                     <button className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
                                         開始補強練習

@@ -68,7 +68,7 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
     // 跳轉到備課編輯器
     const navigateToLessonPreview = () => {
         if (onClose) onClose();
-        navigate('/lesson-prep/preview');
+        navigate('/lesson-prep/preview/lesson-apos-001');
     };
 
     // 跳轉到學習路徑

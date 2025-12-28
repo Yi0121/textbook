@@ -60,7 +60,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         icon: Library,
         items: [
             { path: '/lesson-prep', label: '備課', icon: Edit3 },
-            { path: '/teacher/lesson-progress/lesson-math-001', label: '課程監控', icon: Activity },
+            { path: '/teacher/lesson-progress/lesson-apos-001', label: '課程監控', icon: Activity },
             { path: '/materials', label: '教材庫', icon: FolderOpen },
         ],
     },
@@ -93,7 +93,7 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         label: '我的學習',
         icon: TrendingUp,
         items: [
-            { path: '/student/learning-path', label: '學習路徑', icon: TrendingUp },
+            { path: '/student/learning-path/lesson-apos-001', label: '學習路徑', icon: TrendingUp },
             { path: '/progress', label: '學習進度', icon: BarChart3 },
             { path: '/my-conversations', label: '對話紀錄', icon: MessageSquare },
         ],

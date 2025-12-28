@@ -48,7 +48,7 @@ function withSuspense(Component: React.LazyExoticComponent<React.ComponentType>)
 export const router = createBrowserRouter([
     // 全螢幕編輯器（獨立於 AppLayout）
     {
-        path: '/lesson-prep/preview',
+        path: '/lesson-prep/preview/:lessonId',
         element: withSuspense(LessonPrepPreviewPage),
     },
     // 對話式備課（獨立於 AppLayout）
@@ -105,7 +105,7 @@ export const router = createBrowserRouter([
             },
             // 學生學習路徑
             {
-                path: 'student/learning-path',
+                path: 'student/learning-path/:lessonId',
                 element: withSuspense(StudentLearningPathPage),
             },
             // 教師課程監控
