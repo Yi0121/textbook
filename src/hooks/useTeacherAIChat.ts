@@ -405,7 +405,7 @@ export function useTeacherAIChat() {
 
         // 5. 特殊指令：一鍵生成 APOS 代數教材
         if (input.includes('產生代數的教材') && input.includes('APOS')) {
-            setIsProcessing(true);
+            // 注意: setIsProcessing(true) 已在 Line 404 設定，不需重複
 
             // 模擬思考
             setTimeout(() => {
@@ -439,6 +439,7 @@ export function useTeacherAIChat() {
             switch (intent.category) {
                 case 'lesson-prep':
                     startLessonPrepFlow();
+                    setIsProcessing(false);
                     break;
 
                 case 'learning-path': {
@@ -472,6 +473,7 @@ export function useTeacherAIChat() {
                         `✅ AI 學習路徑分析完成！\n\n📊 **分析結果**：\n${result.recommendation?.summary || '已根據學生弱點生成個性化學習路徑'}\n\n🎯 **重點加強區域**：\n${result.recommendation?.focusAreas?.map(a => `• ${a}`).join('\n') || '• 核心概念複習'}\n\n📐 **預估學習時間**：${result.recommendation?.estimatedDuration || 30} 分鐘\n\n👉 點擊「查看學習路徑」進入詳細規劃`,
                         { type: 'navigate', target: 'learning-path', data: result }
                     );
+                    setIsProcessing(false);
                     break;
                 }
 
@@ -489,6 +491,7 @@ export function useTeacherAIChat() {
                     } else {
                         throw new Error(result.error);
                     }
+                    setIsProcessing(false);
                     break;
                 }
 
@@ -506,23 +509,23 @@ export function useTeacherAIChat() {
                     } else {
                         throw new Error(result.error);
                     }
+                    setIsProcessing(false);
                     break;
                 }
 
                 default:
                     setTimeout(() => {
                         addAssistantMessage(`收到！關於「${input}」，我可以幫您：\n• 備課規劃\n• 推薦學習路徑\n• 生成練習題\n• 協助分組\n\n請告訴我具體的需求！`);
+                        setIsProcessing(false);
                     }, 500);
             }
         } catch (error) {
             console.error(error);
             addAssistantMessage('❌ 抱歉，處理您的請求時發生錯誤，請稍後再試。');
-        } finally {
-            // 注意：對於一鍵生成，我們在內部控制 setIsProcessing(false)，這裡只針對非一鍵生成的情況
-            if (!input.includes('產生代數的教材')) {
-                setIsProcessing(false);
-            }
+            setIsProcessing(false);
         }
+        // 注意：對於一鍵生成 APOS 指令，setIsProcessing(false) 由 generateLessonPlan 內的 setTimeout 處理
+        // 對於其他指令，在 switch case 內個別處理
     }, [isProcessing, lessonPrepStep, handleLessonPrepInput, startLessonPrepFlow, addAssistantMessage, teacher, lpState, lpDispatch]);
 
     return {

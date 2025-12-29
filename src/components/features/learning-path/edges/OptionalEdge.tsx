@@ -1,7 +1,6 @@
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react';
 
 export const OptionalEdge = ({
-    id: _id,
     sourceX,
     sourceY,
     targetX,

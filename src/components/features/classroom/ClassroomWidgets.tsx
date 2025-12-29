@@ -6,6 +6,22 @@ interface ClassroomWidgetsProps {
   onClose: () => void;
 }
 
+// 抽離出一個共用的「底部退出按鈕」，確保位置統一且好按
+const BottomExitButton = ({ label, onClose }: { label: string; onClose: () => void }) => (
+  <button
+      onClick={onClose}
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]
+                 bg-gray-900/80 text-white backdrop-blur-md border border-white/20
+                 px-6 py-3 rounded-full shadow-2xl flex items-center gap-2
+                 hover:bg-red-600/90 transition-colors cursor-pointer pointer-events-auto
+                 group animate-in slide-in-from-bottom-4 fade-in duration-300"
+  >
+      <Power className="w-5 h-5 group-hover:scale-110 transition-transform" />
+      <span className="font-bold tracking-wide">{label}</span>
+      <span className="text-xs opacity-50 ml-2 border-l border-white/30 pl-2">雙擊畫面也可關閉</span>
+  </button>
+);
+
 const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) => {
   // --- 聚光燈邏輯 ---
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
@@ -37,22 +53,6 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
 
   if (mode === 'none') return null;
 
-  // 抽離出一個共用的「底部退出按鈕」，確保位置統一且好按
-  const BottomExitButton = ({ label }: { label: string }) => (
-    <button
-        onClick={onClose}
-        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[110]
-                   bg-gray-900/80 text-white backdrop-blur-md border border-white/20
-                   px-6 py-3 rounded-full shadow-2xl flex items-center gap-2
-                   hover:bg-red-600/90 transition-colors cursor-pointer pointer-events-auto
-                   group animate-in slide-in-from-bottom-4 fade-in duration-300"
-    >
-        <Power className="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span className="font-bold tracking-wide">{label}</span>
-        <span className="text-xs opacity-50 ml-2 border-l border-white/30 pl-2">雙擊畫面也可關閉</span>
-    </button>
-  );
-
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden pointer-events-none">
 
@@ -74,7 +74,7 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
             </svg>
 
             {/* 位於底部正中央的大按鈕 */}
-            <BottomExitButton label="關閉聚光燈" />
+            <BottomExitButton label="關閉聚光燈" onClose={onClose} />
         </div>
       )}
 
@@ -104,7 +104,7 @@ const ClassroomWidgets: React.FC<ClassroomWidgetsProps> = ({ mode, onClose }) =>
             </div>
 
             {/* 位於底部正中央的大按鈕 */}
-            <BottomExitButton label="收起遮幕" />
+            <BottomExitButton label="收起遮幕" onClose={onClose} />
         </div>
       )}
     </div>

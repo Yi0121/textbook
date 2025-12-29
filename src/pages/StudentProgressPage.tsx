@@ -2,7 +2,7 @@
  * StudentProgressPage - 學生進度儀表板 (Designer Version)
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     PieChart, Pie, Cell, ResponsiveContainer,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -33,8 +33,27 @@ const CONCEPT_DATA = [
     { subject: 'R-5-2-507', A: 75, fullMark: 100 },
 ];
 
+// 使用種子隨機數生成可重複的熱力圖資料
+const generateSeededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+};
+
 export default function StudentProgressPage() {
     const [inputMessage, setInputMessage] = useState('');
+
+    // 預計算熱力圖資料，避免每次 render 產生不同的值
+    const heatmapData = useMemo(() => {
+        return Array.from({ length: 200 }).map((_, i) => {
+            const intensity = generateSeededRandom(i + 1);
+            let bgClass = 'bg-gray-100';
+            if (intensity > 0.85) bgClass = 'bg-teal-700';
+            else if (intensity > 0.6) bgClass = 'bg-teal-500';
+            else if (intensity > 0.3) bgClass = 'bg-teal-300';
+            else if (intensity > 0.1) bgClass = 'bg-teal-100';
+            return { key: i, bgClass, intensity };
+        });
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-100 p-6 font-sans">
@@ -219,18 +238,9 @@ export default function StudentProgressPage() {
                                     <span>15:00-17:00</span>
                                 </div>
                                 <div className="flex-1 grid grid-cols-[repeat(50,minmax(0,1fr))] grid-rows-4 gap-1">
-                                    {Array.from({ length: 200 }).map((_, i) => {
-                                        const intensity = Math.random();
-                                        let bgClass = 'bg-gray-100';
-                                        if (intensity > 0.85) bgClass = 'bg-teal-700';
-                                        else if (intensity > 0.6) bgClass = 'bg-teal-500';
-                                        else if (intensity > 0.3) bgClass = 'bg-teal-300';
-                                        else if (intensity > 0.1) bgClass = 'bg-teal-100';
-
-                                        return (
-                                            <div key={i} className={`rounded-sm ${bgClass} transition-colors hover:ring-2 ring-offset-1 ring-gray-300`} title={`Activity: ${Math.floor(intensity * 100)}%`}></div>
-                                        );
-                                    })}
+                                    {heatmapData.map((item) => (
+                                        <div key={item.key} className={`rounded-sm ${item.bgClass} transition-colors hover:ring-2 ring-offset-1 ring-gray-300`} title={`Activity: ${Math.floor(item.intensity * 100)}%`}></div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

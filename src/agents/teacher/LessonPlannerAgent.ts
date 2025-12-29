@@ -76,9 +76,10 @@ export class LessonPlannerAgent extends BaseAgent {
             this.createMockTool(
                 'edit_lesson_flow',
                 '編輯教學流程節點與連線',
-                (_input: EditLessonFlowInput) => ({
+                (input: EditLessonFlowInput) => ({
                     success: true,
                     updatedAt: Date.now(),
+                    lessonId: input.lessonId,
                 })
             ),
 

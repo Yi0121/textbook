@@ -105,7 +105,7 @@ export default function HomePage() {
     // 只有老師模式有選項點擊功能，學生模式給一個空函數避免錯誤
     const handleOptionClick = isTeacher
         ? teacherChat.handleOptionClick
-        : (_id: string, _label: string) => { };
+        : () => { /* no-op for student mode */ };
 
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);

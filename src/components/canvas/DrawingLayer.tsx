@@ -1,7 +1,36 @@
 import React, { useMemo, forwardRef } from 'react';
 
+// 型別定義
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface Stroke {
+  id: string;
+  path: string;
+  color: string;
+  size: number;
+  tool: 'pen' | 'highlighter';
+  rawPoints?: Point[];
+  author?: string;
+}
+
+interface SelectionBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface LaserPoint {
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
 // --- 1. 幾何演算法：將點陣列轉換為平滑曲線 ---
-const getSmoothPath = (points: {x: number, y: number}[]) => {
+const getSmoothPath = (points: Point[]) => {
   if (!points || points.length === 0) return '';
   if (points.length < 3) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
 
@@ -22,7 +51,7 @@ const getSmoothPath = (points: {x: number, y: number}[]) => {
 };
 
 // --- 2. 獨立筆畫元件 ---
-const StrokePath = React.memo(({ stroke }: { stroke: any }) => {
+const StrokePath = React.memo(({ stroke }: { stroke: Stroke }) => {
   const d = useMemo(() => {
     return stroke.rawPoints ? getSmoothPath(stroke.rawPoints) : stroke.path;
   }, [stroke.rawPoints, stroke.path]);
@@ -50,12 +79,12 @@ const StrokePath = React.memo(({ stroke }: { stroke: any }) => {
 // --- Main Component ---
 interface DrawingLayerProps {
   active: boolean;
-  strokes: any[];
+  strokes: Stroke[];
   penColor: string;
   penSize: number;
   currentTool: string;
-  selectionBox: any;
-  laserPath: any[];
+  selectionBox: SelectionBox | null;
+  laserPath: LaserPoint[];
 }
 
 const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
@@ -88,7 +117,7 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
       </defs>
 
       {/* 1. 歷史筆跡 */}
-      {strokes.map((stroke: any) => (
+      {strokes.map((stroke: Stroke) => (
         <StrokePath key={stroke.id} stroke={stroke} />
       ))}
 

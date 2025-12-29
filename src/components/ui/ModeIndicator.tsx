@@ -34,7 +34,6 @@ const ModeIndicator: React.FC<ModeIndicatorProps> = ({
     isEditMode,
     currentTool,
     isSpacePressed = false,
-    userRole: _userRole
 }) => {
     // 決定當前模式
     const getCurrentMode = () => {

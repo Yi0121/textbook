@@ -105,13 +105,8 @@ function LessonPrepPreviewPageInner() {
     const [lesson, setLesson] = useState(MOCK_GENERATED_LESSON);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-    // 監聽 ID 變更並更新資料 (若是真實 API 則在此 fetch)
-    useEffect(() => {
-        if (lessonId === 'lesson-apos-001') {
-            setAposLesson(ALGEBRA_APOS_LESSON);
-        }
-        // 未來可擴充其他 mock
-    }, [lessonId]);
+    // 注意：lessonId 變化時的資料載入已由 useState 的初始化函數處理
+    // 若未來需要支援動態切換，可透過 key prop 重新 mount 組件或使用 useEffect + fetch
 
     // UI State
     const [activeTab, setActiveTab] = useState<string>('agents'); // Cast to string for sidebar

@@ -1,5 +1,5 @@
 // components/layout/RightSidePanel.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   X,
   BookOpen,
@@ -39,20 +39,22 @@ const RightSidePanel: React.FC<RightSidePanelProps> = ({
   initialTab
 }) => {
   // 教師預設顯示 AI 助教，學生預設顯示內容分析
-  const getDefaultTab = (): TabType => {
+  const getDefaultTab = useCallback((): TabType => {
     if (userRole === 'teacher') return 'agent';
     return 'context';
-  };
+  }, [userRole]);
 
-  const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
+  const [activeTab, setActiveTab] = useState<TabType>(() => getDefaultTab());
 
   // 當側邊欄打開時，根據角色設定預設分頁
   useEffect(() => {
     if (isOpen) {
       // 如果有明確指定 initialTab 就用，否則用角色預設
-      setActiveTab(initialTab || getDefaultTab());
+      const targetTab = initialTab || getDefaultTab();
+      // 使用函數式更新，只有當目標分頁與當前分頁不同時才更新
+      setActiveTab(prev => prev !== targetTab ? targetTab : prev);
     }
-  }, [isOpen, initialTab, userRole]);
+  }, [isOpen, initialTab, getDefaultTab]);
 
   return (
     <>

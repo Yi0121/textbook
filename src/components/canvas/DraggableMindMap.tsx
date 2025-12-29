@@ -1,8 +1,29 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { BrainCircuit, Trash2, GripHorizontal } from 'lucide-react';
 
+interface MindMapNode {
+  id: string;
+  label: string;
+  type: 'root' | 'child';
+  offsetX: number;
+  offsetY: number;
+}
+
+interface MindMapEdge {
+  source: string;
+  target: string;
+}
+
+interface MindMapData {
+  id: number;
+  x: number;
+  y: number;
+  nodes: MindMapNode[];
+  edges: MindMapEdge[];
+}
+
 interface DraggableMindMapProps {
-  data: any; 
+  data: MindMapData;
   onDelete: (id: number) => void;
   onUpdate: (id: number, dx: number, dy: number) => void;
   scale: number;
@@ -50,9 +71,9 @@ const DraggableMindMap: React.FC<DraggableMindMapProps> = ({ data, onDelete, onU
         >
             {/* 連線層 (SVG) */}
             <svg className="absolute overflow-visible pointer-events-none" style={{ left: 0, top: 0 }}>
-                {data.edges.map((edge: any, i: number) => {
-                    const start = data.nodes.find((n:any) => n.id === edge.source);
-                    const end = data.nodes.find((n:any) => n.id === edge.target);
+                {data.edges.map((edge: MindMapEdge, i: number) => {
+                    const start = data.nodes.find((n: MindMapNode) => n.id === edge.source);
+                    const end = data.nodes.find((n: MindMapNode) => n.id === edge.target);
                     if(!start || !end) return null;
                     
                     const dx = end.offsetX - start.offsetX;
@@ -74,7 +95,7 @@ const DraggableMindMap: React.FC<DraggableMindMapProps> = ({ data, onDelete, onU
             </svg>
 
             {/* 節點層 */}
-            {data.nodes.map((node: any) => {
+            {data.nodes.map((node: MindMapNode) => {
                 const isRoot = node.type === 'root';
                 return (
                     <div 

@@ -105,7 +105,7 @@ const FabricPageEditor: React.FC<FabricPageEditorProps> = ({
 
     switch (currentTool) {
       case 'pen':
-      case 'highlighter':
+      case 'highlighter': {
         canvas.isDrawingMode = true;
         const brush = new PencilBrush(canvas);
         brush.color = currentTool === 'highlighter'
@@ -114,6 +114,7 @@ const FabricPageEditor: React.FC<FabricPageEditorProps> = ({
         brush.width = currentTool === 'highlighter' ? penSize * 3 : penSize;
         canvas.freeDrawingBrush = brush;
         break;
+      }
       case 'cursor':
       default:
         canvas.isDrawingMode = false;

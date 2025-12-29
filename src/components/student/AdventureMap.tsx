@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { LessonNode } from '../../types/lessonPlan';
 import AdventureNode from './AdventureNode';
 
@@ -7,6 +7,12 @@ interface AdventureMapProps {
     progressMap: Record<string, 'locked' | 'current' | 'completed' | 'upcoming'>;
     onNodeSelect: (nodeId: string) => void;
 }
+
+// 使用 seeded random 來生成確定性的隨機數
+const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+};
 
 // 預定義的地圖路徑座標 (Snake pattern for horizontal scrolling)
 const generatePathPoints = (count: number) => {
@@ -24,9 +30,9 @@ const generatePathPoints = (count: number) => {
             y = 70; // Down
         }
 
-        // Add some organic randomness
-        const randomOffsetX = (Math.random() - 0.5) * 5;
-        const randomOffsetY = (Math.random() - 0.5) * 10;
+        // Add some organic randomness (使用 seeded random 確保確定性)
+        const randomOffsetX = (seededRandom(i * 2 + 1) - 0.5) * 5;
+        const randomOffsetY = (seededRandom(i * 2 + 2) - 0.5) * 10;
 
         points.push({
             x: x + randomOffsetX,
@@ -37,12 +43,8 @@ const generatePathPoints = (count: number) => {
 };
 
 export default function AdventureMap({ nodes, progressMap, onNodeSelect }: AdventureMapProps) {
-    const [pathPoints, setPathPoints] = useState<{ x: number, y: number }[]>([]);
-
-    // 初始化路徑點
-    useEffect(() => {
-        setPathPoints(generatePathPoints(nodes.length));
-    }, [nodes.length]);
+    // 使用 useMemo 計算路徑點，避免在 effect 中設置 state
+    const pathPoints = useMemo(() => generatePathPoints(nodes.length), [nodes.length]);
 
     // 生成 SVG Path D 字串 (Cubic Bezier)
     const generateSvgPath = () => {

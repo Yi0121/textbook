@@ -28,7 +28,8 @@ class MockProvider implements AIProvider {
         this.delay = options?.delay ?? 500;
     }
 
-    async chat(messages: Message[], _options?: ChatOptions): Promise<ChatResponse> {
+    async chat(messages: Message[], options?: ChatOptions): Promise<ChatResponse> {
+        void options; // Interface compliance - options reserved for future use
         await this.simulateDelay();
 
         // 根據最後一條訊息內容決定回應
@@ -46,7 +47,8 @@ class MockProvider implements AIProvider {
         };
     }
 
-    async *streamChat(messages: Message[], _options?: ChatOptions): AsyncGenerator<StreamChunk> {
+    async *streamChat(messages: Message[], options?: ChatOptions): AsyncGenerator<StreamChunk> {
+        void options; // Interface compliance - options reserved for future use
         const response = this.generateResponse(messages[messages.length - 1]?.content || '');
         const words = response.split(' ');
 

@@ -8,6 +8,7 @@
  * - 節點完成率視覺化
  */
 
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
@@ -47,15 +48,18 @@ function ProgressDistributionChart({ students }: { students: typeof MOCK_DIFFERE
 
 // 圓餅圖組件
 function PieChart({ data }: { data: { label: string; value: number; color: string }[] }) {
-    const total = data.reduce((sum, d) => sum + d.value, 0);
-    let cumulativePercent = 0;
-
-    const segments = data.map(d => {
-        const percent = total > 0 ? (d.value / total) * 100 : 0;
-        const startAngle = cumulativePercent * 3.6;
-        cumulativePercent += percent;
-        return { ...d, percent, startAngle };
-    });
+    const { segments, total } = useMemo(() => {
+        const totalValue = data.reduce((sum, d) => sum + d.value, 0);
+        // 使用 reduce 計算累積百分比，避免變數重新賦值
+        const segmentData = data.reduce<Array<{ label: string; value: number; color: string; percent: number; startAngle: number }>>((acc, d, index) => {
+            const percent = totalValue > 0 ? (d.value / totalValue) * 100 : 0;
+            const cumulative = index === 0 ? 0 : acc[index - 1].startAngle / 3.6 + acc[index - 1].percent;
+            const startAngle = cumulative * 3.6;
+            acc.push({ ...d, percent, startAngle });
+            return acc;
+        }, []);
+        return { segments: segmentData, total: totalValue };
+    }, [data]);
 
     return (
         <div className="flex items-center gap-6">
@@ -347,7 +351,7 @@ export default function LessonProgressDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <div className="font-semibold text-gray-900">{student.studentName}</div>
                                         <div className="text-sm text-gray-500 truncate">
-                                            目前：{(lesson.nodes || []).find(n => n.id === student.currentNodeId)?.title}
+                                            目前：{(lesson.nodes || []).find(n => n.id === student.currentNodeId)?.title || '尚未開始'}
                                         </div>
                                         {/* Mini progress bar */}
                                         <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">

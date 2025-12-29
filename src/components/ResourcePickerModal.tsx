@@ -3,7 +3,7 @@
  * 用於從可用的 AI 代理人和教學工具中選擇資源添加到活動
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { X, Video, FileText, CheckSquare, Wrench, Bot, Sparkles, Search, ExternalLink } from 'lucide-react';
 import type { Agent, Tool, ResourceBinding } from '../types/lessonPlan';
 import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
@@ -40,6 +40,7 @@ export default function ResourcePickerModal({
     onSelect,
     currentResources,
 }: ResourcePickerModalProps) {
+    const resourceIdBase = useId();
     const [activeTab, setActiveTab] = useState<TabType>('agents');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -91,7 +92,7 @@ export default function ResourcePickerModal({
         if (!selectedAgent) return;
 
         const newResource: Partial<ResourceBinding> = {
-            id: `resource-${Date.now()}`,
+            id: `${resourceIdBase}-${currentResources.length}`,
             resourceType,
             agent: selectedAgent,
             tools: selectedTools,

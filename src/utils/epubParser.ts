@@ -393,7 +393,7 @@ export function convertHTMLToFabricJSON(html: string, pageWidth: number = PAGE_W
         currentY += Math.max(40, Math.ceil(textContent.length / 40) * 22);
         break;
 
-      case 'img':
+      case 'img': {
         const src = element.getAttribute('src');
         if (src) {
           // 圖片物件 (暫時用佔位符表示)
@@ -413,8 +413,9 @@ export function convertHTMLToFabricJSON(html: string, pageWidth: number = PAGE_W
           currentY += 220;
         }
         break;
+      }
 
-      case 'table':
+      case 'table': {
         // 簡化處理：將表格轉為文字
         const rows = Array.from(element.querySelectorAll('tr'));
         rows.forEach(row => {
@@ -425,6 +426,7 @@ export function convertHTMLToFabricJSON(html: string, pageWidth: number = PAGE_W
         });
         currentY += 15;
         break;
+      }
 
       case 'code':
         fabricObjects.push({

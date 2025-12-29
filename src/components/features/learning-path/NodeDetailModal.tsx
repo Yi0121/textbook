@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Trash2, CheckCircle, AlertCircle, BookOpen, PenTool, Youtube, Users, Sparkles, ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
 import Modal from '../../ui/Modal';
@@ -67,17 +67,20 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
     onDelete,
 }) => {
     const navigate = useNavigate();
-    // 本地狀態用來暫存編輯內容
-    const [formData, setFormData] = useState<Partial<LearningPathNode['data']>>({});
+    // 本地狀態用來暫存編輯內容，使用 node.id 作為 key 來重置狀態
+    const [formData, setFormData] = useState<Partial<LearningPathNode['data']>>(() =>
+        node ? { ...node.data } : {}
+    );
     const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
     const [showResourceSelector, setShowResourceSelector] = useState(false);
+    // 記錄當前處理的 node id，用於檢測 node 變化
+    const [currentNodeId, setCurrentNodeId] = useState<string | null>(node?.id || null);
 
-    // 當 node 改變時，更新 form data
-    useEffect(() => {
-        if (node) {
-            setFormData({ ...node.data });
-        }
-    }, [node]);
+    // 當 node 改變時，更新 form data（使用狀態比較而非 useEffect）
+    if (node && node.id !== currentNodeId) {
+        setCurrentNodeId(node.id);
+        setFormData({ ...node.data });
+    }
 
     if (!node) return null;
 

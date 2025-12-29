@@ -3,9 +3,9 @@
  * 用於 Activity Level View 中顯示單個教學活動
  */
 
-import { memo } from 'react';
+import { memo, type ComponentType } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
-import { Video, FileText, CheckSquare, Wrench, PlayCircle, BookOpen, AlertCircle, RotateCcw, Sparkles, GitBranch } from 'lucide-react';
+import { Video, FileText, CheckSquare, Wrench, PlayCircle, BookOpen, AlertCircle, RotateCcw, Sparkles, GitBranch, type LucideProps } from 'lucide-react';
 import type { ActivityNode as ActivityNodeType } from '../types/lessonPlan';
 
 // ActivityFlowNode 的資料結構
@@ -18,25 +18,23 @@ type ActivityFlowNodeData = {
 
 type CustomActivityFlowNode = Node<ActivityFlowNodeData, 'activityFlowNode'>;
 
-/**
- * 依據活動類型取得對應圖示
- */
-const getActivityIcon = (type: ActivityNodeType['type']) => {
-    switch (type) {
-        case 'intro': return PlayCircle;
-        case 'teaching': return BookOpen;
-        case 'practice': return CheckSquare;
-        case 'checkpoint': return AlertCircle;
-        case 'remedial': return RotateCcw;
-        case 'application': return Sparkles;
-        default: return FileText;
-    }
+// 活動類型圖示映射表（在模組層級定義，避免 render 時創建）
+const activityIconMap: Record<ActivityNodeType['type'], ComponentType<LucideProps>> = {
+    intro: PlayCircle,
+    teaching: BookOpen,
+    practice: CheckSquare,
+    checkpoint: AlertCircle,
+    remedial: RotateCcw,
+    application: Sparkles,
 };
+
+// 預設圖示（用於未知類型）
+const DefaultActivityIcon = FileText;
 
 /**
  * 依據活動類型取得樣式
  */
-const getActivityStyles = (type: ActivityNodeType['type'], _stageColor: string) => {
+const getActivityStyles = (type: ActivityNodeType['type']) => {
     const baseStyles: Record<ActivityNodeType['type'], { bg: string; border: string; accent: string; iconBg: string }> = {
         intro: { bg: 'bg-purple-50', border: 'border-purple-200', accent: 'text-purple-600', iconBg: 'bg-purple-100' },
         teaching: { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'text-blue-600', iconBg: 'bg-blue-100' },
@@ -62,9 +60,10 @@ const getResourceIcon = (resourceType: string) => {
 };
 
 const ActivityFlowNode = ({ data, selected }: NodeProps<CustomActivityFlowNode>) => {
-    const { activity, stageColor, isStart, isEnd } = data;
-    const styles = getActivityStyles(activity.type, stageColor);
-    const Icon = getActivityIcon(activity.type);
+    const { activity, isStart, isEnd } = data;
+    const styles = getActivityStyles(activity.type);
+    // 從映射表直接取得圖示組件（在模組層級定義，不在 render 中創建）
+    const ActivityIcon = activityIconMap[activity.type] || DefaultActivityIcon;
     const hasFlowControl = !!activity.flowControl;
     const defaultResource = activity.resources.find(r => r.isDefault) || activity.resources[0];
 
@@ -99,7 +98,7 @@ const ActivityFlowNode = ({ data, selected }: NodeProps<CustomActivityFlowNode>)
                             w-9 h-9 rounded-lg flex items-center justify-center shrink-0
                             ${styles.iconBg} shadow-sm
                         `}>
-                            <Icon className={`w-5 h-5 ${styles.accent}`} />
+                            <ActivityIcon className={`w-5 h-5 ${styles.accent}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-sm text-gray-800 leading-tight truncate">

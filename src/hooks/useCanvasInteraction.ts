@@ -3,13 +3,25 @@ import { useEditor } from '../context/EditorContext';
 import { useUI } from '../context/UIContext';
 import { distanceBetween } from '../utils/geometry';
 
+interface SelectionBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface SelectionMenuPos {
+  top: number;
+  left: number;
+}
+
 interface UseCanvasInteractionProps {
   viewport: { x: number; y: number; scale: number };
   setViewport: React.Dispatch<React.SetStateAction<{ x: number; y: number; scale: number }>>;
   canvasRef: React.RefObject<HTMLDivElement | null>;
   previewPathRef: React.RefObject<SVGPathElement | null>;
-  setSelectionBox: (box: any) => void;
-  setSelectionMenuPos: (pos: any) => void;
+  setSelectionBox: (box: SelectionBox | null) => void;
+  setSelectionMenuPos: (pos: SelectionMenuPos | null) => void;
 }
 
 export function useCanvasInteraction({
@@ -119,7 +131,7 @@ export function useCanvasInteraction({
         const eraseRadius = 20 / viewport.scale;
         const newStrokes = editorState.strokes.filter(s => {
              if (!s.rawPoints) return true;
-             return !s.rawPoints.some((p:any) => distanceBetween(p, {x, y}) < eraseRadius);
+             return !s.rawPoints.some((p: { x: number; y: number }) => distanceBetween(p, {x, y}) < eraseRadius);
         });
         if (newStrokes.length !== editorState.strokes.length) {
             editorDispatch({ type: 'SET_STROKES', payload: newStrokes });

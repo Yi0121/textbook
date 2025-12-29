@@ -50,12 +50,15 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // 使用 useState 初始化器儲存歡迎訊息的時間戳（只在首次渲染時計算）
+    const [welcomeTimestamp] = useState(() => Date.now());
+
     // 合併歡迎訊息與聊天訊息
     const displayMessages = messages.length > 0 ? messages : [{
         id: 'welcome',
         role: 'assistant' as const,
         content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫我備課\n• 推薦學習路徑\n• 生成練習題\n\n我會幫你完成！',
-        timestamp: Date.now(),
+        timestamp: welcomeTimestamp,
     }];
 
     // 處理使用者輸入
