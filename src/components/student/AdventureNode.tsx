@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, Star, CheckCircle, Activity, Box, Globe, Play, HelpCircle } from 'lucide-react';
+import { Star } from 'lucide-react';
 import type { LessonNode } from '../../types/lessonPlan';
 import { useMemo } from 'react';
 
@@ -14,48 +14,48 @@ interface AdventureNodeProps {
 
 export default function AdventureNode({ node, status, onClick, x, y, delay = 0 }: AdventureNodeProps) {
 
-    // 根據節點類型決定外觀
+    // 根據節點類型決定外觀 (Sky Islands Theme)
     const design = useMemo(() => {
         const stage = node.stage || 'A';
         switch (stage) {
-            case 'A': // Action - 探索
+            case 'A': // Action - 起始之島
                 return {
-                    color: 'from-emerald-500 to-teal-600',
-                    shadow: 'shadow-teal-200/50',
-                    ring: 'ring-teal-200',
-                    icon: Play, // Action: Doing/Moving
-                    label: '操作'
+                    bgGradient: 'from-emerald-400 to-teal-600',
+                    islandColor: '#10b981', // emerald-500
+                    shadowColor: 'rgba(16, 185, 129, 0.4)',
+                    icon: '🏝️',
+                    label: '探索'
                 };
-            case 'P': // Process - 挑戰
+            case 'P': // Process - 試煉空域
                 return {
-                    color: 'from-amber-500 to-orange-600',
-                    shadow: 'shadow-orange-200/50',
-                    ring: 'ring-orange-200',
-                    icon: Activity, // Process: Flow/Activity
-                    label: '過程'
+                    bgGradient: 'from-amber-400 to-orange-600',
+                    islandColor: '#f59e0b', // amber-500
+                    shadowColor: 'rgba(245, 158, 11, 0.4)',
+                    icon: '⚡',
+                    label: '挑戰'
                 };
-            case 'O': // Object - 奪寶
+            case 'O': // Object - 寶藏浮島
                 return {
-                    color: 'from-blue-500 to-indigo-600',
-                    shadow: 'shadow-blue-200/50',
-                    ring: 'ring-blue-200',
-                    icon: Box, // Object: Encapsulated
-                    label: '物件'
+                    bgGradient: 'from-blue-400 to-indigo-600',
+                    islandColor: '#3b82f6', // blue-500
+                    shadowColor: 'rgba(59, 130, 246, 0.4)',
+                    icon: '💎',
+                    label: '奪寶'
                 };
-            case 'S': // Schema - 開拓
+            case 'S': // Schema - 天空之城
                 return {
-                    color: 'from-violet-500 to-purple-600',
-                    shadow: 'shadow-purple-200/50',
-                    ring: 'ring-purple-200',
-                    icon: Globe, // Schema: Big Picture
-                    label: '基模'
+                    bgGradient: 'from-violet-400 to-purple-600',
+                    islandColor: '#8b5cf6', // violet-500
+                    shadowColor: 'rgba(139, 92, 246, 0.4)',
+                    icon: '🏰',
+                    label: '榮耀'
                 };
             default:
                 return {
-                    color: 'from-gray-400 to-gray-500',
-                    shadow: 'shadow-gray-200/50',
-                    ring: 'ring-gray-200',
-                    icon: HelpCircle,
+                    bgGradient: 'from-slate-400 to-slate-600',
+                    islandColor: '#94a3b8',
+                    shadowColor: 'rgba(148, 163, 184, 0.4)',
+                    icon: '☁️',
                     label: '未知'
                 };
         }
@@ -65,89 +65,122 @@ export default function AdventureNode({ node, status, onClick, x, y, delay = 0 }
     const isCurrent = status === 'current';
     const isCompleted = status === 'completed';
 
-    // Dynamic Icon Component
-    const IconComponent = design.icon;
+    // 隨機生成有機形狀 (Organic Blob Shape)
+    const borderRadius = useMemo(() => {
+        const seeds = [
+            '60% 40% 30% 70% / 60% 30% 70% 40%',
+            '30% 70% 70% 30% / 30% 30% 70% 70%',
+            '50% 50% 20% 80% / 25% 80% 20% 75%',
+            '70% 30% 30% 70% / 60% 40% 60% 40%',
+        ];
+        // 簡單雜湊
+        const idx = (x * y + node.title.length) % seeds.length;
+        return seeds[Math.floor(idx)];
+    }, [x, y, node.title]);
 
     return (
         <div
-            className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
+            className="absolute z-10 w-0 h-0 flex justify-center items-center"
             style={{ left: `${x}%`, top: `${y}%` }}
         >
-            <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, delay }}
-                whileHover={!isLocked ? { scale: 1.05, y: -2 } : {}}
-                onClick={onClick}
-                className={`
-                    relative w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center
-                    transition-all duration-300
-                    ${isLocked
-                        ? 'bg-slate-100 border-2 border-slate-200'
-                        : `bg-gradient-to-br ${design.color} shadow-lg ${design.shadow}`
-                    }
-                    ${isCurrent ? `ring-4 ${design.ring} ring-offset-2` : ''}
-                `}
-            >
-                {/* 浮島底座效果 */}
-                {!isLocked && (
-                    <div className="absolute top-full w-full h-4 bg-black/10 rounded-full blur-sm transform translate-y-1" />
-                )}
+            <div className="relative w-[120px] h-[120px] flex justify-center items-center">
+                {/* 浮動動畫容器 */}
+                <motion.div
+                    animate={{ y: [0, -8, 0] }}
+                    transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: delay * 0.2 // 錯開動畫
+                    }}
+                    className="relative flex flex-col items-center justify-center cursor-pointer group"
+                    onClick={onClick}
+                >
+                    {/* 島嶼本體 */}
+                    <div
+                        className={`
+                            relative w-20 h-20 md:w-24 md:h-24 transition-all duration-300
+                            flex items-center justify-center
+                            ${isLocked
+                                ? 'bg-slate-200 grayscale opacity-80'
+                                : `bg-gradient-to-br ${design.bgGradient} shadow-lg`
+                            }
+                            ${isCurrent ? 'scale-110 drop-shadow-[0_10px_10px_rgba(255,255,255,0.5)]' : 'group-hover:scale-105'}
+                        `}
+                        style={{
+                            borderRadius: borderRadius,
+                            boxShadow: isCurrent ? `0 0 20px ${design.shadowColor}` : `0 10px 15px -3px ${design.shadowColor}`,
+                        }}
+                    >
+                        {/* 鎖定遮罩 / 紋理 */}
+                        {isLocked && (
+                            <div className="absolute inset-0 bg-black/10" style={{ borderRadius: borderRadius }} />
+                        )}
 
-                {/* 狀態圖示 */}
-                <div className="relative z-10 flex flex-col items-center">
-                    {isLocked ? (
-                        <Lock className="w-8 h-8 text-slate-300" />
-                    ) : (
-                        <>
-                            <IconComponent className="w-8 h-8 text-white filter drop-shadow-sm mb-1" />
+                        {/* 島嶼上的內容 (Icon) */}
+                        <div className="text-4xl drop-shadow-md transform transition-transform group-hover:-translate-y-1">
+                            {isLocked ? '🔒' : design.icon}
+                        </div>
+
+                        {/* 完成標記 (插旗) */}
+                        {isCompleted && (
+                            <div className="absolute -top-2 -right-2 text-2xl drop-shadow filter animate-bounce">
+                                🚩
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 倒影/陰影 (Shadow underneath) */}
+                    <div
+                        className="absolute -bottom-4 w-16 h-4 bg-black/20 blur-md rounded-full"
+                        style={{ opacity: isCurrent ? 0.4 : 0.2, transform: 'scale(1, 0.5)' }}
+                    />
+
+                    {/* 當前任務指示標 (Hero Marker) */}
+                    {isCurrent && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -40 }}
+                            animate={{ opacity: 1, y: -50 }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute z-20"
+                        >
+                            <div className="bg-white/90 text-indigo-900 text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-indigo-100 whitespace-nowrap">
+                                📍 當前位置
+                            </div>
+                            <div className="w-0.5 h-6 bg-white/50 absolute left-1/2 top-full -translate-x-1/2" />
+                        </motion.div>
+                    )}
+
+                    {/* 標題標籤 (懸浮顯示 或 Current 顯示) */}
+                    <motion.div
+                        className={`
+                            absolute top-full mt-2
+                            transition-all duration-300
+                            ${isLocked ? 'opacity-60 grayscale' : 'opacity-100'}
+                        `}
+                    >
+                        <div className={`
+                            px-3 py-1.5 rounded-lg text-center backdrop-blur-md border outline-4
+                            ${isCurrent
+                                ? 'bg-white/90 border-indigo-200 shadow-lg scale-110'
+                                : 'bg-white/60 border-white/50 shadow-sm'
+                            }
+                        `}>
+                            <div className="text-xs font-bold text-slate-800 whitespace-nowrap">
+                                {node.title}
+                            </div>
+                            {/* 星星評分 (Mock) */}
                             {isCompleted && (
-                                <div className="absolute -top-3 -right-3 bg-white text-emerald-500 p-1 rounded-full shadow-sm border border-emerald-100">
-                                    <CheckCircle size={16} className="text-emerald-500" />
+                                <div className="flex justify-center gap-0.5 mt-0.5">
+                                    <Star size={8} className="text-yellow-400 fill-yellow-400" />
+                                    <Star size={8} className="text-yellow-400 fill-yellow-400" />
+                                    <Star size={8} className="text-yellow-400 fill-yellow-400" />
                                 </div>
                             )}
-                        </>
-                    )}
-                </div>
-
-                {/* 當前關卡指示標 */}
-                {isCurrent && (
-                    <motion.div
-                        initial={{ y: -10, opacity: 0 }}
-                        animate={{ y: -20, opacity: 1 }}
-                        transition={{ repeat: Infinity, repeatType: 'reverse', duration: 1 }}
-                        className="absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-1 bg-white text-indigo-600 text-xs font-bold rounded-full shadow-lg whitespace-nowrap"
-                    >
-                        目前進度
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white" />
-                    </motion.div>
-                )}
-            </motion.button>
-
-            {/* 標籤 */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: delay + 0.2 }}
-                className={`
-                    mt-4 text-center absolute left-1/2 -translate-x-1/2 w-40 pointer-events-none
-                    ${isCurrent ? 'scale-110' : ''}
-                `}
-            >
-                <div className={`
-                    bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-gray-100
-                    inline-flex items-center gap-1
-                `}>
-                    <span className={`text-xs font-bold ${isLocked ? 'text-gray-400' : 'text-gray-800'}`}>
-                        {node.title}
-                    </span>
-                    {isCompleted && (
-                        <div className="flex text-yellow-500">
-                            {[1, 2, 3].map(i => <Star key={i} size={8} fill="currentColor" />)}
                         </div>
-                    )}
-                </div>
-            </motion.div>
+                    </motion.div>
+                </motion.div>
+            </div>
         </div>
     );
 }

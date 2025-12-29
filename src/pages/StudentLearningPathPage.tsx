@@ -2,23 +2,25 @@
  * StudentLearningPathPage - 學生學習路徑頁面
  * 
  * 學生視角：
- * - 看得到：任務、學習內容、進度（闖關式）
+ * - 看得到：任務、學習內容、進度（闘關式）
  * - 看不到：Agent、Tools、教學設計細節
  */
 
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { BookOpen, Award, Clock } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { BookOpen, Award, Play, CheckCircle, X, RotateCw } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, MOCK_GENERATED_LESSON } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
-import { getNodeProgress, getNodeStatus, formatDuration } from '../utils/progressHelpers';
+import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
 
-import AdventureMap from '../components/student/AdventureMap';
+// import AdventureMap from '../components/student/AdventureMap';
+import LessonTaskGrid from '../components/student/LessonTaskGrid';
 
 export default function StudentLearningPathPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
+    const navigate = useNavigate();
 
     // 根據 ID 選擇課程資料
     const lesson = useMemo(() => {
@@ -30,7 +32,6 @@ export default function StudentLearningPathPage() {
 
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-    // 主流程節點 (排除補救分支和平行選項中未選擇的)
     // 主流程節點 (排除補救分支和平行選項中未選擇的)
     const getMainPathNodes = () => {
         // [Fix]: APOS Lesson logic
@@ -77,12 +78,24 @@ export default function StudentLearningPathPage() {
         };
     });
 
-    const selectedNode = (lesson.nodes || []).find(n => n.id === selectedNodeId);
-    const selectedProgress = selectedNodeId ? getNodeProgress(studentProgress.nodeProgress, selectedNodeId) : undefined;
+    // [Enhancement] Clean up titles for student view
+    const getCleanTitle = (title: string) => {
+        return title
+            .replace(/(Action|Process|Object|Schema)\s*[:：]?\s*/gi, '') // Remove APOS prefixes (flexible)
+            .replace(/📋 |🔢 |🧪 |⚙️ |✏️ |📦 |🔧 |🧠 |🌍 |📝 |✓ /g, '') // Remove old emojis
+            .trim();
+    };
+
+    // Unused legacy variables - keep node id for modal
+    // const selectedNode = (lesson.nodes || []).find(n => n.id === selectedNodeId);
+    // const selectedProgress = selectedNodeId ? getNodeProgress(studentProgress.nodeProgress, selectedNodeId) : undefined;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-[#dbeafe] p-6 text-slate-800 font-sans">
+            {/* Background decoration */}
+            <div className="fixed inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay" />
+
+            <div className="max-w-6xl mx-auto relative z-10">
                 {/* 頭部 (Standard Mode) */}
                 {lessonId !== 'lesson-apos-001' && (
                     <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -162,167 +175,151 @@ export default function StudentLearningPathPage() {
 
                 {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
                 {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
+                {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
                 {lessonId === 'lesson-apos-001' && (
-                    <div className="flex items-center justify-between mb-4 animate-slide-up">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-2xl font-bold text-gray-800">{lesson.title}</h1>
+                    <div className="flex flex-col gap-6 animate-slide-up mb-8">
+                        {/* Header */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+                            <h1 className="text-3xl font-bold text-gray-800 text-center">{lesson.title}</h1>
                         </div>
 
-                        {/* Gamified HUD: Points & Gems */}
-                        {(() => {
-                            // Calculate Score and Gems (Score > 90 = Gem)
-                            const relevantProgress = studentProgress.nodeProgress;
-                            const totalScore = relevantProgress.reduce((acc, curr) => acc + (curr.score || 0), 0);
-                            const gemCount = relevantProgress.filter(np => (np.score || 0) >= 90).length;
-
-                            return (
-                                <div className="flex gap-4">
-                                    {/* 累積代幣 (Tokens) */}
-                                    <div className="bg-white/90 backdrop-blur px-5 py-2.5 rounded-xl shadow-sm border border-indigo-100 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center border border-yellow-100">
-                                            <div className="text-lg">🪙</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">學習代幣</div>
-                                            <div className="flex items-baseline gap-1">
-                                                <span className="text-xl font-black text-gray-800 leading-none">{totalScore}</span>
-                                                <span className="text-xs text-yellow-600 font-bold">枚</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* 榮譽寶石 (Gems/High Scores) */}
-                                    <div className="bg-white/90 backdrop-blur px-5 py-2.5 rounded-xl shadow-sm border border-indigo-100 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100">
-                                            <div className="text-lg">💎</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">榮譽寶石</div>
-                                            <div className="text-xl font-black text-gray-800 leading-none">{gemCount}<span className="text-gray-400 text-sm font-medium">/5</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
+                        {/* [NEW] Task Grid View */}
+                        <LessonTaskGrid
+                            nodes={lesson.nodes || []}
+                            onNodeSelect={(nodeId) => setSelectedNodeId(nodeId)}
+                            completedNodeIds={studentProgress.nodeProgress.filter(n => n.completed).map(n => n.nodeId)}
+                        />
                     </div>
                 )}
 
-                {/* 闖關式學習路徑 */}
-                <div className={`
-                    rounded-2xl shadow-lg mb-6 overflow-hidden
-                    ${lessonId === 'lesson-apos-001' ? 'bg-[#e0f7fa]' : 'bg-white p-6'}
-                `}>
-                    {lessonId !== 'lesson-apos-001' && <h2 className="text-xl font-bold text-gray-900 mb-6">學習路徑</h2>}
+                {/* [Standard Mode Content] */}
+                {lessonId !== 'lesson-apos-001' && (
+                    <>
+                        {/* 傳統 Step Progress */}
+                        {/* 闖關式學習路徑 */}
+                        <div className={`
+                            rounded-2xl shadow-lg mb-6 overflow-hidden
+                            ${lessonId === 'lesson-apos-001' ? 'bg-[#e0f7fa]' : 'bg-white p-6'}
+                        `}>
+                            {lessonId !== 'lesson-apos-001' && <h2 className="text-xl font-bold text-gray-900 mb-6">學習路徑</h2>}
 
-                    {lessonId === 'lesson-apos-001' ? (
-                        <div className="py-10">
-                            <AdventureMap
-                                nodes={visibleNodes}
-                                progressMap={
-                                    visibleNodes.reduce((acc, node) => ({
-                                        ...acc,
-                                        [node.id]: getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'locked' ? 'upcoming' : getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId)
-                                    }), {})
-                                }
-                                onNodeSelect={(id) => setSelectedNodeId(id)}
+                            {/* Adventure Map (Deprecated/Hidden for this Lesson) */}
+                            {/* {lessonId === 'lesson-apos-001' ? (
+                                <div className="py-10">
+                                    <AdventureMap
+                                        nodes={visibleNodes.map(n => ({ ...n, title: getCleanTitle(n.title) }))}
+                                        progressMap={
+                                            visibleNodes.reduce((acc, node) => ({
+                                                ...acc,
+                                                [node.id]: getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'locked' ? 'upcoming' : getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId)
+                                            }), {})
+                                        }
+                                        onNodeSelect={(id) => setSelectedNodeId(id)}
+                                    />
+                                </div>
+                            ) : ( */}
+                            <StepProgress
+                                steps={steps}
+                                onStepClick={(step) => setSelectedNodeId(step.id)}
                             />
-                        </div>
-                    ) : (
-                        <StepProgress
-                            steps={steps}
-                            onStepClick={(step) => setSelectedNodeId(step.id)}
-                        />
-                    )}
-                </div>
+                            {/* Node Detail Modal */}
+                            {selectedNodeId && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedNodeId(null)} />
 
-                {/* 節點詳細資訊（當選中時顯示）*/}
-                {selectedNode && (
-                    <div className="bg-white rounded-2xl shadow-lg p-6 animate-fadeIn">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                                    {selectedNode.title}
-                                    {selectedNode.isConditional && (
-                                        <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full font-medium">
-                                            檢查點
-                                        </span>
-                                    )}
-                                </h2>
-                            </div>
-                            <button
-                                onClick={() => setSelectedNodeId(null)}
-                                className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
-                            >
-                                ×
-                            </button>
-                        </div>
+                                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden relative animate-slide-up z-10 mx-auto">
+                                        {(() => {
+                                            const node = lesson.nodes?.find(n => n.id === selectedNodeId);
+                                            if (!node) return null;
+                                            // const isLocked = !studentProgress.nodeProgress.find(p => p.nodeId === node.id)?.unlocked; // REMOVED LOCK
+                                            const isCompleted = studentProgress.nodeProgress.find(p => p.nodeId === node.id)?.completed;
 
-                        {/* 學習內容 */}
-                        {selectedNode.generatedContent && (
-                            <div className="space-y-3 mb-6">
-                                {selectedNode.generatedContent.materials && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <BookOpen className="w-5 h-5 text-indigo-600" />
-                                        <span className="font-medium">教材：</span>
-                                        <span>{selectedNode.generatedContent.materials.join(', ')}</span>
-                                    </div>
-                                )}
-                                {selectedNode.generatedContent.exercises && (
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <Award className="w-5 h-5 text-yellow-600" />
-                                        <span className="font-medium">練習題：</span>
-                                        <span>{selectedNode.generatedContent.exercises} 題</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                            return (
+                                                <>
+                                                    {/* Modal Header */}
+                                                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-8 -mt-8" />
+                                                        <button
+                                                            onClick={() => setSelectedNodeId(null)}
+                                                            className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+                                                        >
+                                                            <X className="w-5 h-5" />
+                                                        </button>
 
-                        {/* 進度資訊 */}
-                        {selectedProgress && (
-                            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
-                                {selectedProgress.score !== undefined && (
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-indigo-600">{selectedProgress.score}</div>
-                                        <div className="text-sm text-gray-600">得分</div>
-                                    </div>
-                                )}
-                                {selectedProgress.timeSpent && (
-                                    <div className="text-center">
-                                        <div className="flex items-center justify-center gap-1 text-lg font-bold text-gray-900">
-                                            <Clock className="w-5 h-5" />
-                                            {formatDuration(selectedProgress.timeSpent)}
-                                        </div>
-                                        <div className="text-sm text-gray-600">學習時間</div>
-                                    </div>
-                                )}
-                                {selectedProgress.retryCount !== undefined && (
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-purple-600">{selectedProgress.retryCount}</div>
-                                        <div className="text-sm text-gray-600">重試次數</div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                        <div className="flex items-start gap-4 relative z-10">
+                                                            <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl border border-white/20 shadow-inner">
+                                                                {node.nodeType === 'video' && <Play className="w-8 h-8 text-white" />}
+                                                                {node.nodeType === 'worksheet' && <BookOpen className="w-8 h-8 text-white" />}
+                                                                {(!node.nodeType || (node.nodeType !== 'video' && node.nodeType !== 'worksheet')) && <Award className="w-8 h-8 text-white" />}
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1 opacity-90">
+                                                                    <span className="text-sm font-bold bg-white/20 px-2 py-0.5 rounded text-white border border-white/20">Task {node.order}</span>
+                                                                    <span className="text-sm font-medium tracking-wide uppercas flex items-center gap-1">
+                                                                        {node.nodeType === 'video' ? 'Video Concept' : node.nodeType === 'worksheet' ? 'Exercise' : 'Interactive'}
+                                                                        {isCompleted && <CheckCircle className="w-4 h-4 text-green-300" />}
+                                                                    </span>
+                                                                </div>
+                                                                <h2 className="text-3xl font-bold leading-tight">{getCleanTitle(node.title)}</h2>
+                                                                {node.generatedContent?.materials && (
+                                                                    <p className="mt-2 text-indigo-100 text-sm line-clamp-1">{node.generatedContent.materials[0]}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                        {/* 行動按鈕 */}
-                        <div className="mt-6 flex gap-3">
-                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'current' && (
-                                <button className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-md">
-                                    繼續學習
-                                </button>
-                            )}
-                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'completed' && (
-                                <button className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                                    複習
-                                </button>
-                            )}
-                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'locked' && (
-                                <div className="flex-1 px-6 py-3 bg-gray-100 text-gray-500 rounded-lg font-medium text-center">
-                                    🔒 完成前面的關卡以解鎖
+                                                    {/* Modal Content */}
+                                                    <div className="p-8">
+                                                        {/* Materials Section */}
+                                                        {node.generatedContent?.materials && (
+                                                            <div className="mb-8">
+                                                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Learning Materials</h3>
+                                                                <ul className="space-y-3">
+                                                                    {node.generatedContent.materials.map((m, i) => (
+                                                                        <li key={i} className="flex items-start gap-3 text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 group hover:border-indigo-100 transition-colors">
+                                                                            <div className="mt-0.5 bg-indigo-100 text-indigo-600 p-1 rounded-full group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                                                <BookOpen className="w-4 h-4" />
+                                                                            </div>
+                                                                            <span className="leading-relaxed">{m}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Action Button */}
+                                                        <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
+                                                            <button
+                                                                onClick={() => navigate(`/lesson/${lessonId}/node/${node.id}`)}
+                                                                className={`
+                                                        px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-3 shadow-lg hover:-translate-y-1 transition-all duration-300
+                                                        ${isCompleted
+                                                                        ? 'bg-white text-slate-700 border-2 border-slate-200 hover:border-slate-300'
+                                                                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-200'}
+                                                    `}
+                                                            >
+                                                                {isCompleted ? (
+                                                                    <>
+                                                                        <RotateCw className="w-5 h-5" />
+                                                                        Review Lesson
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Play className="w-5 h-5 fill-current" />
+                                                                        Start Learning
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </>
                 )}
 
                 {/* 補強提示（如果學生正在補強路徑上）*/}
@@ -339,7 +336,7 @@ export default function StudentLearningPathPage() {
                                 </p>
                                 <div className="bg-white rounded-lg p-4 border border-orange-200">
                                     <h4 className="font-medium text-gray-900 mb-2">
-                                        {(lesson.nodes || []).find(n => n.id === studentProgress.currentNodeId)?.title || '補救教學'}
+                                        {getCleanTitle((lesson.nodes || []).find(n => n.id === studentProgress.currentNodeId)?.title || '補救教學')}
                                     </h4>
                                     <p className="text-sm text-gray-600 mb-3">
                                         {(lesson.nodes || []).find(n => n.id === studentProgress.currentNodeId)?.generatedContent?.materials?.join(' • ') || 'AI 個別輔導 • 概念重建'}

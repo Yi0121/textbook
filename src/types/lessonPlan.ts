@@ -103,7 +103,7 @@ export interface APOSStageNode {
  * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
  * 此型別保留用於向後相容，未來版本將移除
  */
-export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external';
+export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external' | 'project';
 
 /**
  * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
@@ -402,45 +402,46 @@ export const findToolById = (id: string) => AVAILABLE_TOOLS.find(t => t.id === i
 
 export const MOCK_GENERATED_LESSON: LessonPlan = {
     id: 'lesson-apos-001',
-    title: '二元一次方程式 - APOS 教學流程',
+    title: '二元一次方程式', // Clean title
+    // subject: 'Math',
     topic: '二元一次方程式',
     objectives: '理解二元一次方程式的意義\n能用代入消去法或加減消去法解聯立方程\n應用於生活情境問題',
     difficulty: 'intermediate',
     status: 'draft',
     createdAt: new Date(),
     nodes: [
-        // ============ Stage 1: Action (行動階段) ============
-        // 透過具體操作理解概念
+        // ============ Stage 1: Action (體現模擬版 - Version C) ============
+        // 適用對象：Low Achievers (建立具體感覺) / High Achievers (建立深層基模)
         {
-            id: 'action-intro',
-            title: '📋 情境導入',
+            id: 'action-embodied',
+            title: '🖐️ Action: 體現模擬', // Version C: Embodied Simulation
             order: 1,
             stage: 'A',
             nodeType: 'video',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['3分鐘動畫：雞兔同籠問題'],
-                interactions: ['實際情境引導'],
+                materials: ['數位演示：一隻真實的手伸入畫面', '抓取 (-5) 整塊搬移至最前方'],
+                interactions: ['觀察「手」的動作：抓取 -> 搬運 -> 放下', '觸發鏡像神經元'],
             },
         },
         {
-            id: 'action-explore',
-            title: '🔢 Action：具體操作',
+            id: 'action-practice',
+            title: '🖐️ Action: 實作模仿',
             order: 2,
             stage: 'A',
             nodeType: 'external',
             agent: findAgentById('technical-support'),
-            selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[4]],
+            selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
-                materials: ['GeoGebra 互動元件：變數滑桿', '代入不同數值觀察結果'],
+                materials: ['及時回饋：模仿手的動作', '解決 Cognitive Load 問題'],
                 exercises: 3,
-                interactions: ['拖曳滑桿調整 x, y 值', '觀察等式成立條件'],
+                interactions: ['用滑鼠模擬「抓取」動作', '拖曳 (-5) 到正確位置'],
             },
         },
         {
             id: 'action-check',
-            title: '🧪 Action 檢測',
+            title: '🧪 Action: 體感檢測',
             order: 3,
             stage: 'A',
             nodeType: 'worksheet',
@@ -448,19 +449,19 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 5,
-                materials: ['代入數值驗證題'],
+                materials: ['基礎題：2a - 3a', '(4x - 1) x (-5)'],
             },
             isConditional: true,
             conditions: {
-                learnedPath: 'process-explain',
+                learnedPath: 'process-anim',
                 notLearnedPath: 'action-remedial',
-                assessmentCriteria: '正確率 ≥ 70%',
+                assessmentCriteria: '正確率 ≥ 80%',
                 branchType: 'remedial',
             },
         },
         {
             id: 'action-remedial',
-            title: '🔄 Action 補強',
+            title: '🔄 Action: 慢動作重播',
             order: 4,
             stage: 'A',
             nodeType: 'material',
@@ -468,64 +469,63 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             agent: findAgentById('conjecture'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
-                materials: ['AI 一對一重新引導', '更多具體例子'],
-                interactions: ['蘇格拉底提問'],
+                materials: ['慢速播放抓取 (-5) 的過程', '強調連同負號一起抓'],
             },
             nextNodeId: 'action-check',
         },
 
-        // ============ Stage 2: Process (過程階段) ============
-        // 將步驟內化為心智過程
+        // ============ Stage 2: Process (圖像動畫版 - Version B) ============
+        // 適用對象：Visual Learners (看見時間連續性)
         {
-            id: 'process-explain',
-            title: '⚙️ Process：代入消去法',
+            id: 'process-anim',
+            title: '🎬 Process: 動畫演示', // Version B: Graphic Animation
             order: 5,
             stage: 'P',
             nodeType: 'video',
             agent: findAgentById('apos-construction'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
-                materials: ['代入消去法動畫 5分鐘', '步驟分解說明'],
-                interactions: ['AI 引導學生說出步驟'],
+                materials: ['自動飄移：可以看到 (-5) 圖塊自動移到前方', '解決靜態圖無法呈現「連續性」問題'],
+                interactions: ['預測圖塊飄移路徑'],
             },
         },
         {
-            id: 'process-practice',
-            title: '✏️ Process：解題練習',
+            id: 'process-flow',
+            title: '🌊 Process: 步驟拆解', // Worked Example
             order: 6,
             stage: 'P',
-            nodeType: 'worksheet',
+            nodeType: 'external',
             agent: findAgentById('multi-solution'),
-            selectedTools: [AVAILABLE_TOOLS[3], AVAILABLE_TOOLS[8]],
+            selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
-                exercises: 8,
-                materials: ['代入法練習 4題', '加減消去法練習 4題'],
-                interactions: ['即時解題回饋', '多重解法展示'],
+                materials: ['工作範例：先「搬移」再「乘開」', '避免跳步'],
+                exercises: 5,
+                interactions: ['排列正確的運算步驟卡'],
             },
         },
         {
             id: 'process-check',
-            title: '🧪 Process 檢測',
+            title: '🧪 Process: 流程檢測',
             order: 7,
             stage: 'P',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
-                exercises: 6,
-                materials: ['過程步驟評估'],
+                exercises: 5,
+                materials: ['判斷運算順序是否正確'],
             },
             isConditional: true,
             conditions: {
-                learnedPath: 'object-abstract',
+                learnedPath: 'object-static',
                 notLearnedPath: 'process-remedial',
-                assessmentCriteria: '正確率 ≥ 75% 且能說明步驟',
+                assessmentCriteria: '正確率 ≥ 80%',
                 branchType: 'remedial',
             },
         },
         {
             id: 'process-remedial',
-            title: '🔄 Process 補強',
+            title: '🔄 Process: 動畫重播',
             order: 8,
             stage: 'P',
             nodeType: 'material',
@@ -533,64 +533,64 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             agent: findAgentById('reasoning'),
             selectedTools: [AVAILABLE_TOOLS[7]],
             generatedContent: {
-                materials: ['逐步推論引導', '錯誤類型分析'],
-                interactions: ['邏輯步驟驗證', 'AI 個別指導'],
+                materials: ['強調交換律與分配律的動畫銜接'],
             },
             nextNodeId: 'process-check',
         },
 
-        // ============ Stage 3: Object (物件階段) ============
-        // 將過程視為可操作的整體物件
+        // ============ Stage 3: Object (靜態圖示版 - Version A) ============
+        // 適用對象：Review / Abstract Thinkers
         {
-            id: 'object-abstract',
-            title: '📦 Object：方程式作為物件',
+            id: 'object-static',
+            title: '🏹 Object: 靜態結構', // Version A: Static Diagram
             order: 9,
             stage: 'O',
-            nodeType: 'video',
+            nodeType: 'worksheet',
             agent: findAgentById('apos-construction'),
-            selectedTools: [AVAILABLE_TOOLS[6]],
+            selectedTools: [AVAILABLE_TOOLS[3]],
             generatedContent: {
-                materials: ['將方程式視為「可操作的對象」', '變換、組合、比較'],
-                interactions: ['概念抽象化引導'],
+                materials: ['靜態箭頭：(-5) 指向 4x 前方', '文字註解：交換律'],
+                exercises: 8,
+                interactions: ['閱讀靜態講義', '將結構內化為物件'],
             },
         },
         {
-            id: 'object-transform',
-            title: '🔧 Object：方程式變換',
+            id: 'object-pattern',
+            title: '🔍 Object: 結構指認',
             order: 10,
             stage: 'O',
             nodeType: 'external',
-            agent: findAgentById('technical-support'),
-            selectedTools: [AVAILABLE_TOOLS[1], AVAILABLE_TOOLS[5]],
+            agent: findAgentById('multi-solution'),
+            selectedTools: [AVAILABLE_TOOLS[5]],
             generatedContent: {
-                materials: ['GeoGebra 代數視窗', 'Wolfram 驗算'],
+                materials: ['識別同類項', '指認運算結構 (ax+b)'],
                 exercises: 5,
-                interactions: ['方程式等價變換', '組合多個方程式'],
+                interactions: ['快速分類不同結構的試題'],
             },
         },
         {
             id: 'object-check',
-            title: '🧪 Object 檢測',
+            title: '🧪 Object: 概念檢測',
             order: 11,
             stage: 'O',
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
-                exercises: 5,
-                materials: ['判斷等價方程組', '選擇最佳解法'],
+                exercises: 6,
+                materials: ['去除所有視覺輔助，純符號運算'],
             },
             isConditional: true,
             conditions: {
-                learnedPath: 'schema-integrate',
+                learnedPath: 'schema-transfer',
                 notLearnedPath: 'object-remedial',
-                assessmentCriteria: '正確率 ≥ 80%',
+                assessmentCriteria: '正確率 ≥ 85%',
                 branchType: 'remedial',
             },
         },
         {
             id: 'object-remedial',
-            title: '🔄 Object 補強',
+            title: '🔄 Object: 回溯輔助',
             order: 12,
             stage: 'O',
             nodeType: 'material',
@@ -598,87 +598,41 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             agent: findAgentById('conjecture'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
-                materials: ['物件觀點重建', '比較不同方程式的關係'],
+                materials: ['對照靜態圖與運算式', '找出思考盲點'],
             },
             nextNodeId: 'object-check',
         },
 
-        // ============ Stage 4: Schema (基模階段) ============
-        // 整合為概念網絡結構
+        // ============ Stage 4: Schema (基模遷移 - Far Transfer) ============
         {
-            id: 'schema-integrate',
-            title: '🧠 Schema：概念整合',
+            id: 'schema-transfer',
+            title: '🧠 Schema: 遠遷移', // Far Transfer
             order: 13,
             stage: 'S',
-            nodeType: 'material',
-            agent: findAgentById('apos-construction'),
-            selectedTools: [AVAILABLE_TOOLS[6]],
+            nodeType: 'project',
+            agent: findAgentById('synthesis'),
+            selectedTools: [AVAILABLE_TOOLS[0]],
             generatedContent: {
-                materials: ['心智圖：聯立方程式知識結構', '連結一元一次方程式'],
-                interactions: ['概念網絡建構'],
+                materials: ['遠遷移題：(c-1)x(-5) - (c-3)x(-4)', '調用「抓取搬移」基模解題'],
+                exercises: 3,
+                interactions: ['挑戰未知結構', '應用深度基模'],
             },
         },
         {
-            id: 'schema-apply',
-            title: '🌍 Schema：生活應用',
+            id: 'schema-mastery',
+            title: '🏆 Schema: 卓越精通',
             order: 14,
             stage: 'S',
-            nodeType: 'worksheet',
-            agent: findAgentById('creativity'),
-            selectedTools: [AVAILABLE_TOOLS[3]],
-            generatedContent: {
-                exercises: 5,
-                materials: ['雞兔同籠問題', '購物找零問題', '速度距離時間問題'],
-                interactions: ['情境建模', '多元解法探索'],
-            },
-        },
-        {
-            id: 'schema-final',
-            title: '📝 總評量',
-            order: 15,
-            stage: 'S',
-            nodeType: 'worksheet',
-            agent: findAgentById('grader'),
-            selectedTools: [AVAILABLE_TOOLS[8]],
-            generatedContent: {
-                exercises: 15,
-                materials: ['綜合能力測驗'],
-            },
-            isConditional: true,
-            conditions: {
-                learnedPath: 'complete',
-                notLearnedPath: 'schema-remedial',
-                assessmentCriteria: '總分 ≥ 80 分',
-                branchType: 'remedial',
-            },
-        },
-        {
-            id: 'schema-remedial',
-            title: '🔄 弱點加強',
-            order: 16,
-            stage: 'S',
-            nodeType: 'material',
-            branchLevel: 'remedial',
+            nodeType: 'external',
             agent: findAgentById('realtime-advisor'),
-            selectedTools: [AVAILABLE_TOOLS[6]],
-            generatedContent: {
-                materials: ['根據錯題分析個別弱點', 'AI 推薦複習路徑'],
-            },
-            nextNodeId: 'schema-final',
-        },
-        {
-            id: 'complete',
-            title: '✓ 學習完成',
-            order: 17,
-            stage: 'S',
-            nodeType: 'material',
-            agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['學習成果總結', 'APOS 歷程回顧', '能力Badge獲得'],
+                materials: ['超越代數：將搬移法則應用於幾何或物理公式', '全能數學家'],
+                interactions: ['創造自己的運算規則'],
             },
         },
     ],
+
 };
 
 // ==================== 差異化教學範例 ====================

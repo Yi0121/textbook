@@ -8,132 +8,162 @@ interface AdventureMapProps {
     onNodeSelect: (nodeId: string) => void;
 }
 
-// 使用 seeded random 來生成確定性的隨機數
-const seededRandom = (seed: number) => {
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-};
 
-// 預定義的地圖路徑座標 (Snake pattern for horizontal scrolling)
-const generatePathPoints = (count: number) => {
-    const points = [];
-    for (let i = 0; i < count; i++) {
-        // Horizontal Zig-Zag Logic
-        // Progress X steadily
-        const x = 10 + i * 20; // 10%, 30%, 50%... but we might need pixels or scaled % if container is wide
-
-        // Oscillate Y up and down
-        let y = 50;
-        if (i % 2 === 0) {
-            y = 30; // Up
-        } else {
-            y = 70; // Down
-        }
-
-        // Add some organic randomness (使用 seeded random 確保確定性)
-        const randomOffsetX = (seededRandom(i * 2 + 1) - 0.5) * 5;
-        const randomOffsetY = (seededRandom(i * 2 + 2) - 0.5) * 10;
-
-        points.push({
-            x: x + randomOffsetX,
-            y: y + randomOffsetY
-        });
-    }
-    return points;
-};
 
 export default function AdventureMap({ nodes, progressMap, onNodeSelect }: AdventureMapProps) {
-    // 使用 useMemo 計算路徑點，避免在 effect 中設置 state
-    const pathPoints = useMemo(() => generatePathPoints(nodes.length), [nodes.length]);
+    // [Refactor] Group nodes by Stage for Island Layout
+    const pathPoints = useMemo(() => {
+        const points: { x: number; y: number }[] = [];
+        const stageGroups: Record<string, number> = { A: 0, P: 0, O: 0, S: 0 };
 
-    // 生成 SVG Path D 字串 (Cubic Bezier)
+        // Count nodes per stage to center them within islands
+        nodes.forEach(n => {
+            const s = n.stage || 'A';
+            stageGroups[s] = (stageGroups[s] || 0) + 1;
+        });
+
+        // 定義島嶼座標 (Base Coordinate for each Island)
+        const stageConfig = {
+            'A': { baseX: 150, baseY: 60, width: 250 }, // Action: 探索島 (Low)
+            'P': { baseX: 550, baseY: 30, width: 250 }, // Process: 試煉島 (High)
+            'O': { baseX: 950, baseY: 50, width: 250 }, // Object: 寶藏島 (Mid)
+            'S': { baseX: 1350, baseY: 40, width: 250 }, // Schema: 天空城 (High)
+        };
+
+        const currentStageCounts: Record<string, number> = { A: 0, P: 0, O: 0, S: 0 };
+
+        nodes.forEach((node) => {
+            const stage = (node.stage || 'A') as keyof typeof stageConfig;
+            const config = stageConfig[stage] || stageConfig['A'];
+            const indexInStage = currentStageCounts[stage]++;
+            const totalInStage = stageGroups[stage];
+
+            // Calculate local position within the island (Zig-zag or Arc)
+            const xOffset = (config.width / (totalInStage + 1)) * (indexInStage + 1) - (config.width / 2);
+
+            // Add some "organic" random-looking vertical variation
+            const yOffset = Math.sin(indexInStage * 1.5) * 20;
+
+            points.push({
+                x: config.baseX + xOffset,
+                y: config.baseY + yOffset
+            });
+        });
+
+        return points;
+    }, [nodes]);
+
+    // Generate SVG path for connecting lines
+    // We want to draw continuous lines within islands, but "bridges" between them
     const generateSvgPath = () => {
-        if (pathPoints.length < 2) return '';
+        if (pathPoints.length === 0) return '';
 
-        // Scale coordinates to SVG viewbox
-        // In this horizontal layout, 'x' in pathPoints corresponds to relative progress
-        // We will map 0..100 logic to the actual wide viewbox
-
-        const getSvgX = (pt: { x: number }) => pt.x; // Already generated as progressive X
-        const getSvgY = (pt: { y: number }) => pt.y;
-
-        let d = `M ${getSvgX(pathPoints[0])} ${getSvgY(pathPoints[0])}`;
+        let d = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
 
         for (let i = 0; i < pathPoints.length - 1; i++) {
-            const current = pathPoints[i];
+            const curr = pathPoints[i];
             const next = pathPoints[i + 1];
+            const currNode = nodes[i];
+            const nextNode = nodes[i + 1];
 
-            // Horizontal curve control points
-            const cp1x = current.x + (next.x - current.x) / 2;
-            const cp1y = current.y;
-            const cp2x = next.x - (next.x - current.x) / 2;
-            const cp2y = next.y;
-
-            d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+            // If jumping stages, draw a curved "Bridge"
+            if (currNode.stage !== nextNode.stage) {
+                const midX = (curr.x + next.x) / 2;
+                const midY = (curr.y + next.y) / 2 - 50; // Arch up for the bridge
+                d += ` Q ${midX} ${midY}, ${next.x} ${next.y}`;
+            } else {
+                // Within island: Organic curve
+                const midX = (curr.x + next.x) / 2;
+                const midY = (curr.y + next.y) / 2;
+                d += ` Q ${curr.x + 20} ${curr.y}, ${midX} ${midY} T ${next.x} ${next.y}`;
+            }
         }
-
         return d;
     };
 
     // Dynamic Width based on node count to ensure they aren't cramped
-    // Each node takes about 250px width in the scrolling container
-    const containerWidth = Math.max(100, nodes.length * 20 + 20); // Virtual width units for SVG
-    const realContainerWidth = Math.max(800, nodes.length * 250); // Pixel width for CSS
+    // Each node takes about 320px width for the island aesthetic
+    const containerWidth = 1500; // Fixed virtual width for the islands map
+    const realContainerWidth = 1500; // Pixel width
 
     return (
-        <div className="w-full overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
+        <div className="w-full overflow-x-auto pb-12 pt-4 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
             <div
-                className="relative h-[500px] bg-[#e0f7fa] rounded-3xl shadow-inner mx-auto"
+                className="relative h-[600px] bg-[#dbeafe] rounded-[40px] shadow-2xl mx-auto overflow-hidden border-4 border-white"
                 style={{ width: `${realContainerWidth}px`, minWidth: '100%' }}
             >
-                {/* Ambient Background Elements */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none overflow-hidden rounded-3xl">
-                    <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-blue-300 rounded-full blur-[100px]" />
-                    <div className="absolute bottom-[20%] left-[40%] w-96 h-96 bg-purple-300 rounded-full blur-[100px]" />
-                    <div className="absolute top-[30%] right-[10%] w-80 h-80 bg-green-200 rounded-full blur-[100px]" />
+                {/* === Sky Background Layer === */}
+                <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-sky-200 to-indigo-100">
+                    {/* Clouds */}
+                    <div className="absolute top-20 left-20 text-white/40 text-9xl blur-sm animate-[pulse_8s_ease-in-out_infinite]">☁️</div>
+                    <div className="absolute top-40 left-1/2 text-white/30 text-[10rem] blur-md animate-[pulse_10s_ease-in-out_infinite_1s]">☁️</div>
+                    <div className="absolute bottom-32 right-40 text-white/50 text-8xl blur-xs animate-[pulse_12s_ease-in-out_infinite_2s]">☁️</div>
+
+                    {/* Floating Particles */}
+                    {Array.from({ length: 20 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute bg-white/40 rounded-full blur-[1px]"
+                            style={{
+                                width: Math.random() * 10 + 5 + 'px',
+                                height: Math.random() * 10 + 5 + 'px',
+                                left: Math.random() * 100 + '%',
+                                top: Math.random() * 100 + '%',
+                                animation: `float ${Math.random() * 5 + 5}s infinite ease-in-out ${Math.random() * 2}s`
+                            }}
+                        />
+                    ))}
                 </div>
 
-                {/* Cloud Decoration (Animated horizontally?) */}
-                <div className="absolute top-10 left-10 text-white/40 animate-pulse text-6xl">☁️</div>
-                <div className="absolute bottom-20 left-1/3 text-white/30 animate-pulse delay-1000 text-8xl">☁️</div>
-                <div className="absolute top-16 right-20 text-white/40 animate-pulse delay-700 text-6xl">☁️</div>
-
-                {/* SVG Path Layer */}
+                {/* === SVG Path Layer === */}
                 <svg
-                    className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
                     viewBox={`0 0 ${containerWidth} 100`}
                     preserveAspectRatio="none"
                 >
-                    {/* Background Path (Gray) */}
-                    <path
-                        d={generateSvgPath()}
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray="1 1" // Dotted line for academic feel
-                        className="opacity-60"
-                    />
+                    <defs>
+                        <linearGradient id="gradientPathH" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="rgba(255,255,255,0.2)" />
+                            <stop offset="20%" stopColor="#fff" />
+                            <stop offset="80%" stopColor="#fff" />
+                            <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
+                        </linearGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
 
-                    {/* Active Path (Gradient) */}
+                    {/* Connecting Energy Beam */}
                     <path
                         d={generateSvgPath()}
                         fill="none"
                         stroke="url(#gradientPathH)"
-                        strokeWidth="3"
+                        strokeWidth="1.5"
                         strokeLinecap="round"
+                        strokeDasharray="4 4"
+                        filter="url(#glow)"
+                        className="opacity-60"
                     />
-                    <defs>
-                        <linearGradient id="gradientPathH" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#4fd1c5" />
-                            <stop offset="50%" stopColor="#818cf8" />
-                            <stop offset="100%" stopColor="#c084fc" />
-                        </linearGradient>
-                    </defs>
+
+                    {/* Solid core line */}
+                    <path
+                        d={generateSvgPath()}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="0.5"
+                        className="opacity-40"
+                    />
                 </svg>
 
-                {/* Nodes Layer */}
-                <div className="relative w-full h-full">
+                {/* === Island Labels === */}
+                <div className="absolute top-10 left-[150px] text-emerald-600/50 font-black text-4xl tracking-widest pointer-events-none select-none">ACTION</div>
+                <div className="absolute bottom-10 left-[550px] text-amber-600/50 font-black text-4xl tracking-widest pointer-events-none select-none">PROCESS</div>
+                <div className="absolute top-10 left-[900px] text-indigo-600/50 font-black text-4xl tracking-widest pointer-events-none select-none">OBJECT</div>
+                <div className="absolute bottom-10 left-[1250px] text-purple-600/50 font-black text-4xl tracking-widest pointer-events-none select-none">SCHEMA</div>
+
+                {/* === Nodes Layer === */}
+                <div className="relative w-full h-full z-10">
                     {nodes.map((node, index) => (
                         pathPoints[index] && (
                             <AdventureNode
@@ -141,23 +171,34 @@ export default function AdventureMap({ nodes, progressMap, onNodeSelect }: Adven
                                 node={node}
                                 status={progressMap[node.id] || 'locked'}
                                 onClick={() => onNodeSelect(node.id)}
-                                // Map internal path units to % of container
                                 x={(pathPoints[index].x / containerWidth) * 100}
                                 y={(pathPoints[index].y / 100) * 100}
+                                delay={0.1 * index}
                             />
                         )
                     ))}
                 </div>
 
-                {/* Start Banner - Positioned at start of path */}
-                <div className="absolute top-1/2 -translate-y-1/2 left-4 bg-white/80 backdrop-blur px-4 py-1.5 rounded-full shadow-sm text-indigo-900 font-bold border border-white/50 text-sm z-20">
-                    🚩 起點
+                {/* === Start Banner === */}
+                <div className="absolute top-[45%] left-6 z-20 animate-bounce">
+                    <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border-2 border-indigo-100 flex items-center gap-2 transform -rotate-6 hover:rotate-0 transition-transform cursor-default">
+                        <span className="text-2xl">🚩</span>
+                        <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Start</div>
+                            <div className="text-sm font-black text-indigo-900 leading-none">冒險起點</div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            {/* CSS Animation for particles */}
+            <style>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-20px); }
+                }
+            `}</style>
         </div>
     );
 }
 
-// Override logic for AdventureNode positioning in the loop above to match standard CSS top/left
-// We need to pass the exact % or pixel top.
-// Since containerHeight is dynamic, let's pass exact coords.

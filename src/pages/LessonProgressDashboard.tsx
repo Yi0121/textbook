@@ -163,6 +163,8 @@ export default function LessonProgressDashboard() {
     const lesson = MOCK_DIFFERENTIATED_LESSON;
     const students = MOCK_DIFFERENTIATED_STUDENT_PROGRESS;
 
+    if (!lesson) return <div>Loading...</div>;
+
     // 主流程節點 (排除補救分支和平行選項)
     const mainPathNodes = (lesson.nodes || []).filter(n =>
         (!n.branchLevel || n.branchLevel !== 'remedial') &&
