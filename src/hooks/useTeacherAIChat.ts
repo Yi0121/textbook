@@ -8,12 +8,11 @@
  * 4. 狀態更新 (LearningPath Context Update)
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useTeacherAgents } from '../context/AgentContext';
 import { useLearningPath } from '../context/LearningPathContext';
 import { analyzeStudentAndGeneratePath } from '../services/ai/learningPathService';
-import { searchCurriculumByKeyword, type CurriculumUnit } from '../data/curriculum108Math';
-import { PEDAGOGY_METHODS, type PedagogyMethod } from '../data/pedagogyMethods';
+import type { PedagogyMethod } from '../data/pedagogyMethods';
 import type { StudentLearningRecord } from '../types';
 
 // ==================== Types ====================
@@ -31,19 +30,7 @@ export interface ChatMessage {
     };
     // 特殊訊息類型
     options?: { id: string; label: string }[];
-    curriculumMatches?: CurriculumUnit[];
     pedagogyMethods?: PedagogyMethod[];
-}
-
-// 備課對話狀態
-type LessonPrepStep = 'idle' | 'topic' | 'curriculum' | 'sessions' | 'objectives' | 'pedagogy' | 'confirm';
-
-interface LessonPrepData {
-    topic: string;
-    curriculumUnit?: CurriculumUnit;
-    sessions: number;
-    objectives: string[];
-    pedagogy?: PedagogyMethod;
 }
 
 // 預設學生即時記錄（模擬）
@@ -70,14 +57,6 @@ export function useTeacherAIChat() {
     const { state: lpState, dispatch: lpDispatch } = useLearningPath();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-
-    // 備課對話狀態
-    const [lessonPrepStep, setLessonPrepStep] = useState<LessonPrepStep>('idle');
-    const lessonPrepDataRef = useRef<LessonPrepData>({
-        topic: '',
-        sessions: 2,
-        objectives: [],
-    });
 
     const genId = () => `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -136,142 +115,15 @@ export function useTeacherAIChat() {
 
         // 備課
         if (lowerPrompt.includes('備課') || lowerPrompt.includes('準備課程') ||
-            lowerPrompt.includes('設計課程') || lowerPrompt.includes('規劃教學')) {
+            lowerPrompt.includes('設計課程') || lowerPrompt.includes('規劃教學') || lowerPrompt.includes('產生代數的教材')) {
             return { category: 'lesson-prep', params: {} };
         }
 
         return { category: 'chat', params: {} };
     };
 
-    // ==================== 備課對話流程 ====================
-
-    // 開始備課對話
-    const startLessonPrepFlow = useCallback(() => {
-        lessonPrepDataRef.current = { topic: '', sessions: 2, objectives: [] };
-        setLessonPrepStep('topic');
-        addAssistantMessage(
-            '📚 好的，我來幫你備課！\n\n請告訴我你想要教什麼主題？\n\n例如：「二元一次方程式」、「分數加減法」、「四則運算」'
-        );
-    }, [addAssistantMessage]);
-
-    // 處理備課對話中的用戶輸入
-    const handleLessonPrepInput = useCallback((input: string) => {
-        const data = lessonPrepDataRef.current;
-
-        switch (lessonPrepStep) {
-            case 'topic': {
-                data.topic = input;
-                const matches = searchCurriculumByKeyword(input);
-
-                if (matches.length > 0) {
-                    setLessonPrepStep('curriculum');
-                    addAssistantMessage(
-                        `很好！「${input}」在 108 課綱中找到以下相關單元：`,
-                        { type: 'curriculum', data: matches.slice(0, 5) },
-                        { curriculumMatches: matches.slice(0, 5) }
-                    );
-                } else {
-                    setLessonPrepStep('sessions');
-                    addAssistantMessage(
-                        `好的，主題設定為「${input}」。\n\n請問你預計用幾堂課來教這個主題？`,
-                        { type: 'options' },
-                        {
-                            options: [
-                                { id: '1', label: '1 堂課' },
-                                { id: '2', label: '2 堂課' },
-                                { id: '3', label: '3 堂課' },
-                                { id: '4', label: '4 堂課' },
-                            ]
-                        }
-                    );
-                }
-                break;
-            }
-
-            case 'curriculum': {
-                // 用戶選擇了課綱或跳過
-                if (input === '跳過' || input === '略過') {
-                    // 跳過
-                } else {
-                    const matches = searchCurriculumByKeyword(data.topic);
-                    const selected = matches.find(m =>
-                        input.includes(m.code) || input.includes(m.title)
-                    );
-                    if (selected) {
-                        data.curriculumUnit = selected;
-                    }
-                }
-
-                setLessonPrepStep('sessions');
-                addAssistantMessage(
-                    '請問你預計用幾堂課來教這個主題？',
-                    { type: 'options' },
-                    {
-                        options: [
-                            { id: '1', label: '1 堂課' },
-                            { id: '2', label: '2 堂課' },
-                            { id: '3', label: '3 堂課' },
-                            { id: '4', label: '4 堂課' },
-                        ]
-                    }
-                );
-                break;
-            }
-
-            case 'sessions': {
-                const num = parseInt(input.replace(/[堂課 ]/g, ''), 10);
-                data.sessions = isNaN(num) ? 2 : num;
-
-                setLessonPrepStep('objectives');
-                addAssistantMessage(
-                    `✅ 已設定 ${data.sessions} 堂課\n\n請簡述教學目標（用逗號分隔多個目標），或輸入「略過」讓 AI 自動生成：`
-                );
-                break;
-            }
-
-            case 'objectives': {
-                if (input !== '略過' && input !== '跳過') {
-                    data.objectives = input.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
-                }
-
-                setLessonPrepStep('pedagogy');
-                addAssistantMessage(
-                    '最後，請選擇你想使用的教學法：',
-                    { type: 'pedagogy' },
-                    { pedagogyMethods: PEDAGOGY_METHODS }
-                );
-                break;
-            }
-
-            case 'pedagogy': {
-                const method = PEDAGOGY_METHODS.find(p =>
-                    input.includes(p.name) || input.includes(p.id)
-                );
-                if (method) {
-                    data.pedagogy = method;
-                } else {
-                    data.pedagogy = PEDAGOGY_METHODS[0]; // 預設四學
-                }
-
-                setLessonPrepStep('confirm');
-                showLessonPrepSummary();
-                break;
-            }
-
-            case 'confirm': {
-                if (input.includes('確認') || input.includes('是') || input.includes('開始')) {
-                    generateLessonPlan();
-                } else {
-                    // 重新開始
-                    startLessonPrepFlow();
-                }
-                break;
-            }
-        }
-    }, [lessonPrepStep, addAssistantMessage, startLessonPrepFlow]);
-
     // 處理選項點擊
-    const handleOptionClick = useCallback((optionId: string, optionLabel: string) => {
+    const handleOptionClick = useCallback((_optionId: string, optionLabel: string) => {
         // 加入用戶選擇的訊息
         setMessages(prev => [...prev, {
             id: genId(),
@@ -279,108 +131,7 @@ export function useTeacherAIChat() {
             content: optionLabel,
             timestamp: Date.now(),
         }]);
-
-        // 根據當前步驟處理
-        if (lessonPrepStep === 'curriculum') {
-            handleCurriculumSelect(optionId);
-        } else if (lessonPrepStep === 'sessions') {
-            handleLessonPrepInput(optionId);
-        } else if (lessonPrepStep === 'pedagogy') {
-            handlePedagogySelect(optionId);
-        } else if (lessonPrepStep === 'confirm') {
-            if (optionId === 'confirm-yes') {
-                generateLessonPlan();
-            } else {
-                startLessonPrepFlow();
-            }
-        }
-    }, [lessonPrepStep, handleLessonPrepInput, startLessonPrepFlow]);
-
-    // 處理課綱選擇
-    const handleCurriculumSelect = useCallback((code: string) => {
-        const data = lessonPrepDataRef.current;
-        if (code === 'skip') {
-            // 跳過
-        } else {
-            const matches = searchCurriculumByKeyword(data.topic);
-            const selected = matches.find(m => m.code === code);
-            if (selected) {
-                data.curriculumUnit = selected;
-                addAssistantMessage(`✅ 已選擇：${selected.code} ${selected.title}`);
-            }
-        }
-
-        setLessonPrepStep('sessions');
-        setTimeout(() => {
-            addAssistantMessage(
-                '請問你預計用幾堂課來教這個主題？',
-                { type: 'options' },
-                {
-                    options: [
-                        { id: '1', label: '1 堂課' },
-                        { id: '2', label: '2 堂課' },
-                        { id: '3', label: '3 堂課' },
-                        { id: '4', label: '4 堂課' },
-                    ]
-                }
-            );
-        }, 300);
-    }, [addAssistantMessage]);
-
-    // 處理教學法選擇
-    const handlePedagogySelect = useCallback((id: string) => {
-        const data = lessonPrepDataRef.current;
-        const method = PEDAGOGY_METHODS.find(p => p.id === id);
-        if (method) {
-            data.pedagogy = method;
-            addAssistantMessage(`✅ 已選擇：${method.icon} ${method.name}`);
-        }
-
-        setLessonPrepStep('confirm');
-        setTimeout(() => showLessonPrepSummary(), 300);
-    }, [addAssistantMessage]);
-
-    // 顯示備課摘要
-    const showLessonPrepSummary = useCallback(() => {
-        const data = lessonPrepDataRef.current;
-        const summary = [
-            `📚 **主題**：${data.topic}`,
-            data.curriculumUnit ? `📖 **課綱**：${data.curriculumUnit.code} ${data.curriculumUnit.title}` : '',
-            `⏱️ **堂數**：${data.sessions} 堂課`,
-            data.objectives.length > 0 ? `🎯 **目標**：${data.objectives.join('、')}` : '🎯 **目標**：AI 自動生成',
-            data.pedagogy ? `📐 **教學法**：${data.pedagogy.icon} ${data.pedagogy.name}` : '',
-        ].filter(Boolean).join('\n');
-
-        addAssistantMessage(
-            `太好了！以下是你的備課設定：\n\n${summary}\n\n確認後，將開始生成課程！`,
-            { type: 'options' },
-            {
-                options: [
-                    { id: 'confirm-yes', label: '✅ 確認，開始生成' },
-                    { id: 'confirm-no', label: '🔄 重新設定' },
-                ]
-            }
-        );
-    }, [addAssistantMessage]);
-
-    // 生成課程規劃
-    const generateLessonPlan = useCallback(() => {
-        const data = lessonPrepDataRef.current;
-        setLessonPrepStep('idle');
-
-        addAssistantMessage(
-            '🚀 開始生成課程規劃...\n\n✓ 分析主題與課綱\n✓ 選擇 AI Agents\n⏳ 規劃學習路徑...'
-        );
-
-        // 模擬生成後導航
-        setTimeout(() => {
-            addAssistantMessage(
-                `✅ **課程規劃完成！**\n\n已根據「${data.topic}」主題與「${data.pedagogy?.name || '四學'}」教學法生成課程流程。\n\n👉 點擊下方按鈕進入視覺化編輯器`,
-                { type: 'navigate', target: 'lesson-preview', data }
-            );
-            setIsProcessing(false);
-        }, 2000);
-    }, [addAssistantMessage, setIsProcessing]);
+    }, []);
 
     // ==================== 發送訊息主函數 ====================
 
@@ -395,51 +146,20 @@ export function useTeacherAIChat() {
             timestamp: Date.now(),
         }]);
 
-        // 如果正在備課對話中，使用備課流程處理
-        if (lessonPrepStep !== 'idle') {
-            handleLessonPrepInput(input);
-            return;
-        }
-
         setIsProcessing(true);
-
-        // 5. 特殊指令：一鍵生成 APOS 代數教材
-        if (input.includes('產生代數的教材') && input.includes('APOS')) {
-            // 注意: setIsProcessing(true) 已在 Line 404 設定，不需重複
-
-            // 模擬思考
-            setTimeout(() => {
-                // 設定資料
-                lessonPrepDataRef.current = {
-                    topic: '乘法公式 (代數)',
-                    sessions: 2,
-                    objectives: ['理解乘法公式的幾何意義', '熟練(a+b)²、(a-b)²、(a+b)(a-b)公式', '能應用乘法公式進行運算'],
-                    pedagogy: PEDAGOGY_METHODS.find(p => p.id === 'apos') || PEDAGOGY_METHODS[0],
-                    curriculumUnit: { code: 'A-8-1', title: '乘法公式', description: '二次方乘法公式的幾何意義與運算。' }
-                };
-
-                setLessonPrepStep('confirm');
-
-                addAssistantMessage(
-                    '⚡ 收到快速指令！已為您準備好「代數 - 乘法公式」教材規劃（基於 APOS 教學法）：\n\n📚 主題：乘法公式\n📐 教學法：APOS (Action-Process-Object-Schema)\n⏱️ 堂數：2 堂課\n\n正在為您生成詳細內容...',
-                );
-
-                // 自動觸發生成
-                setTimeout(() => {
-                    generateLessonPlan();
-                }, 1500);
-            }, 500);
-
-            return;
-        }
 
         try {
             const intent = parseIntent(input);
 
             switch (intent.category) {
                 case 'lesson-prep':
-                    startLessonPrepFlow();
-                    setIsProcessing(false);
+                    setTimeout(() => {
+                        addAssistantMessage(
+                            '想要準備新課程嗎？\n\n我們已經為您準備了全新的「對話式備課工作台」，支援多欄位快速輸入、書商版本選擇與自動產生教案功能！\n\n請點擊下方按鈕前往體驗。',
+                            { type: 'navigate', target: 'lesson-prep-chat' }
+                        );
+                        setIsProcessing(false);
+                    }, 500);
                     break;
 
                 case 'learning-path': {
@@ -515,7 +235,7 @@ export function useTeacherAIChat() {
 
                 default:
                     setTimeout(() => {
-                        addAssistantMessage(`收到！關於「${input}」，我可以幫您：\n• 備課規劃\n• 推薦學習路徑\n• 生成練習題\n• 協助分組\n\n請告訴我具體的需求！`);
+                        addAssistantMessage(`收到！關於「${input}」，我可以幫您：\n• 備課規劃 (請使用備課工作台)\n• 推薦學習路徑\n• 生成練習題\n• 協助分組\n\n請告訴我具體的需求！`);
                         setIsProcessing(false);
                     }, 500);
             }
@@ -524,17 +244,13 @@ export function useTeacherAIChat() {
             addAssistantMessage('❌ 抱歉，處理您的請求時發生錯誤，請稍後再試。');
             setIsProcessing(false);
         }
-        // 注意：對於一鍵生成 APOS 指令，setIsProcessing(false) 由 generateLessonPlan 內的 setTimeout 處理
-        // 對於其他指令，在 switch case 內個別處理
-    }, [isProcessing, lessonPrepStep, handleLessonPrepInput, startLessonPrepFlow, addAssistantMessage, teacher, lpState, lpDispatch]);
+    }, [isProcessing, addAssistantMessage, teacher, lpState, lpDispatch]);
 
     return {
         messages,
         setMessages,
         sendMessage,
         isProcessing,
-        // 備課對話相關
-        lessonPrepStep,
         handleOptionClick,
     };
 }

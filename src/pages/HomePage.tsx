@@ -30,18 +30,15 @@ import { type UserRole } from '../config/toolConfig';
 import {
     TextMessage,
     OptionsMessage,
-    CurriculumMatchesMessage,
     PedagogySelectMessage,
     SummaryMessage,
 } from '../components/features/chat/ChatMessages';
 import { useTeacherAIChatContext, useStudentAIChatContext, type ChatMessage } from '../context/AIChatContext';
-import type { CurriculumUnit } from '../data/curriculum108Math';
 import type { PedagogyMethod } from '../data/pedagogyMethods';
 
 // 定義一個包含所有可能欄位的擴展訊息類型
 type ExtendedChatMessage = ChatMessage & {
     options?: { id: string; label: string; icon?: string }[];
-    curriculumMatches?: CurriculumUnit[];
     pedagogyMethods?: PedagogyMethod[];
     type?: string;
 };
@@ -129,9 +126,6 @@ export default function HomePage() {
         }
     }, [isTeacher, messages.length, setMessages]);
 
-    // 移除自動跳轉：改為顯示確認按鈕
-    // (原本的自動跳轉已移除，現在由按鈕觸發)
-
     const handleSend = () => {
         if (!input.trim() || isProcessing) return;
         sendMessage(input);
@@ -191,12 +185,6 @@ export default function HomePage() {
                                                         onSelect={handleOptionClick}
                                                     />
                                                 )
-                                            ) : extendedMsg.curriculumMatches ? (
-                                                <CurriculumMatchesMessage
-                                                    content={msg.content}
-                                                    matches={extendedMsg.curriculumMatches}
-                                                    onSelect={handleOptionClick}
-                                                />
                                             ) : extendedMsg.pedagogyMethods ? (
                                                 <PedagogySelectMessage
                                                     content={msg.content}
@@ -229,6 +217,17 @@ export default function HomePage() {
                                     >
                                         <Edit3 className="w-4 h-4" />
                                         視覺化編輯課程
+                                    </button>
+                                )}
+
+                                {/* 確認按鈕：前往備課工作台 */}
+                                {msg.action?.type === 'navigate' && msg.action.target === 'lesson-prep-chat' && (
+                                    <button
+                                        onClick={() => navigate('/lesson-prep')}
+                                        className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
+                                    >
+                                        <Edit3 className="w-4 h-4" />
+                                        前往備課工作台
                                     </button>
                                 )}
                             </div>
@@ -376,6 +375,6 @@ export default function HomePage() {
                     </p>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
