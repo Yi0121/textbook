@@ -431,7 +431,7 @@ const schemaStage: APOSStageNode = {
 // ===== 完整 APOS 課程 =====
 export const ALGEBRA_APOS_LESSON: LessonPlan = {
     id: 'algebra-operations-apos',
-    title: '代數式基本運算 - APOS 教學設計',
+    title: '代數式基本運算',
     topic: '代數式運算',
     objectives: '理解代數式組成、掌握同類項合併與加減法、應用乘法公式解題',
     difficulty: 'intermediate',

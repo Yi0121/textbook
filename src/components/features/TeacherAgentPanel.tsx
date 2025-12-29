@@ -11,7 +11,6 @@ import {
     CheckCircle,
     Bot,
     User,
-    BookOpen,
 } from 'lucide-react';
 import { useTeacherAgents } from '../../context/AgentContext';
 import { useUI } from '../../context/UIContext';
@@ -107,40 +106,8 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         );
     };
 
-    // 渲染課綱選擇
-    const renderCurriculumMatches = (msg: ChatMessage) => {
-        if (!msg.curriculumMatches || msg.curriculumMatches.length === 0) return null;
+    // Orphaned code block removed
 
-        return (
-            <div className="mt-2 space-y-2">
-                {msg.curriculumMatches.map((unit) => (
-                    <button
-                        key={unit.code}
-                        onClick={() => handleOptionClick(unit.code, `${unit.code} ${unit.title}`)}
-                        className="w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 
-                                   rounded-lg border border-blue-200 transition-colors"
-                    >
-                        <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <div>
-                                <span className="text-xs text-blue-600 font-mono">{unit.code}</span>
-                                <span className="text-sm text-gray-800 ml-2">{unit.title}</span>
-                                {unit.description && (
-                                    <div className="text-xs text-gray-500">{unit.description}</div>
-                                )}
-                            </div>
-                        </div>
-                    </button>
-                ))}
-                <button
-                    onClick={() => handleOptionClick('skip', '跳過')}
-                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                    跳過，使用自訂主題
-                </button>
-            </div>
-        );
-    };
 
     // 渲染教學法選擇
     const renderPedagogyMethods = (msg: ChatMessage) => {
@@ -248,7 +215,8 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
                             {msg.role === 'assistant' && renderOptions(msg)}
 
                             {/* 課綱選擇 */}
-                            {msg.role === 'assistant' && renderCurriculumMatches(msg)}
+                            {/* Curriculum Matches Removed */}
+
 
                             {/* 教學法選擇 */}
                             {msg.role === 'assistant' && renderPedagogyMethods(msg)}

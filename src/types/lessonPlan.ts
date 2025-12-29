@@ -103,7 +103,7 @@ export interface APOSStageNode {
  * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
  * 此型別保留用於向後相容，未來版本將移除
  */
-export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external' | 'project';
+export type NodeType = 'agent' | 'video' | 'material' | 'worksheet' | 'external' | 'project' | 'interactive';
 
 /**
  * @deprecated 請使用新的三層架構：APOSStageNode → ActivityNode → ResourceBinding
@@ -136,6 +136,12 @@ export interface LessonNode {
     nextNodeId?: string;
     // 分支類型標記（用於視覺區分）
     branchLevel?: 'advanced' | 'standard' | 'remedial';
+    // 多選分支選項
+    multiBranchOptions?: {
+        id: string;
+        label: string;
+        nextNodeId: string;
+    }[];
 }
 
 export interface LessonPlan {
@@ -584,21 +590,37 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
             conditions: {
                 learnedPath: 'schema-transfer',
                 notLearnedPath: 'object-remedial',
+                advancedPath: 'object-advanced', // Added Advanced Path
                 assessmentCriteria: '正確率 ≥ 85%',
-                branchType: 'remedial',
+                branchType: 'differentiated', // Changed to differentiated
             },
+        },
+        {
+            id: 'object-advanced',
+            title: '🚀 Object: 進階挑戰',
+            order: 12,
+            stage: 'O',
+            nodeType: 'worksheet',
+            branchLevel: 'advanced',
+            agent: findAgentById('reflection'), // Using reflection agent or similar
+            selectedTools: [AVAILABLE_TOOLS[8]],
+            generatedContent: {
+                exercises: 3,
+                materials: ['複雜乘法公式應用', '多重括號展開'],
+            },
+            nextNodeId: 'schema-transfer', // Rejoin main path
         },
         {
             id: 'object-remedial',
             title: '🔄 Object: 回溯輔助',
-            order: 12,
+            order: 13,
             stage: 'O',
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('conjecture'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
-                materials: ['對照靜態圖與運算式', '找出思考盲點'],
+                materials: ['數形結合重新理解', '具象操作乘法分配律'],
             },
             nextNodeId: 'object-check',
         },

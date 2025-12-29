@@ -8,15 +8,134 @@
 
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, Play, CheckCircle, X, RotateCw } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON, MOCK_GENERATED_LESSON } from '../types/lessonPlan';
+import { ALGEBRA_APOS_LESSON, getAllActivitiesFromAlgebra } from '../types/algebraAposLesson';
+import { AVAILABLE_AGENTS, MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
+import type { LessonPlan, LessonNode } from '../types/lessonPlan';
+import type { StudentProgress } from '../types/studentProgress';
 import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
+import StudentPathCanvas from '../components/student/StudentPathCanvas';
+import { BookOpen, Award, Play, CheckCircle, X, RotateCw, Zap } from 'lucide-react';
 
-// import AdventureMap from '../components/student/AdventureMap';
-import LessonTaskGrid from '../components/student/LessonTaskGrid';
+// === APOS 課程專用進度資料 (模擬：檢測點未通過 → AI 推薦補救) ===
+const MOCK_APOS_STUDENT_PROGRESS: StudentProgress = {
+    studentId: 'student-apos-demo',
+    studentName: '學生範例',
+    lessonId: 'lesson-apos-001',
+    currentNodeId: 'action-remedial', // AI 推薦去補救！
+    overallProgress: 22,
+    lastActiveAt: new Date(),
+    nodeProgress: [
+        { nodeId: 'action-intro', completed: true, score: 95, timeSpent: 480 },
+        { nodeId: 'action-manipulate', completed: true, score: 88, timeSpent: 720 },
+        { nodeId: 'action-practice', completed: true, score: 82, timeSpent: 600 },
+        // 檢測點：嘗試過但未通過（需要補救後重考）
+        { nodeId: 'action-checkpoint', completed: false, score: 65, passedCheckpoint: false, pathTaken: 'remedial', timeSpent: 480 },
+        { nodeId: 'action-remedial', completed: false, timeSpent: 120 }, // 正在補救中
+    ],
+};
+
+
+// === Dashboard Progress Ring (Local) ===
+const DashboardProgressRing = ({ percentage, size = 60 }: { percentage: number; size?: number }) => {
+    const strokeWidth = 5;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    return (
+        <div className="relative" style={{ width: size, height: size }}>
+            <svg width={size} height={size} className="transform -rotate-90">
+                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-purple-100" />
+                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="url(#progressGradient)" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} className="transition-all duration-1000 ease-out" />
+                <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="100%" stopColor="#d8b4fe" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-bold text-slate-700">{percentage}%</span>
+            </div>
+        </div>
+    );
+};
+
+// Helper to convert APOS ActivityNode to LessonNode for the Grid
+const convertAposToLessonNodes = (aposLesson: LessonPlan): LessonNode[] => {
+    if (!aposLesson.stages) return [];
+
+    let globalOrder = 1;
+    const allActivities = getAllActivitiesFromAlgebra(aposLesson);
+
+    return allActivities.map(act => {
+        // Map Conditions
+        const conditions: LessonNode['conditions'] = {};
+        let isConditional = false;
+
+        if (act.flowControl) {
+            isConditional = true;
+            conditions.branchType =
+                act.flowControl.type === 'differentiation' ? 'differentiated' :
+                    act.flowControl.type === 'checkpoint' ? 'remedial' : undefined;
+
+            act.flowControl.paths.forEach(p => {
+                const label = p.label.toLowerCase();
+                // Heuristic mapping based on label or ID
+                if (label.includes('補救') || p.id.includes('remedial') || p.id.includes('fail')) {
+                    conditions.notLearnedPath = p.nextActivityId;
+                } else if (label.includes('進階') || p.id.includes('advanced')) {
+                    conditions.advancedPath = p.nextActivityId;
+                } else {
+                    conditions.learnedPath = p.nextActivityId;
+                }
+            });
+
+            if (act.flowControl.criteria) {
+                conditions.assessmentCriteria = act.flowControl.criteria;
+            }
+        }
+
+        // Determine Branch Level
+        let branchLevel: LessonNode['branchLevel'] = 'standard';
+        let multiBranchOptions: LessonNode['multiBranchOptions'] = undefined;
+
+        if (act.type === 'remedial') branchLevel = 'remedial';
+        if (act.id.includes('advanced')) branchLevel = 'advanced';
+
+        // Handle multi-choice specific logic
+        if (act.flowControl?.type === 'multi-choice' && act.flowControl.paths) {
+            multiBranchOptions = act.flowControl.paths.map(p => ({
+                id: p.id,
+                label: p.label,
+                nextNodeId: p.nextActivityId
+            }));
+        }
+
+        // Find stage
+        const stageNode = aposLesson.stages?.find(s => s.activities.some(a => a.id === act.id));
+
+        return {
+            id: act.id,
+            title: act.title,
+            order: globalOrder++, // Simple sequential order
+            nodeType: act.resources?.[0]?.resourceType || 'worksheet',
+            agent: act.resources?.[0]?.agent || AVAILABLE_AGENTS[0],
+            selectedTools: [],
+            stage: stageNode?.stage,
+            isConditional,
+            conditions,
+            branchLevel,
+            multiBranchOptions,
+            generatedContent: {
+                materials: [act.description || ''],
+            }
+        };
+    });
+};
 
 export default function StudentLearningPathPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
@@ -24,11 +143,18 @@ export default function StudentLearningPathPage() {
 
     // 根據 ID 選擇課程資料
     const lesson = useMemo(() => {
-        if (lessonId === 'lesson-apos-001') return MOCK_GENERATED_LESSON; // 對應 APOS 範例
+        if (lessonId === 'lesson-apos-001') {
+            // Convert real APOS lesson to flat nodes
+            const convertedNodes = convertAposToLessonNodes(ALGEBRA_APOS_LESSON);
+            return { ...ALGEBRA_APOS_LESSON, nodes: convertedNodes };
+        }
         return MOCK_DIFFERENTIATED_LESSON; // 預設
     }, [lessonId]);
 
-    const studentProgress = MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]; // 模擬當前學生是張小明
+    // 使用對應課程的進度資料
+    const studentProgress = lessonId === 'lesson-apos-001'
+        ? MOCK_APOS_STUDENT_PROGRESS
+        : MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0];
 
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -36,18 +162,16 @@ export default function StudentLearningPathPage() {
     const getMainPathNodes = () => {
         // [Fix]: APOS Lesson logic
         if (lessonId === 'lesson-apos-001') {
-            const studentPath = studentProgress.nodeProgress.map(np => np.nodeId);
-            return (lesson.nodes || []).filter(node => {
-                // Show all main nodes (not remedial)
-                if (!node.branchLevel || node.branchLevel === 'standard' || node.branchLevel === 'advanced') return true;
-                // Show remedial nodes only if student has visited them
-                if (node.branchLevel === 'remedial' && studentPath.includes(node.id)) return true;
-                return false;
-            });
+            // For the visual grid, we pass ALL nodes to LessonTaskGrid
+            // The Grid itself handles filtering and layout (Main vs Remedial vs Advanced)
+            // But here we might want to filter what "visibleNodes" means for the step progress bar?
+            // Actually LessonTaskGrid takes `nodes` prop.
+            return lesson.nodes || [];
         }
 
         // Default Differentiated Lesson logic
         const mainSteps = ['step1', 'step3', 'step4-test', 'step5', 'step6', 'step7', 'finish'];
+
         const studentPath = studentProgress.nodeProgress.map(np => np.nodeId);
 
         // 找到學生選擇的步驟2
@@ -91,12 +215,22 @@ export default function StudentLearningPathPage() {
     // const selectedProgress = selectedNodeId ? getNodeProgress(studentProgress.nodeProgress, selectedNodeId) : undefined;
 
     return (
-        <div className="min-h-screen bg-[#dbeafe] p-6 text-slate-800 font-sans">
-            {/* Background decoration */}
-            <div className="fixed inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay" />
+        <div className="h-full bg-slate-50 text-slate-900 font-sans overflow-hidden relative">
+            {/* Dynamic Animated Mesh Gradient Background (Light Mode) */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-200/40 rounded-full blur-[100px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-fuchsia-200/40 rounded-full blur-[100px] animate-pulse delay-700" />
+                <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-pink-200/30 rounded-full blur-[80px] animate-pulse delay-1000" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 brightness-100 contrast-100 mix-blend-overlay pointer-events-none" />
+            </div>
 
-            <div className="max-w-6xl mx-auto relative z-10">
-                {/* 頭部 (Standard Mode) */}
+            <div className="relative z-10 h-screen flex flex-col">
+                {/* 頭部 (Standard Mode) - keeping as is for non-APOS lessons */}
+                {lessonId !== 'lesson-apos-001' && (
+                    <div className="max-w-6xl mx-auto w-full p-6">
+                        {/* ... (Existing Standard Header content) ... */}
+                    </div>
+                )}
                 {lessonId !== 'lesson-apos-001' && (
                     <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
                         <div className="flex items-start justify-between gap-6">
@@ -174,21 +308,68 @@ export default function StudentLearningPathPage() {
                 )}
 
                 {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
-                {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
-                {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
                 {lessonId === 'lesson-apos-001' && (
-                    <div className="flex flex-col gap-6 animate-slide-up mb-8">
-                        {/* Header */}
-                        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800 text-center">{lesson.title}</h1>
+                    <div className="flex-1 flex flex-col min-h-0 animate-slide-up">
+                        {/* ====== Unified Header Bar ====== */}
+                        <div className="flex-shrink-0 absolute top-4 left-8 right-8 z-20">
+                            <div className="bg-white/85 backdrop-blur-xl rounded-2xl px-6 py-3 border border-purple-200/50 flex items-center justify-between shadow-xl">
+                                {/* Left: Title + Subtitle */}
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                                        <BookOpen className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-pink-600">
+                                            {lesson.title}
+                                        </h1>
+                                        <p className="text-xs text-slate-500">第一單元 · 共 {lesson.nodes?.filter(n => n.branchLevel !== 'remedial').length || 0} 個學習任務</p>
+                                    </div>
+                                </div>
+
+                                {/* Right: Progress HUD */}
+                                <div className="flex items-center gap-4">
+                                    {(() => {
+                                        const totalTasks = lesson.nodes?.filter(n => n.branchLevel !== 'remedial').length || 0;
+                                        const completedTasks = studentProgress.nodeProgress.filter(np => np.completed && visibleNodes.some(n => n.id === np.nodeId)).length;
+                                        const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                                        // Find next task
+                                        const mainNodes = lesson.nodes?.filter(n => n.branchLevel !== 'remedial' && n.branchLevel !== 'advanced').sort((a, b) => a.order - b.order) || [];
+                                        const nextTask = mainNodes.find(n => !studentProgress.nodeProgress.find(p => p.nodeId === n.id)?.completed);
+
+                                        return (
+                                            <>
+                                                <div className="flex items-center gap-3 border-r border-purple-200/50 pr-4">
+                                                    <DashboardProgressRing percentage={progressPercentage} size={44} />
+                                                    <div className="flex flex-col text-sm">
+                                                        <div className="text-purple-900 font-bold text-xs">學習進度</div>
+                                                        <div className="text-xs text-purple-600 font-medium">{completedTasks} / {totalTasks} 完成</div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => nextTask && setSelectedNodeId(nextTask.id)}
+                                                    className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white rounded-xl px-5 py-2.5 shadow-lg hover:shadow-purple-500/30 transition-all flex items-center gap-2 text-sm font-bold"
+                                                >
+                                                    <Zap className="w-4 h-4 fill-current" />
+                                                    開始挑戰
+                                                </button>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
                         </div>
 
-                        {/* [NEW] Task Grid View */}
-                        <LessonTaskGrid
-                            nodes={lesson.nodes || []}
-                            onNodeSelect={(nodeId) => setSelectedNodeId(nodeId)}
-                            completedNodeIds={studentProgress.nodeProgress.filter(n => n.completed).map(n => n.nodeId)}
-                        />
+                        {/* Task Grid View - Full Width Scrolling */}
+                        <div className="flex-1 overflow-hidden relative pt-16">
+                            <StudentPathCanvas
+                                nodes={lesson.nodes || []}
+                                completedNodeIds={studentProgress.nodeProgress.filter(n => n.completed).map(n => n.nodeId)}
+                                failedNodeIds={studentProgress.nodeProgress.filter(n => n.passedCheckpoint === false && !n.completed).map(n => n.nodeId)}
+                                currentNodeId={studentProgress.currentNodeId}
+                                onNodeSelect={(nodeId) => setSelectedNodeId(nodeId)}
+                            />
+                        </div>
                     </div>
                 )}
 
