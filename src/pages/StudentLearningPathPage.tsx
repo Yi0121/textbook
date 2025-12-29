@@ -16,12 +16,13 @@ import type { NodeProgress } from '../types/studentProgress';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
 
+import AdventureMap from '../components/student/AdventureMap';
+
 export default function StudentLearningPathPage() {
     const { lessonId } = useParams<{ lessonId: string }>();
 
     // 根據 ID 選擇課程資料
     const lesson = useMemo(() => {
-        if (lessonId === 'lesson-math-002') return MOCK_DIFFERENTIATED_LESSON;
         if (lessonId === 'lesson-apos-001') return MOCK_GENERATED_LESSON; // 對應 APOS 範例
         return MOCK_DIFFERENTIATED_LESSON; // 預設
     }, [lessonId]);
@@ -43,7 +44,21 @@ export default function StudentLearningPathPage() {
     };
 
     // 主流程節點 (排除補救分支和平行選項中未選擇的)
+    // 主流程節點 (排除補救分支和平行選項中未選擇的)
     const getMainPathNodes = () => {
+        // [Fix]: APOS Lesson logic
+        if (lessonId === 'lesson-apos-001') {
+            const studentPath = studentProgress.nodeProgress.map(np => np.nodeId);
+            return (lesson.nodes || []).filter(node => {
+                // Show all main nodes (not remedial)
+                if (!node.branchLevel || node.branchLevel === 'standard' || node.branchLevel === 'advanced') return true;
+                // Show remedial nodes only if student has visited them
+                if (node.branchLevel === 'remedial' && studentPath.includes(node.id)) return true;
+                return false;
+            });
+        }
+
+        // Default Differentiated Lesson logic
         const mainSteps = ['step1', 'step3', 'step4-test', 'step5', 'step6', 'step7', 'finish'];
         const studentPath = studentProgress.nodeProgress.map(np => np.nodeId);
 
@@ -88,88 +103,156 @@ export default function StudentLearningPathPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
             <div className="max-w-6xl mx-auto">
-                {/* 頭部 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <div className="flex items-start justify-between gap-6">
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold text-gray-900 mb-4">{lesson.title}</h1>
+                {/* 頭部 (Standard Mode) */}
+                {lessonId !== 'lesson-apos-001' && (
+                    <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                        <div className="flex items-start justify-between gap-6">
+                            <div className="flex-1">
+                                <h1 className="text-2xl font-bold text-gray-900 mb-4">{lesson.title}</h1>
 
-                            {/* 統計數據 */}
+                                {/* 統計數據 */}
+                                {(() => {
+                                    // 只計算 visibleNodes 中有進度的節點
+                                    const visibleNodeIds = visibleNodes.map(n => n.id);
+                                    const relevantProgress = studentProgress.nodeProgress.filter(np =>
+                                        visibleNodeIds.includes(np.nodeId)
+                                    );
+                                    const completedCount = relevantProgress.filter(n => n.completed).length;
+                                    const scoredProgress = relevantProgress.filter(n => n.score !== undefined);
+                                    const avgScore = scoredProgress.length > 0
+                                        ? Math.round(scoredProgress.reduce((acc, n) => acc + (n.score || 0), 0) / scoredProgress.length)
+                                        : 0;
+                                    const totalTime = Math.round(relevantProgress.reduce((acc, n) => acc + (n.timeSpent || 0), 0) / 60);
+
+                                    return (
+                                        <>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="bg-indigo-50 rounded-xl p-4">
+                                                    <div className="text-sm text-indigo-600 font-medium mb-1">已完成</div>
+                                                    <div className="text-2xl font-bold text-indigo-900">
+                                                        {completedCount} / {visibleNodes.length}
+                                                    </div>
+                                                    <div className="text-xs text-indigo-600 mt-1">個學習節點</div>
+                                                </div>
+
+                                                <div className="bg-purple-50 rounded-xl p-4">
+                                                    <div className="text-sm text-purple-600 font-medium mb-1">平均分數</div>
+                                                    <div className="text-2xl font-bold text-purple-900">
+                                                        {avgScore || '-'}
+                                                    </div>
+                                                    <div className="text-xs text-purple-600 mt-1">分</div>
+                                                </div>
+
+                                                <div className="bg-blue-50 rounded-xl p-4">
+                                                    <div className="text-sm text-blue-600 font-medium mb-1">學習時間</div>
+                                                    <div className="text-2xl font-bold text-blue-900">
+                                                        {totalTime}
+                                                    </div>
+                                                    <div className="text-xs text-blue-600 mt-1">分鐘</div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* 圓形進度圖 */}
                             {(() => {
-                                // 只計算 visibleNodes 中有進度的節點
                                 const visibleNodeIds = visibleNodes.map(n => n.id);
                                 const relevantProgress = studentProgress.nodeProgress.filter(np =>
                                     visibleNodeIds.includes(np.nodeId)
                                 );
                                 const completedCount = relevantProgress.filter(n => n.completed).length;
-                                const scoredProgress = relevantProgress.filter(n => n.score !== undefined);
-                                const avgScore = scoredProgress.length > 0
-                                    ? Math.round(scoredProgress.reduce((acc, n) => acc + (n.score || 0), 0) / scoredProgress.length)
-                                    : 0;
-                                const totalTime = Math.round(relevantProgress.reduce((acc, n) => acc + (n.timeSpent || 0), 0) / 60);
+                                const overallProgress = Math.round((completedCount / visibleNodes.length) * 100);
 
                                 return (
-                                    <>
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div className="bg-indigo-50 rounded-xl p-4">
-                                                <div className="text-sm text-indigo-600 font-medium mb-1">已完成</div>
-                                                <div className="text-2xl font-bold text-indigo-900">
-                                                    {completedCount} / {visibleNodes.length}
-                                                </div>
-                                                <div className="text-xs text-indigo-600 mt-1">個學習節點</div>
-                                            </div>
-
-                                            <div className="bg-purple-50 rounded-xl p-4">
-                                                <div className="text-sm text-purple-600 font-medium mb-1">平均分數</div>
-                                                <div className="text-2xl font-bold text-purple-900">
-                                                    {avgScore || '-'}
-                                                </div>
-                                                <div className="text-xs text-purple-600 mt-1">分</div>
-                                            </div>
-
-                                            <div className="bg-blue-50 rounded-xl p-4">
-                                                <div className="text-sm text-blue-600 font-medium mb-1">學習時間</div>
-                                                <div className="text-2xl font-bold text-blue-900">
-                                                    {totalTime}
-                                                </div>
-                                                <div className="text-xs text-blue-600 mt-1">分鐘</div>
-                                            </div>
-                                        </div>
-                                    </>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="text-sm text-gray-500">整體進度</div>
+                                        <CircularProgress
+                                            progress={overallProgress}
+                                            size="xl"
+                                            color="text-indigo-600"
+                                        />
+                                    </div>
                                 );
                             })()}
                         </div>
+                    </div>
+                )}
 
-                        {/* 圓形進度圖 */}
+                {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
+                {/* [Adventure Mode HUD] 僅在冒險模式顯示 */}
+                {lessonId === 'lesson-apos-001' && (
+                    <div className="flex items-center justify-between mb-4 animate-slide-up">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-bold text-gray-800">{lesson.title}</h1>
+                        </div>
+
+                        {/* Gamified HUD: Points & Gems */}
                         {(() => {
-                            const visibleNodeIds = visibleNodes.map(n => n.id);
-                            const relevantProgress = studentProgress.nodeProgress.filter(np =>
-                                visibleNodeIds.includes(np.nodeId)
-                            );
-                            const completedCount = relevantProgress.filter(n => n.completed).length;
-                            const overallProgress = Math.round((completedCount / visibleNodes.length) * 100);
+                            // Calculate Score and Gems (Score > 90 = Gem)
+                            const relevantProgress = studentProgress.nodeProgress;
+                            const totalScore = relevantProgress.reduce((acc, curr) => acc + (curr.score || 0), 0);
+                            const gemCount = relevantProgress.filter(np => (np.score || 0) >= 90).length;
 
                             return (
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="text-sm text-gray-500">整體進度</div>
-                                    <CircularProgress
-                                        progress={overallProgress}
-                                        size="xl"
-                                        color="text-indigo-600"
-                                    />
+                                <div className="flex gap-4">
+                                    {/* 累積代幣 (Tokens) */}
+                                    <div className="bg-white/90 backdrop-blur px-5 py-2.5 rounded-xl shadow-sm border border-indigo-100 flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center border border-yellow-100">
+                                            <div className="text-lg">🪙</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">學習代幣</div>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-xl font-black text-gray-800 leading-none">{totalScore}</span>
+                                                <span className="text-xs text-yellow-600 font-bold">枚</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 榮譽寶石 (Gems/High Scores) */}
+                                    <div className="bg-white/90 backdrop-blur px-5 py-2.5 rounded-xl shadow-sm border border-indigo-100 flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100">
+                                            <div className="text-lg">💎</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">榮譽寶石</div>
+                                            <div className="text-xl font-black text-gray-800 leading-none">{gemCount}<span className="text-gray-400 text-sm font-medium">/5</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })()}
                     </div>
-                </div>
+                )}
 
                 {/* 闖關式學習路徑 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">學習路徑</h2>
-                    <StepProgress
-                        steps={steps}
-                        onStepClick={(step) => setSelectedNodeId(step.id)}
-                    />
+                <div className={`
+                    rounded-2xl shadow-lg mb-6 overflow-hidden
+                    ${lessonId === 'lesson-apos-001' ? 'bg-[#e0f7fa]' : 'bg-white p-6'}
+                `}>
+                    {lessonId !== 'lesson-apos-001' && <h2 className="text-xl font-bold text-gray-900 mb-6">學習路徑</h2>}
+
+                    {lessonId === 'lesson-apos-001' ? (
+                        <div className="py-10">
+                            <AdventureMap
+                                nodes={visibleNodes}
+                                progressMap={
+                                    visibleNodes.reduce((acc, node) => ({
+                                        ...acc,
+                                        [node.id]: getNodeStatus(node) === 'locked' ? 'upcoming' : getNodeStatus(node)
+                                    }), {})
+                                }
+                                onNodeSelect={(id) => setSelectedNodeId(id)}
+                            />
+                        </div>
+                    ) : (
+                        <StepProgress
+                            steps={steps}
+                            onStepClick={(step) => setSelectedNodeId(step.id)}
+                        />
+                    )}
                 </div>
 
                 {/* 節點詳細資訊（當選中時顯示）*/}
