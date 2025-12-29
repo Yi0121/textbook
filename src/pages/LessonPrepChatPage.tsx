@@ -2,7 +2,7 @@
  * LessonPrepChatPage - 對話式備課頁面
  * 
  * 透過 AI 對話收集備課資訊：
- * 主題 → 章節 → 堂數 → 目標 → 教學法 → 生成課程
+ * 單元 → 書商/年級 → 堂數 → 目標 → 教學法 → 生成課程
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -17,9 +17,9 @@ import {
     Clock,
     Target,
     GraduationCap,
+    Calendar,
 } from 'lucide-react';
-import { useLessonPrepChat, type ChatMessage } from '../hooks/useLessonPrepChat';
-import type { CurriculumUnit } from '../data/curriculum108Math';
+import { useLessonPrepChat, type ChatMessage, PUBLISHERS, GRADES, SEMESTERS, type PublisherId } from '../hooks/useLessonPrepChat';
 import type { PedagogyMethod } from '../data/pedagogyMethods';
 
 // ==================== Message Components ====================
@@ -27,7 +27,6 @@ import type { PedagogyMethod } from '../data/pedagogyMethods';
 import {
     TextMessage,
     OptionsMessage,
-    CurriculumMatchesMessage,
     PedagogySelectMessage,
     SummaryMessage,
 } from '../components/features/chat/ChatMessages';
@@ -48,14 +47,6 @@ function MessageBubble({
                 <OptionsMessage
                     content={message.content}
                     options={message.options || []}
-                    onSelect={onOptionSelect}
-                />
-            );
-        case 'curriculum-matches':
-            return (
-                <CurriculumMatchesMessage
-                    content={message.content}
-                    matches={message.curriculumMatches || []}
                     onSelect={onOptionSelect}
                 />
             );
@@ -84,22 +75,28 @@ function MessageBubble({
 
 function PrepDataSidebar({
     prepData,
-    currentStep,
 }: {
     prepData: {
         topic: string;
-        curriculumUnit?: CurriculumUnit;
+        publisher?: PublisherId;
+        grade?: string;
+        semester?: string;
         sessions: number;
         objectives: string[];
         pedagogy?: PedagogyMethod;
     };
-    currentStep: string;
 }) {
+    const publisherName = prepData.publisher ? PUBLISHERS.find(p => p.id === prepData.publisher)?.name : '';
+    const gradeName = prepData.grade ? GRADES.find(g => g.id === prepData.grade)?.name : '';
+    const semesterName = prepData.semester ? SEMESTERS.find(s => s.id === prepData.semester)?.name : '';
+    const gradeSemester = [gradeName, semesterName].filter(Boolean).join(' ') || '';
+
     const steps = [
-        { key: 'topic', label: '主題', icon: BookOpen, value: prepData.topic, done: !!prepData.topic },
-        { key: 'curriculum', label: '課綱', icon: GraduationCap, value: prepData.curriculumUnit?.code, done: !!prepData.curriculumUnit },
-        { key: 'sessions', label: '堂數', icon: Clock, value: prepData.sessions ? `${prepData.sessions} 堂` : '', done: currentStep !== 'topic' && currentStep !== 'curriculum' },
-        { key: 'objectives', label: '目標', icon: Target, value: prepData.objectives.length > 0 ? `${prepData.objectives.length} 個` : '', done: prepData.objectives.length > 0 || (currentStep !== 'topic' && currentStep !== 'curriculum' && currentStep !== 'sessions' && currentStep !== 'objectives') },
+        { key: 'topic', label: '單元', icon: BookOpen, value: prepData.topic, done: !!prepData.topic },
+        { key: 'publisher', label: '書商', icon: GraduationCap, value: publisherName, done: !!prepData.publisher },
+        { key: 'gradeSemester', label: '年級/學期', icon: Calendar, value: gradeSemester, done: !!prepData.grade || !!prepData.semester },
+        { key: 'sessions', label: '堂數', icon: Clock, value: prepData.sessions > 0 ? `${prepData.sessions} 堂` : '', done: prepData.sessions > 0 },
+        { key: 'objectives', label: '目標', icon: Target, value: prepData.objectives.length > 0 ? `${prepData.objectives.length} 個` : '', done: prepData.objectives.length > 0 },
         { key: 'pedagogy', label: '教學法', icon: Sparkles, value: prepData.pedagogy?.name, done: !!prepData.pedagogy },
     ];
 
@@ -141,7 +138,6 @@ export default function LessonPrepChatPage() {
     const navigate = useNavigate();
     const {
         messages,
-        currentStep,
         prepData,
         isTyping,
         startConversation,
@@ -152,7 +148,7 @@ export default function LessonPrepChatPage() {
 
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // 開始對話
     useEffect(() => {
@@ -244,14 +240,23 @@ export default function LessonPrepChatPage() {
                             {/* Input */}
                             <div className="border-t border-gray-200 p-4 bg-white/80">
                                 <form onSubmit={handleSubmit} className="flex gap-3">
-                                    <input
+                                    <textarea
                                         ref={inputRef}
-                                        type="text"
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder="輸入訊息..."
+                                        onKeyDown={(e) => {
+                                            // Enter 送出，Shift+Enter 換行
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                if (inputValue.trim() && !isTyping && !isGenerating) {
+                                                    handleSubmit(e);
+                                                }
+                                            }
+                                        }}
+                                        placeholder="輸入訊息...（Shift+Enter 換行）"
                                         disabled={isTyping || isGenerating}
-                                        className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all disabled:opacity-50"
+                                        rows={2}
+                                        className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all disabled:opacity-50 resize-none"
                                     />
                                     <button
                                         type="submit"
@@ -272,7 +277,7 @@ export default function LessonPrepChatPage() {
                     {/* Sidebar */}
                     <div className="hidden lg:block">
                         <div className="sticky top-24">
-                            <PrepDataSidebar prepData={prepData} currentStep={currentStep} />
+                            <PrepDataSidebar prepData={prepData} />
                         </div>
                     </div>
                 </div>
