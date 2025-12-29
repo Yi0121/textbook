@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useTeacherAgents } from '../../context/AgentContext';
 import { useUI } from '../../context/UIContext';
-import { useTeacherAIChat, type ChatMessage } from '../../hooks/useTeacherAIChat';
+import { useTeacherAIChatContext, type ChatMessage } from '../../context/AIChatContext';
 
 interface TeacherAgentPanelProps {
     className?: string;
@@ -39,7 +39,7 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
         sendMessage,
         isProcessing,
         handleOptionClick,
-    } = useTeacherAIChat();
+    } = useTeacherAIChatContext();
 
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +54,7 @@ export default function TeacherAgentPanel({ className = '', onClose }: TeacherAg
     const [welcomeTimestamp] = useState(() => Date.now());
 
     // 合併歡迎訊息與聊天訊息
-    const displayMessages = messages.length > 0 ? messages : [{
+    const displayMessages: ChatMessage[] = messages.length > 0 ? messages : [{
         id: 'welcome',
         role: 'assistant' as const,
         content: '你好！我是教學 AI 助手 🎓\n\n你可以告訴我你想做什麼，例如：\n• 幫我備課\n• 推薦學習路徑\n• 生成練習題\n\n我會幫你完成！',

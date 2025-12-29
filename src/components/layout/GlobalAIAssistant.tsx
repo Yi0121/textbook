@@ -6,13 +6,138 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Bot, X, Sparkles, MessageCircle } from 'lucide-react';
+import { Bot, X, Sparkles, Send, Loader2, User } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
+import { useStudentAIChatContext, type ChatMessage } from '../../context/AIChatContext';
 import TeacherAgentPanel from '../features/TeacherAgentPanel';
 
 interface GlobalAIAssistantProps {
     /** 是否預設展開 */
     defaultOpen?: boolean;
+}
+
+// 學生版 AI 家教面板
+function StudentChatPanel({ onClose: _onClose }: { onClose: () => void }) {
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        isProcessing,
+    } = useStudentAIChatContext();
+
+    const [input, setInput] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [welcomeTimestamp] = useState(() => Date.now());
+
+    // 自動滾動到底部
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    // 初始化歡迎訊息
+    useEffect(() => {
+        if (messages.length === 0) {
+            setMessages([{
+                id: 'welcome',
+                role: 'assistant',
+                content: '嗨！我是你的 AI 學習家教 ✨\n\n有什麼問題嗎？我可以幫你：\n• 解答課本上的問題\n• 複習重點概念\n• 練習題目',
+                timestamp: welcomeTimestamp,
+            }]);
+        }
+    }, [messages.length, setMessages, welcomeTimestamp]);
+
+    const handleSubmit = () => {
+        if (!input.trim() || isProcessing) return;
+        sendMessage(input);
+        setInput('');
+    };
+
+    const displayMessages: ChatMessage[] = messages.length > 0 ? messages : [{
+        id: 'welcome',
+        role: 'assistant' as const,
+        content: '嗨！我是你的 AI 學習家教 ✨\n\n有什麼問題嗎？我可以幫你：\n• 解答課本上的問題\n• 複習重點概念\n• 練習題目',
+        timestamp: welcomeTimestamp,
+    }];
+
+    return (
+        <div className="flex flex-col h-full">
+            {/* 訊息列表 */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {displayMessages.map((msg) => (
+                    <div
+                        key={msg.id}
+                        className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                    >
+                        {/* 頭像 */}
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            msg.role === 'user'
+                                ? 'bg-emerald-100 text-emerald-600'
+                                : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                        }`}>
+                            {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                        </div>
+
+                        {/* 訊息內容 */}
+                        <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+                            <div className={`inline-block px-4 py-3 rounded-2xl ${
+                                msg.role === 'user'
+                                    ? 'bg-emerald-600 text-white rounded-tr-sm'
+                                    : 'bg-slate-100 text-slate-800 rounded-tl-sm'
+                            }`}>
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* 處理中動畫 */}
+                {isProcessing && (
+                    <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-white animate-pulse" />
+                        </div>
+                        <div className="bg-slate-100 rounded-2xl rounded-tl-sm px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                                <span className="text-sm text-slate-600">思考中...</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* 輸入區 */}
+            <div className="p-4 border-t border-slate-200 bg-white">
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
+                        placeholder="輸入你的問題..."
+                        disabled={isProcessing}
+                        className="flex-1 px-4 py-2.5 bg-slate-100 border-0 rounded-full text-sm
+                                   placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500
+                                   disabled:opacity-50"
+                    />
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!input.trim() || isProcessing}
+                        className="p-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300
+                                   text-white rounded-full transition-colors"
+                    >
+                        {isProcessing ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <Send className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 export default function GlobalAIAssistant({ defaultOpen = false }: GlobalAIAssistantProps) {
@@ -149,22 +274,7 @@ export default function GlobalAIAssistant({ defaultOpen = false }: GlobalAIAssis
                                 onClose={() => setIsOpen(false)}
                             />
                         ) : (
-                            // 學生版 AI 家教（暫時用簡單的提示）
-                            <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                                    <MessageCircle className="w-8 h-8 text-emerald-600" />
-                                </div>
-                                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                                    AI 學習家教
-                                </h4>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    有任何學習問題都可以問我！<br />
-                                    我會根據你的進度提供個人化指導。
-                                </p>
-                                <div className="text-xs text-gray-400">
-                                    （學生版 AI 家教功能開發中...）
-                                </div>
-                            </div>
+                            <StudentChatPanel onClose={() => setIsOpen(false)} />
                         )}
                     </div>
                 </div>

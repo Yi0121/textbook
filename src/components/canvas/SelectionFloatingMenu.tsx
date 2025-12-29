@@ -20,7 +20,7 @@ const MenuButton = ({ icon, label, subLabel, onClick, colorClass }: any) => (
 );
 
 interface SelectionMenuProps {
-  position: { x: number; y: number } | null;
+  position: { top: number; left: number } | null;
   userRole: UserRole; // 新增：傳入角色
   onClose: () => void;
 
@@ -46,7 +46,7 @@ const SelectionFloatingMenu: React.FC<SelectionMenuProps> = ({
     <div
       ref={menuRef}
       className="fixed z-[9999] animate-in fade-in zoom-in-95 duration-200 origin-top-left"
-      style={{ top: position.y + 10, left: position.x }}
+      style={{ top: position.top + 10, left: position.left }}
     >
       <div className="bg-white/95 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl shadow-indigo-500/15 p-1.5 flex flex-col gap-1 min-w-[220px]">
 

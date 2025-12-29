@@ -14,29 +14,17 @@ import { BookOpen, CheckCircle, Lock, PlayCircle, Award, TrendingUp } from 'luci
 import { MOCK_GENERATED_LESSON } from '../types/lessonPlan';
 import { MOCK_STUDENT_PROGRESS } from '../types/studentProgress';
 import type { LessonNode } from '../types/lessonPlan';
-import type { NodeProgress } from '../types/studentProgress';
+import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';
 
 export default function MyLearningPathPage() {
     // TODO: 從 API 或 localStorage 讀取
     const lesson = MOCK_GENERATED_LESSON;
     const studentProgress = MOCK_STUDENT_PROGRESS[0]; // 模擬當前學生
 
-    const getNodeProgress = (nodeId: string): NodeProgress | undefined => {
-        return studentProgress.nodeProgress.find(np => np.nodeId === nodeId);
-    };
-
-    const getNodeStatus = (node: LessonNode): 'completed' | 'current' | 'locked' => {
-        const progress = getNodeProgress(node.id);
-        if (!progress) return 'locked';
-        if (progress.completed) return 'completed';
-        if (node.id === studentProgress.currentNodeId) return 'current';
-        return 'locked';
-    };
-
     // 建立學生端的 ReactFlow nodes（簡化版，不顯示 Agent）
     const createStudentNode = (node: LessonNode, idx: number): Node => {
-        const status = getNodeStatus(node);
-        const progress = getNodeProgress(node.id);
+        const status = getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId);
+        const progress = getNodeProgress(studentProgress.nodeProgress, node.id);
 
         return {
             id: node.id,
@@ -130,7 +118,7 @@ export default function MyLearningPathPage() {
         const safeNodes = lesson.nodes || [];
 
         safeNodes.forEach((node, idx) => {
-            const progress = getNodeProgress(node.id);
+            const progress = getNodeProgress(studentProgress.nodeProgress, node.id);
 
             // 條件節點的路徑（根據學生實際走的路徑）
             if (node.isConditional && node.conditions && progress) {
@@ -232,7 +220,7 @@ export default function MyLearningPathPage() {
                         nodeColor={(node) => {
                             const lessonNode = (lesson.nodes || []).find(n => n.id === node.id);
                             if (!lessonNode) return '#d1d5db';
-                            const status = getNodeStatus(lessonNode);
+                            const status = getNodeStatus(lessonNode, studentProgress.nodeProgress, studentProgress.currentNodeId);
                             return status === 'completed' ? '#10b981' : status === 'current' ? '#6366f1' : '#d1d5db';
                         }}
                         maskColor="rgba(0, 0, 0, 0.1)"

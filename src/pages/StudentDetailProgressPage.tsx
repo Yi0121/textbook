@@ -12,6 +12,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
+import { getNodeProgress, formatTimeMMSS } from '../utils/progressHelpers';
 
 // 闘關式學習路徑組件（教師視角）
 function QuestPathView({
@@ -23,13 +24,13 @@ function QuestPathView({
     studentProgress: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]['nodeProgress'];
     currentNodeId: string;
 }) {
-    const getNodeProgress = (nodeId: string) => studentProgress.find(np => np.nodeId === nodeId);
+    const getProgress = (nodeId: string) => getNodeProgress(studentProgress, nodeId);
 
     return (
         <div className="relative overflow-x-auto pb-4">
             <div className="flex items-center gap-2 min-w-max px-4 py-6">
                 {nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').filter(n => !n.id.startsWith('step2-') || n.id === 'step2-video').map((node, idx, arr) => {
-                    const progress = getNodeProgress(node.id);
+                    const progress = getProgress(node.id);
                     const isCompleted = progress?.completed;
                     const isCurrent = node.id === currentNodeId;
                     const isLocked = !isCompleted && !isCurrent;
@@ -169,12 +170,7 @@ export default function StudentDetailProgressPage() {
         return <div className="p-6 text-center text-gray-500">學生資料未找到</div>;
     }
 
-    const formatTime = (seconds?: number) => {
-        if (!seconds) return '-';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
+
 
     const formatDate = (date?: Date) => {
         if (!date) return '-';
@@ -311,7 +307,7 @@ export default function StudentDetailProgressPage() {
                                                 {progress.timeSpent && (
                                                     <span className="flex items-center gap-1">
                                                         <Clock className="w-3 h-3 text-blue-500" />
-                                                        {formatTime(progress.timeSpent)}
+                                                        {formatTimeMMSS(progress.timeSpent)}
                                                     </span>
                                                 )}
                                                 {progress.retryCount !== undefined && progress.retryCount > 0 && (

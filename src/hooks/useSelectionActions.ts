@@ -16,7 +16,7 @@ export function useSelectionActions() {
     dispatch({ type: 'SET_SELECTION_BOX', payload: box });
   };
 
-  const updateMenuPosition = (pos: { x: number; y: number } | null) => {
+  const updateMenuPosition = (pos: { top: number; left: number } | null) => {
     dispatch({ type: 'SET_SELECTION_MENU_POS', payload: pos });
   };
 

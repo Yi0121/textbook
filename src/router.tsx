@@ -20,7 +20,6 @@ const LearningSuggestionsPage = lazy(() => import('./pages/LearningSuggestionsPa
 const MyLearningPathPage = lazy(() => import('./pages/MyLearningPathPage'));
 const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
 const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
-const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
 const LessonPrepChatPage = lazy(() => import('./pages/LessonPrepChatPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
@@ -94,14 +93,10 @@ export const router = createBrowserRouter([
                 path: 'my-conversations',
                 element: withSuspense(MyConversationsPage),
             },
-            // 老師端分析
+            // 老師端分析（全班視圖中可切換至個人視圖）
             {
                 path: 'analytics/class',
                 element: withSuspense(ClassAnalyticsPage),
-            },
-            {
-                path: 'analytics/student/:id',
-                element: withSuspense(StudentAnalyticsPage),
             },
             // 學生學習路徑
             {

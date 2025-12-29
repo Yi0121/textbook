@@ -1,7 +1,7 @@
 // context/EditorContext.tsx
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
 import { type UserRole } from '../config/toolConfig';
-import type { Stroke, MindMapData, AIMemo, TextObject, SelectionBox, Point } from '../types';
+import type { Stroke, MindMapData, AIMemo, TextObject, SelectionBox, LaserPoint } from '../types';
 
 // ==================== 編輯器狀態 ====================
 export interface EditorState {
@@ -19,11 +19,11 @@ export interface EditorState {
   mindMaps: MindMapData[];
   aiMemos: AIMemo[];
   textObjects: TextObject[];
-  laserPath: Point[];
+  laserPath: LaserPoint[];
 
   // 選取狀態
   selectionBox: SelectionBox | null;
-  selectionMenuPos: { x: number; y: number } | null;
+  selectionMenuPos: { top: number; left: number } | null;
   selectedText: string;
 
   // 特殊模式
@@ -52,10 +52,10 @@ export type EditorAction =
   | { type: 'UPDATE_TEXT_OBJECT'; payload: { id: number; data: Partial<TextObject> } }
   | { type: 'DELETE_TEXT_OBJECT'; payload: number }
   | { type: 'SET_SELECTION_BOX'; payload: SelectionBox | null }
-  | { type: 'SET_SELECTION_MENU_POS'; payload: { x: number; y: number } | null }
+  | { type: 'SET_SELECTION_MENU_POS'; payload: { top: number; left: number } | null }
   | { type: 'SET_SELECTED_TEXT'; payload: string }
-  | { type: 'SET_LASER_PATH'; payload: Point[] }
-  | { type: 'ADD_LASER_POINT'; payload: Point }
+  | { type: 'SET_LASER_PATH'; payload: LaserPoint[] }
+  | { type: 'ADD_LASER_POINT'; payload: LaserPoint }
   | { type: 'TOGGLE_STUDENT_STAGE' }
   | { type: 'SET_VIEWPORT'; payload: { x: number; y: number; scale: number } };
 

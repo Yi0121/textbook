@@ -9,6 +9,7 @@ import { UIProvider } from './UIContext';
 import { CollaborationProvider } from './CollaborationContext';
 import { LearningPathProvider } from './LearningPathContext';
 import { AgentProvider } from './AgentContext';
+import { AIChatProvider } from './AIChatContext';
 
 // 匯出所有 Context
 export * from './EditorContext';
@@ -17,6 +18,7 @@ export * from './UIContext';
 export * from './CollaborationContext';
 export * from './LearningPathContext';
 export * from './AgentContext';
+export * from './AIChatContext';
 
 // 組合所有 Provider
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -27,7 +29,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
           <UIProvider>
             <CollaborationProvider>
               <LearningPathProvider>
-                {children}
+                <AIChatProvider>
+                  {children}
+                </AIChatProvider>
               </LearningPathProvider>
             </CollaborationProvider>
           </UIProvider>

@@ -11,8 +11,7 @@ import { useParams } from 'react-router-dom';
 import { BookOpen, Award, Clock } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, MOCK_GENERATED_LESSON } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
-import type { LessonNode } from '../types/lessonPlan';
-import type { NodeProgress } from '../types/studentProgress';
+import { getNodeProgress, getNodeStatus, formatDuration } from '../utils/progressHelpers';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
 
@@ -30,18 +29,6 @@ export default function StudentLearningPathPage() {
     const studentProgress = MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]; // 模擬當前學生是張小明
 
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-
-    const getNodeProgress = (nodeId: string): NodeProgress | undefined => {
-        return studentProgress.nodeProgress.find(np => np.nodeId === nodeId);
-    };
-
-    const getNodeStatus = (node: LessonNode): 'completed' | 'current' | 'locked' => {
-        const progress = getNodeProgress(node.id);
-        if (!progress) return 'locked';
-        if (progress.completed) return 'completed';
-        if (node.id === studentProgress.currentNodeId) return 'current';
-        return 'locked';
-    };
 
     // 主流程節點 (排除補救分支和平行選項中未選擇的)
     // 主流程節點 (排除補救分支和平行選項中未選擇的)
@@ -80,25 +67,18 @@ export default function StudentLearningPathPage() {
 
     // 將 lesson nodes 轉換為 Step format
     const steps: Step[] = visibleNodes.map(node => {
-        const progress = getNodeProgress(node.id);
+        const progress = getNodeProgress(studentProgress.nodeProgress, node.id);
         return {
             id: node.id,
             title: node.title,
-            status: getNodeStatus(node),
+            status: getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId),
             score: progress?.score,
             isCheckpoint: node.isConditional,
         };
     });
 
-
-    const formatTime = (seconds?: number) => {
-        if (!seconds) return '-';
-        const mins = Math.floor(seconds / 60);
-        return `${mins} 分鐘`;
-    };
-
     const selectedNode = (lesson.nodes || []).find(n => n.id === selectedNodeId);
-    const selectedProgress = selectedNodeId ? getNodeProgress(selectedNodeId) : undefined;
+    const selectedProgress = selectedNodeId ? getNodeProgress(studentProgress.nodeProgress, selectedNodeId) : undefined;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -241,7 +221,7 @@ export default function StudentLearningPathPage() {
                                 progressMap={
                                     visibleNodes.reduce((acc, node) => ({
                                         ...acc,
-                                        [node.id]: getNodeStatus(node) === 'locked' ? 'upcoming' : getNodeStatus(node)
+                                        [node.id]: getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'locked' ? 'upcoming' : getNodeStatus(node, studentProgress.nodeProgress, studentProgress.currentNodeId)
                                     }), {})
                                 }
                                 onNodeSelect={(id) => setSelectedNodeId(id)}
@@ -310,7 +290,7 @@ export default function StudentLearningPathPage() {
                                     <div className="text-center">
                                         <div className="flex items-center justify-center gap-1 text-lg font-bold text-gray-900">
                                             <Clock className="w-5 h-5" />
-                                            {formatTime(selectedProgress.timeSpent)}
+                                            {formatDuration(selectedProgress.timeSpent)}
                                         </div>
                                         <div className="text-sm text-gray-600">學習時間</div>
                                     </div>
@@ -326,17 +306,17 @@ export default function StudentLearningPathPage() {
 
                         {/* 行動按鈕 */}
                         <div className="mt-6 flex gap-3">
-                            {getNodeStatus(selectedNode) === 'current' && (
+                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'current' && (
                                 <button className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-md">
                                     繼續學習
                                 </button>
                             )}
-                            {getNodeStatus(selectedNode) === 'completed' && (
+                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'completed' && (
                                 <button className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                                     複習
                                 </button>
                             )}
-                            {getNodeStatus(selectedNode) === 'locked' && (
+                            {getNodeStatus(selectedNode, studentProgress.nodeProgress, studentProgress.currentNodeId) === 'locked' && (
                                 <div className="flex-1 px-6 py-3 bg-gray-100 text-gray-500 rounded-lg font-medium text-center">
                                     🔒 完成前面的關卡以解鎖
                                 </div>

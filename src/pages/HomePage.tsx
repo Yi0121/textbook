@@ -34,15 +34,12 @@ import {
     PedagogySelectMessage,
     SummaryMessage,
 } from '../components/features/chat/ChatMessages';
-import { useTeacherAIChat } from '../hooks/useTeacherAIChat';
-import { useStudentAIChat } from '../hooks/useStudentAIChat';
-import type { ChatMessage as TeacherChatMessage } from '../hooks/useTeacherAIChat';
-import type { ChatMessage as StudentChatMessage } from '../hooks/useStudentAIChat';
+import { useTeacherAIChatContext, useStudentAIChatContext, type ChatMessage } from '../context/AIChatContext';
 import type { CurriculumUnit } from '../data/curriculum108Math';
 import type { PedagogyMethod } from '../data/pedagogyMethods';
 
 // 定義一個包含所有可能欄位的擴展訊息類型
-type ExtendedChatMessage = TeacherChatMessage & Partial<StudentChatMessage> & {
+type ExtendedChatMessage = ChatMessage & {
     options?: { id: string; label: string; icon?: string }[];
     curriculumMatches?: CurriculumUnit[];
     pedagogyMethods?: PedagogyMethod[];
@@ -88,11 +85,10 @@ export default function HomePage() {
     const isTeacher = userRole === 'teacher';
     const navigate = useNavigate();
 
-    // 根據角色動態選擇 Chat Hook
-    const teacherChat = useTeacherAIChat();
-    const studentChat = useStudentAIChat();
+    // 根據角色使用共享的 Context Chat
+    const teacherChat = useTeacherAIChatContext();
+    const studentChat = useStudentAIChatContext();
 
-    // 根據角色使用對應的 Chat
     // 根據角色使用對應的 Chat
     const activeChat = isTeacher ? teacherChat : studentChat;
     const {

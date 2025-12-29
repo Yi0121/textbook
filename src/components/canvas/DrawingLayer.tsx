@@ -1,33 +1,5 @@
 import React, { useMemo, forwardRef } from 'react';
-
-// 型別定義
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface Stroke {
-  id: string;
-  path: string;
-  color: string;
-  size: number;
-  tool: 'pen' | 'highlighter';
-  rawPoints?: Point[];
-  author?: string;
-}
-
-interface SelectionBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface LaserPoint {
-  x: number;
-  y: number;
-  timestamp: number;
-}
+import type { Stroke, SelectionBox, Point, LaserPoint } from '../../types';
 
 // --- 1. 幾何演算法：將點陣列轉換為平滑曲線 ---
 const getSmoothPath = (points: Point[]) => {
@@ -67,7 +39,7 @@ const StrokePath = React.memo(({ stroke }: { stroke: Stroke }) => {
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeOpacity={isHighlighter ? 0.4 : 1}
-      style={{ 
+      style={{
         mixBlendMode: isHighlighter ? 'multiply' : 'normal',
         transition: 'stroke-width 0.2s',
       }}
@@ -101,9 +73,9 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
   const laserTip = laserPath.length > 0 ? laserPath[laserPath.length - 1] : null;
 
   return (
-    <svg 
+    <svg
       className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20"
-      style={{ willChange: 'contents' }} 
+      style={{ willChange: 'contents' }}
     >
       <defs>
         {/* [修正] 雷射光暈濾鏡：改用單純的高斯模糊，去除產生白點的 ColorMatrix */}
@@ -135,61 +107,61 @@ const DrawingLayer = forwardRef<SVGPathElement, DrawingLayerProps>(({
 
       {/* 3. 範圍選取框 */}
       {selectionBox && (
-         <rect 
-            x={selectionBox.x} y={selectionBox.y}
-            width={selectionBox.width} height={selectionBox.height}
-            fill="rgba(99, 102, 241, 0.1)" 
-            stroke="#6366f1" 
-            strokeWidth={1.5} 
-            strokeDasharray="6 4" 
-            rx={8} 
-            className="animate-pulse"
-         />
+        <rect
+          x={selectionBox.x} y={selectionBox.y}
+          width={selectionBox.width} height={selectionBox.height}
+          fill="rgba(99, 102, 241, 0.1)"
+          stroke="#6366f1"
+          strokeWidth={1.5}
+          strokeDasharray="6 4"
+          rx={8}
+          className="animate-pulse"
+        />
       )}
 
-{/* 4. [修正] 雷射筆特效：移除動畫，改用靜態光暈 */}
+      {/* 4. [修正] 雷射筆特效：移除動畫，改用靜態光暈 */}
       {laserPath.length > 0 && laserTip && (
-          <g>
-            {/* 層級 A: 紅色路徑光暈 */}
-            <path
-                d={laserD}
-                stroke="#ef4444" 
-                strokeWidth="8" 
-                strokeOpacity={0.3} 
-                fill="none" 
-                strokeLinecap="round"
-                filter="url(#laser-glow)"
-            />
-            
-            {/* 層級 B: 亮白核心路徑 */}
-            <path
-                d={laserD}
-                stroke="#ffffff" 
-                strokeWidth="2" 
-                strokeOpacity={0.9} 
-                fill="none" 
-                strokeLinecap="round"
-            />
+        <g>
+          {/* 層級 A: 紅色路徑光暈 */}
+          <path
+            d={laserD}
+            stroke="#ef4444"
+            strokeWidth="8"
+            strokeOpacity={0.3}
+            fill="none"
+            strokeLinecap="round"
+            filter="url(#laser-glow)"
+          />
 
-            {/* 筆頭：外層光暈 (靜態，無動畫) */}
-            <circle 
-                cx={laserTip.x} 
-                cy={laserTip.y} 
-                r={8} 
-                fill="#ef4444" 
-                fillOpacity={0.5}
-                stroke="none"
-            />
-            
-            {/* 筆頭：中心實心白點 */}
-            <circle 
-                cx={laserTip.x} 
-                cy={laserTip.y} 
-                r={3.5} 
-                fill="#ffffff"
-                stroke="none"
-            />
-          </g>
+          {/* 層級 B: 亮白核心路徑 */}
+          <path
+            d={laserD}
+            stroke="#ffffff"
+            strokeWidth="2"
+            strokeOpacity={0.9}
+            fill="none"
+            strokeLinecap="round"
+          />
+
+          {/* 筆頭：外層光暈 (靜態，無動畫) */}
+          <circle
+            cx={laserTip.x}
+            cy={laserTip.y}
+            r={8}
+            fill="#ef4444"
+            fillOpacity={0.5}
+            stroke="none"
+          />
+
+          {/* 筆頭：中心實心白點 */}
+          <circle
+            cx={laserTip.x}
+            cy={laserTip.y}
+            r={3.5}
+            fill="#ffffff"
+            stroke="none"
+          />
+        </g>
       )}
     </svg>
   );

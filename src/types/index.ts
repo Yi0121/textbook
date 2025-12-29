@@ -8,6 +8,12 @@ export interface Point {
   timestamp?: number;
 }
 
+export interface LaserPoint {
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
 export interface Viewport {
   x: number;
   y: number;
@@ -26,7 +32,7 @@ export interface SelectionBox {
 export type DrawingTool = 'cursor' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'laser';
 
 export interface Stroke {
-  id?: string;
+  id: string;
   path: string;
   color: string;
   size: number;
@@ -42,8 +48,8 @@ export interface MindMapNode {
   id: string;
   x?: number; // 絕對座標
   y?: number;
-  offsetX?: number; // 相對座標
-  offsetY?: number;
+  offsetX: number; // 相對座標
+  offsetY: number;
   label: string;
   type: 'root' | 'child';
 }
