@@ -4,7 +4,7 @@
  * 使用 React.lazy() 實現路由級別 Code Splitting
  */
 
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import AppLayout from './components/layout/AppLayout';
 import { PageLoader } from './components/ui/LoadingSpinner';
@@ -13,24 +13,18 @@ import { PageLoader } from './components/ui/LoadingSpinner';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const ClassroomPage = lazy(() => import('./pages/ClassroomPage'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const LessonPrepPage = lazy(() => import('./pages/LessonPrepPage'));
 const TeachingSuggestionsPage = lazy(() => import('./pages/TeachingSuggestionsPage'));
 const LearningSuggestionsPage = lazy(() => import('./pages/LearningSuggestionsPage'));
-const MyLearningPathPage = lazy(() => import('./pages/MyLearningPathPage'));
 const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
 const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
 const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
 const LessonPrepChatPage = lazy(() => import('./pages/LessonPrepChatPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
 const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboard'));
-const StudentDetailProgressPage = lazy(() => import('./pages/StudentDetailProgressPage'));
+const TeacherStudentOverviewPage = lazy(() => import('./pages/TeacherStudentOverviewPage'));
 const TeacherClassSetupPage = lazy(() => import('./pages/TeacherClassSetupPage'));
-const StudentProgressPage = lazy(() => import('./pages/StudentProgressPage'));
-
-// ...
-
-
+const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 
 // ==================== Suspense Wrapper ====================
 
@@ -47,12 +41,12 @@ function withSuspense(Component: React.LazyExoticComponent<React.ComponentType>)
 export const router = createBrowserRouter([
     // 全螢幕編輯器（獨立於 AppLayout）
     {
-        path: '/lesson-prep/preview/:lessonId',
+        path: '/teacher/lesson-prep/preview/:lessonId',
         element: withSuspense(LessonPrepPreviewPage),
     },
     // 對話式備課（獨立於 AppLayout）
     {
-        path: '/lesson-prep/chat',
+        path: '/teacher/lesson-prep/chat',
         element: withSuspense(LessonPrepChatPage),
     },
     // 標準布局頁面
@@ -64,63 +58,70 @@ export const router = createBrowserRouter([
                 index: true,
                 element: withSuspense(HomePage),
             },
+
+            // ==================== 教師端路由 /teacher/* ====================
             {
-                path: 'class',
+                path: 'teacher/classroom',
                 element: withSuspense(ClassroomPage),
             },
             {
-                path: 'dashboard',
-                element: withSuspense(DashboardPage),
-            },
-            {
-                path: 'lesson-prep',
+                path: 'teacher/lesson-prep',
                 element: withSuspense(LessonPrepPage),
             },
             {
-                path: 'teaching-suggestions',
+                path: 'teacher/suggestions',
                 element: withSuspense(TeachingSuggestionsPage),
             },
             {
-                path: 'learning-suggestions',
-                element: withSuspense(LearningSuggestionsPage),
-            },
-            // 學生端新增
-            {
-                path: 'my-path',
-                element: withSuspense(MyLearningPathPage),
-            },
-            {
-                path: 'my-conversations',
-                element: withSuspense(MyConversationsPage),
-            },
-            // 老師端分析（全班視圖中可切換至個人視圖）
-            {
-                path: 'analytics/class',
+                path: 'teacher/class-analytics',
                 element: withSuspense(ClassAnalyticsPage),
             },
-            // 學生學習路徑
             {
-                path: 'student/learning-path/:lessonId',
-                element: withSuspense(StudentLearningPathPage),
+                path: 'teacher/class-setup',
+                element: withSuspense(TeacherClassSetupPage),
             },
-            // 教師課程監控
             {
                 path: 'teacher/lesson-progress/:lessonId',
                 element: withSuspense(LessonProgressDashboard),
             },
             {
-                path: 'teacher/student-progress/:lessonId/:studentId',
-                element: withSuspense(StudentDetailProgressPage),
+                path: 'teacher/student-overview/:lessonId/:studentId',
+                element: withSuspense(TeacherStudentOverviewPage),
             },
-            // 老師端單元選擇
             {
-                path: 'teacher/start-class',
-                element: withSuspense(TeacherClassSetupPage),
+                path: 'teacher/student-detail/:lessonId/:studentId',
+                element: withSuspense(StudentAnalyticsPage),
             },
-            // 學生端進度
+
+            // ==================== 學生端路由 /student/* ====================
             {
-                path: 'progress',
-                element: withSuspense(StudentProgressPage),
+                path: 'student/dashboard',
+                element: withSuspense(StudentAnalyticsPage),
+            },
+            {
+                path: 'student/conversations',
+                element: withSuspense(MyConversationsPage),
+            },
+            {
+                path: 'student/suggestions',
+                element: withSuspense(LearningSuggestionsPage),
+            },
+            {
+                path: 'student/path/:lessonId',
+                element: withSuspense(StudentLearningPathPage),
+            },
+            // ==================== Legacy Redirects & 404 ====================
+            {
+                path: 'lesson-prep',
+                element: <Navigate to="/teacher/lesson-prep" replace />,
+            },
+            {
+                path: 'class',
+                element: <Navigate to="/teacher/classroom" replace />,
+            },
+            {
+                path: '*',
+                element: <Navigate to="/" replace />,
             },
         ],
     },

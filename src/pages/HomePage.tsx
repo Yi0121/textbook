@@ -49,19 +49,19 @@ interface OutletContextType {
 
 // 教師快速入口
 const TEACHER_QUICK_ACTIONS = [
-    { icon: Edit3, label: '備課', description: '備課工作台', path: '/lesson-prep' },
-    { icon: BarChart3, label: '學習分析', description: '班級學習分析', path: '/dashboard' },
-    { icon: Lightbulb, label: '教學建議', description: 'AI 教學建議', path: '/teaching-suggestions' },
+    { icon: Edit3, label: '備課', description: '備課工作台', path: '/teacher/lesson-prep' },
+    { icon: BarChart3, label: '學習分析', description: '班級學習分析', path: '/teacher/class-analytics' },
+    { icon: Lightbulb, label: '教學建議', description: 'AI 教學建議', path: '/teacher/suggestions' },
     { icon: Users, label: '分組協作', description: '管理小組活動', path: '/groups' },
     { icon: ClipboardList, label: '作業管理', description: '發布與批改', path: '/assignments' },
 ];
 
 // 學生快速入口
 const STUDENT_QUICK_ACTIONS = [
-    { icon: BookOpen, label: '開始上課', description: '閱讀教材', path: '/class' },
-    { icon: BarChart3, label: '學習進度', description: '查看我的進度', path: '/progress' },
+    { icon: BookOpen, label: '開始上課', description: '閱讀教材', path: '/teacher/classroom' },
+    { icon: BarChart3, label: '學習進度', description: '查看我的進度', path: '/student/dashboard' },
     { icon: ClipboardList, label: '我的作業', description: '查看與提交', path: '/assignments' },
-    { icon: Lightbulb, label: '學習建議', description: '個人化學習建議', path: '/learning-suggestions' },
+    { icon: Lightbulb, label: '學習建議', description: '個人化學習建議', path: '/student/suggestions' },
 ];
 
 // Mock 最近活動資料
@@ -201,7 +201,7 @@ export default function HomePage() {
                                 {/* 確認按鈕：學習路徑導航 */}
                                 {msg.action?.type === 'navigate' && msg.action.target === 'learning-path' && (
                                     <button
-                                        onClick={() => navigate('/dashboard?tab=learning-path')}
+                                        onClick={() => navigate('/student/dashboard?tab=learning-path')}
                                         className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
                                     >
                                         <BarChart3 className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function HomePage() {
                                 {/* 確認按鈕：課程預覽導航（視覺化編輯） */}
                                 {msg.action?.type === 'navigate' && msg.action.target === 'lesson-preview' && (
                                     <button
-                                        onClick={() => navigate('/lesson-prep/preview/lesson-apos-001')}
+                                        onClick={() => navigate('/teacher/lesson-prep/preview/lesson-apos-001')}
                                         className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
                                     >
                                         <Edit3 className="w-4 h-4" />
@@ -223,7 +223,7 @@ export default function HomePage() {
                                 {/* 確認按鈕：前往備課工作台 */}
                                 {msg.action?.type === 'navigate' && msg.action.target === 'lesson-prep-chat' && (
                                     <button
-                                        onClick={() => navigate('/lesson-prep')}
+                                        onClick={() => navigate('/teacher/lesson-prep')}
                                         className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl font-medium text-sm transition-all shadow-md hover:shadow-lg"
                                     >
                                         <Edit3 className="w-4 h-4" />

@@ -661,9 +661,9 @@ export const MOCK_GENERATED_LESSON: LessonPlan = {
 
 export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
     id: 'lesson-math-002',
-    title: '四則運算 - 教學流程圖',
-    topic: '四則混合運算',
-    objectives: '理解運算順序規則\\n能正確計算混合運算\\n應用於生活情境問題',
+    title: '二元一次方程式',
+    topic: '二元一次方程式解題',
+    objectives: '掌握方程式基本概念\\n能使用消去法解題\\n應用於實際問題',
     difficulty: 'intermediate',
     status: 'draft',
     createdAt: new Date(),
@@ -671,13 +671,13 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 步驟 1: 課程導入
         {
             id: 'step1',
-            title: '1. 認識運算符號',
+            title: '1. 方程式基礎概念',
             order: 1,
             nodeType: 'material',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['加減乘除符號教學'],
+                materials: ['方程式基本定義與符號'],
             },
             // 三選一：使用特殊的 multiPath 來表示多個並行選項
             isConditional: true,
@@ -685,7 +685,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
                 learnedPath: 'step2-video',      // 選項A
                 notLearnedPath: 'step2-game',    // 選項B
                 advancedPath: 'step2-reading',   // 選項C
-                assessmentCriteria: '選擇教學方式',
+                assessmentCriteria: '選擇學習方式',
                 branchType: 'multi-choice',
             },
         },
@@ -693,42 +693,42 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 步驟 2: 教學（三選一）- 平行路徑從 step1 出發，都指向 step3
         {
             id: 'step2-video',
-            title: '2A. 影片：先乘除後加減',
+            title: '2A. 影片教學',
             order: 2,
             nodeType: 'video',
             branchLevel: 'standard',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['運算順序動畫'],
+                materials: ['代入消去法動畫講解'],
             },
             nextNodeId: 'step3', // 指向步驟3
         },
 
         {
             id: 'step2-game',
-            title: '2B. 遊戲：運算大冒險',
+            title: '2B. 互動遊戲',
             order: 2,
             nodeType: 'external',
             branchLevel: 'standard',
             agent: findAgentById('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
-                materials: ['互動遊戲'],
+                materials: ['互動式解題遊戲'],
             },
             nextNodeId: 'step3', // 指向步驟3
         },
 
         {
             id: 'step2-reading',
-            title: '2C. 閱讀：運算規則圖解',
+            title: '2C. 圖文講義',
             order: 2,
             nodeType: 'material',
             branchLevel: 'standard',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[0]],
             generatedContent: {
-                materials: ['圖解教材'],
+                materials: ['加減消去法圖解教材'],
             },
             nextNodeId: 'step3', // 指向步驟3
         },
@@ -736,28 +736,28 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 步驟 3: 練習
         {
             id: 'step3',
-            title: '3. 基礎練習',
+            title: '3. 基礎解題練習',
             order: 3,
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 5,
-                materials: ['5題基礎運算'],
+                materials: ['5題基礎方程式'],
             },
         },
 
         // 步驟 4: 測驗（檢查點）
         {
             id: 'step4-test',
-            title: '4. 學習檢測',
+            title: '4. 能力檢測',
             order: 4,
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 10,
-                materials: ['10題混合運算'],
+                materials: ['10題方程式測驗'],
             },
             isConditional: true,
             conditions: {
@@ -771,21 +771,21 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 補救教學分支
         {
             id: 'remedial1',
-            title: '補救：個別指導',
+            title: '補救：概念重建',
             order: 5,
             nodeType: 'material',
             branchLevel: 'remedial',
             agent: findAgentById('conjecture'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
-                materials: ['AI一對一輔導'],
+                materials: ['AI 個別化輔導'],
             },
             nextNodeId: 'remedial-test',
         },
 
         {
             id: 'remedial-test',
-            title: '補救：再次測驗',
+            title: '補救：再次評量',
             order: 6,
             nodeType: 'worksheet',
             branchLevel: 'remedial',
@@ -793,7 +793,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 5,
-                materials: ['簡化版測驗'],
+                materials: ['簡化版方程式'],
             },
             isConditional: true,
             conditions: {
@@ -807,40 +807,40 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 步驟 5: 進階應用
         {
             id: 'step5',
-            title: '5. 括號運算',
+            title: '5. 多元解法探索',
             order: 7,
             nodeType: 'material',
             agent: findAgentById('multi-solution'),
             selectedTools: [AVAILABLE_TOOLS[3]],
             generatedContent: {
-                materials: ['括號優先規則'],
+                materials: ['不同解題策略比較'],
             },
         },
 
         // 步驟 6: 應用題
         {
             id: 'step6',
-            title: '6. 生活應用題',
+            title: '6. 實際問題應用',
             order: 8,
             nodeType: 'video',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['購物情境題'],
+                materials: ['生活情境題：速度問題'],
             },
         },
 
         // 步驟 7: 總測驗
         {
             id: 'step7',
-            title: '7. 總評量',
+            title: '7. 總結性評量',
             order: 9,
             nodeType: 'worksheet',
             agent: findAgentById('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 15,
-                materials: ['綜合測驗'],
+                materials: ['綜合能力測驗'],
             },
             isConditional: true,
             conditions: {
@@ -854,14 +854,14 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 應用題補救
         {
             id: 'remedial2',
-            title: '補救：應用題加強',
+            title: '補救：應用題解題',
             order: 10,
             nodeType: 'external',
             branchLevel: 'remedial',
             agent: findAgentById('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
-                materials: ['互動情境練習'],
+                materials: ['互動式應用題練習'],
             },
             nextNodeId: 'step7',
         },
@@ -869,13 +869,13 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
         // 完成
         {
             id: 'finish',
-            title: '✓ 課程完成',
+            title: '✓ 學習路徑完成',
             order: 11,
             nodeType: 'material',
             agent: findAgentById('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
-                materials: ['學習成果總結'],
+                materials: ['個人化學習成果報告'],
             },
         },
     ],

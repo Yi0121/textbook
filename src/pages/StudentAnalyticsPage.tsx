@@ -1,8 +1,9 @@
 /**
- * StudentProgressPage - 學生進度儀表板 (Designer Version)
+ * StudentAnalyticsPage - 學生進度儀表板 (Designer Version)
  */
 
 import { useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     PieChart, Pie, Cell, ResponsiveContainer,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -39,7 +40,10 @@ const generateSeededRandom = (seed: number) => {
     return x - Math.floor(x);
 };
 
-export default function StudentProgressPage() {
+export default function StudentAnalyticsPage() {
+    const { lessonId: _lessonId, studentId } = useParams<{ lessonId?: string; studentId?: string }>();
+    const navigate = useNavigate();
+
     const [inputMessage, setInputMessage] = useState('');
 
     // 預計算熱力圖資料，避免每次 render 產生不同的值
@@ -57,17 +61,30 @@ export default function StudentProgressPage() {
 
     return (
         <div className="min-h-screen bg-gray-100 p-6 font-sans">
-            <div className="max-w-[1600px] mx-auto grid grid-cols-12 gap-6 h-[calc(100vh-3rem)]">
+            <div className="max-w-[1600px] mx-auto grid grid-cols-12 gap-6">
+
+                {/* Back Button for Teacher View */}
+                {studentId && (
+                    <div className="col-span-12">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 mb-2 transition-colors px-1"
+                        >
+                            <User className="w-5 h-5" />
+                            <span>返回學生總覽</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* Left Column: Data Visaulization (9 cols) */}
-                <div className="col-span-12 lg:col-span-9 flex flex-col gap-6 h-full overflow-y-auto pr-2 custom-scrollbar">
+                <div className="col-span-12 lg:col-span-9 flex flex-col gap-6">
 
                     {/* Row 1: Tasks & Radar */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[22rem]">
                         {/* Task Completion */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
                             <h3 className="text-xl font-bold text-gray-800 mb-4">任務完成度</h3>
-                            <div className="flex-1 relative flex items-center justify-center">
+                            <div className="flex-1 relative flex items-center justify-center min-h-0 min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -97,7 +114,7 @@ export default function StudentProgressPage() {
                         {/* Concept Mastery Radar */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
                             <h3 className="text-xl font-bold text-gray-800 mb-2">概念精熟度</h3>
-                            <div className="flex-1">
+                            <div className="flex-1 min-h-0 min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={CONCEPT_DATA}>
                                         <PolarGrid stroke="#e5e7eb" />
@@ -215,7 +232,7 @@ export default function StudentProgressPage() {
                     </div>
 
                     {/* Row 3: Heatmap */}
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-[12rem] flex flex-col">
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col min-h-[16rem]">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">學習投入歷程</h3>
                         <div className="flex-1 flex flex-col">
                             {/* Time Labels */}
@@ -231,11 +248,11 @@ export default function StudentProgressPage() {
 
                             {/* Grid */}
                             <div className="flex-1 flex gap-2">
-                                <div className="flex flex-col justify-between text-xs text-gray-400 pr-4 font-mono w-20 text-right">
-                                    <span>08:00-10:00</span>
-                                    <span>10:00-12:00</span>
-                                    <span>13:00-15:00</span>
-                                    <span>15:00-17:00</span>
+                                <div className="flex flex-col justify-between text-xs text-gray-400 pr-4 font-mono w-16 text-right">
+                                    <span>08-10</span>
+                                    <span>10-12</span>
+                                    <span>13-15</span>
+                                    <span>15-17</span>
                                 </div>
                                 <div className="flex-1 grid grid-cols-[repeat(50,minmax(0,1fr))] grid-rows-4 gap-1">
                                     {heatmapData.map((item) => (

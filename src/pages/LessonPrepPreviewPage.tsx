@@ -494,7 +494,7 @@ function LessonPrepPreviewPageInner() {
                 isSidebarOpen={isSidebarOpen}
                 viewLevel={viewLevel}
                 expandedStage={expandedStage}
-                onNavigateBack={() => navigate('/lesson-prep')}
+                onNavigateBack={() => navigate('/teacher/lesson-prep')}
                 onReturnToStageView={() => { setExpandedStage(null); setViewLevel('stage'); }}
                 onAddActivity={handleAddActivity}
                 onFitView={() => fitView({ padding: 0.2 })}

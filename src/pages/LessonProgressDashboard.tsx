@@ -332,7 +332,7 @@ export default function LessonProgressDashboard() {
                             return (
                                 <button
                                     key={student.studentId}
-                                    onClick={() => navigate(`/teacher/student-progress/${lesson.id}/${student.studentId}`)}
+                                    onClick={() => navigate(`/teacher/student-overview/${lesson.id}/${student.studentId}`)}
                                     className="flex items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all text-left group bg-gray-50 hover:bg-white"
                                 >
                                     {/* Avatar with progress ring */}

@@ -9,36 +9,33 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Clock, Signal, ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Clock, ArrowRight, Play, CheckCircle2 } from 'lucide-react';
 
 // Mock Data: 課程單元
 const UNITS = [
     {
         id: 'u1',
-        title: '第一單元：四則運算基礎',
+        title: '五年級：四則運算基礎',
         description: '理解加減乘除的運算規則與優先順序',
         duration: '45 分鐘',
-        difficulty: '基礎',
         status: 'completed', // completed, in-progress, not-started
         topics: ['加減法複習', '乘除法原理', '括號的使用'],
     },
     {
         id: 'u2',
-        title: '第二單元：分數的加減',
-        description: '異分母分數的通分與計算',
-        duration: '50 分鐘',
-        difficulty: '中階',
+        title: '八年級：一元二次方程式',
+        description: '學習一元二次方程式的解法與應用',
+        duration: '60 分鐘',
         status: 'in-progress',
-        topics: ['擴分與約分', '通分技巧', '分數加減應用題'],
+        topics: ['因式分解法', '配方法', '公式解'],
     },
     {
         id: 'u3',
-        title: '第三單元：幾何圖形面積',
-        description: '長方形、三角形與梯形的面積公式推導',
-        duration: '60 分鐘',
-        difficulty: '進階',
+        title: '六年級：分數的加減',
+        description: '異分母分數的通分與計算',
+        duration: '50 分鐘',
         status: 'not-started',
-        topics: ['面積公式', '複合圖形', '生活應用'],
+        topics: ['擴分與約分', '通分技巧', '分數加減應用題'],
     },
 ];
 
@@ -48,7 +45,7 @@ export default function TeacherClassSetupPage() {
 
     const handleStartClass = (unitId: string) => {
         // 實際應用中，這裡會將 selectedUnitId 存入 Context 或通過 State 傳遞
-        navigate('/class', { state: { unitId } });
+        navigate('/teacher/classroom', { state: { unitId } });
     };
 
     return (
@@ -101,10 +98,6 @@ export default function TeacherClassSetupPage() {
                                             <Clock className="w-4 h-4 text-gray-400" />
                                             {unit.duration}
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Signal className="w-4 h-4 text-gray-400" />
-                                            {unit.difficulty}
-                                        </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-gray-400">|</span>
                                             {unit.topics.map(topic => (
@@ -140,7 +133,7 @@ export default function TeacherClassSetupPage() {
                 {/* 底部提示 */}
                 <div className="mt-8 text-center">
                     <button
-                        onClick={() => navigate('/lesson-prep')}
+                        onClick={() => navigate('/teacher/lesson-prep')}
                         className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2 hover:underline"
                     >
                         還沒準備好課程？前往備課工作台 <ArrowRight className="w-4 h-4" />

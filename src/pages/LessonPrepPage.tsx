@@ -43,7 +43,7 @@ export default function LessonPrepPage() {
         setTimeout(() => {
             setIsGenerating(false);
             // 導航到視覺化編輯器
-            navigate('/lesson-prep/preview/lesson-apos-001'); // 暫時導向示範課程
+            navigate('/teacher/lesson-prep/preview/lesson-apos-001'); // 暫時導向示範課程
         }, 2000);
     };
 
@@ -69,7 +69,7 @@ export default function LessonPrepPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* 快速開始 */}
                             <button
-                                onClick={() => navigate('/lesson-prep/chat')}
+                                onClick={() => navigate('/teacher/lesson-prep/chat')}
                                 className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-300 text-left group"
                             >
                                 <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -86,7 +86,7 @@ export default function LessonPrepPage() {
 
                             {/* 查看示範課程 */}
                             <button
-                                onClick={() => navigate('/lesson-prep/preview/lesson-apos-001?demo=differentiated')}
+                                onClick={() => navigate('/teacher/lesson-prep/preview/lesson-apos-001?demo=differentiated')}
                                 className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
                             >
                                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -117,7 +117,7 @@ export default function LessonPrepPage() {
                                 {RECENT_DRAFTS.map((draft) => (
                                     <div
                                         key={draft.id}
-                                        onClick={() => navigate('/lesson-prep/preview/lesson-math-001')}
+                                        onClick={() => navigate('/teacher/lesson-prep/preview/lesson-math-001')}
                                         className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-xl cursor-pointer transition-all group"
                                     >
                                         <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">

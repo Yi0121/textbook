@@ -51,7 +51,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         icon: GraduationCap,
         items: [
             { path: '/', label: 'AI 助教', icon: MessageSquare },
-            { path: '/teacher/start-class', label: '上課', icon: BookOpen },
+            { path: '/teacher/class-setup', label: '上課', icon: BookOpen },
         ],
     },
     {
@@ -59,7 +59,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         label: '課程管理',
         icon: Library,
         items: [
-            { path: '/lesson-prep', label: '備課', icon: Edit3 },
+            { path: '/teacher/lesson-prep', label: '備課', icon: Edit3 },
             { path: '/teacher/lesson-progress/lesson-apos-001', label: '課程監控', icon: Activity },
             { path: '/materials', label: '教材庫', icon: FolderOpen },
         ],
@@ -69,10 +69,10 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         label: '學生管理',
         icon: Users,
         items: [
-            { path: '/analytics/class', label: '學習分析', icon: BarChart3 },
+            { path: '/teacher/class-analytics', label: '學習分析', icon: BarChart3 },
             { path: '/assignments', label: '作業管理', icon: ClipboardList },
             { path: '/groups', label: '分組協作', icon: Users },
-            { path: '/teaching-suggestions', label: '教學建議', icon: Lightbulb },
+            { path: '/teacher/suggestions', label: '教學建議', icon: Lightbulb },
         ],
     },
 ];
@@ -85,7 +85,7 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         icon: Sparkles,
         items: [
             { path: '/', label: 'AI 家教', icon: Sparkles },
-            { path: '/class', label: '上課', icon: BookOpen },
+            { path: '/teacher/classroom', label: '上課', icon: BookOpen },
         ],
     },
     {
@@ -93,9 +93,9 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         label: '我的學習',
         icon: TrendingUp,
         items: [
-            { path: '/student/learning-path/lesson-apos-001', label: '學習路徑', icon: TrendingUp },
-            { path: '/progress', label: '學習進度', icon: BarChart3 },
-            { path: '/my-conversations', label: '對話紀錄', icon: MessageSquare },
+            { path: '/student/path/lesson-apos-001', label: '學習路徑', icon: TrendingUp },
+            { path: '/student/dashboard', label: '學習進度', icon: BarChart3 },
+            { path: '/student/conversations', label: '對話紀錄', icon: MessageSquare },
         ],
     },
     {
@@ -104,7 +104,7 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         icon: ClipboardList,
         items: [
             { path: '/assignments', label: '作業', icon: ClipboardList },
-            { path: '/learning-suggestions', label: '學習建議', icon: Lightbulb },
+            { path: '/student/suggestions', label: '學習建議', icon: Lightbulb },
         ],
     },
 ];

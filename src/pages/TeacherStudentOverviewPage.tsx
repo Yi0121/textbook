@@ -1,5 +1,5 @@
 /**
- * StudentDetailProgressPage - 教師端查看個別學生詳情
+ * TeacherStudentOverviewPage - 教師端查看個別學生詳情
  * 
  * 增強版功能：
  * - 闘關式學習路徑視覺化
@@ -12,7 +12,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
 import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
 import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
-import { getNodeProgress, formatTimeMMSS } from '../utils/progressHelpers';
+import { getNodeProgress } from '../utils/progressHelpers';
+
 
 // 闘關式學習路徑組件（教師視角）
 function QuestPathView({
@@ -26,10 +27,16 @@ function QuestPathView({
 }) {
     const getProgress = (nodeId: string) => getNodeProgress(studentProgress, nodeId);
 
+    // 找出學生實際選擇的 step2 選項（三選一）
+    const completedStep2Ids = ['step2-video', 'step2-game', 'step2-reading'].filter(id =>
+        studentProgress.some(np => np.nodeId === id)
+    );
+    const selectedStep2Id = completedStep2Ids.length > 0 ? completedStep2Ids[0] : 'step2-video';
+
     return (
         <div className="relative overflow-x-auto pb-4">
             <div className="flex items-center gap-2 min-w-max px-4 py-6">
-                {nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').filter(n => !n.id.startsWith('step2-') || n.id === 'step2-video').map((node, idx, arr) => {
+                {nodes.filter(n => !n.branchLevel || n.branchLevel !== 'remedial').filter(n => !n.id.startsWith('step2-') || n.id === selectedStep2Id).map((node, idx, arr) => {
                     const progress = getProgress(node.id);
                     const isCompleted = progress?.completed;
                     const isCurrent = node.id === currentNodeId;
@@ -91,6 +98,7 @@ function QuestPathView({
         </div>
     );
 }
+
 
 // 成就徽章組件
 function AchievementBadges({ student, lesson }: {
@@ -159,7 +167,7 @@ function AchievementBadges({ student, lesson }: {
     );
 }
 
-export default function StudentDetailProgressPage() {
+export default function TeacherStudentOverviewPage() {
     const { lessonId, studentId } = useParams<{ lessonId: string; studentId: string }>();
     const navigate = useNavigate();
 
@@ -170,19 +178,8 @@ export default function StudentDetailProgressPage() {
         return <div className="p-6 text-center text-gray-500">學生資料未找到</div>;
     }
 
-
-
-    const formatDate = (date?: Date) => {
-        if (!date) return '-';
-        return new Date(date).toLocaleString('zh-TW', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
-
     return (
+
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
             <div className="max-w-6xl mx-auto">
                 {/* 頭部 */}
@@ -257,85 +254,23 @@ export default function StudentDetailProgressPage() {
                     />
                 </div>
 
-                {/* 節點詳細列表 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-600" />
-                        節點詳情
-                    </h2>
-
-                    <div className="space-y-3">
-                        {(lesson.nodes || []).map((node) => {
-                            const progress = student.nodeProgress.find(np => np.nodeId === node.id);
-                            const isCompleted = progress?.completed;
-                            const isCurrent = node.id === student.currentNodeId;
-
-                            return (
-                                <div
-                                    key={node.id}
-                                    className={`flex items-center gap-4 p-4 rounded-xl border-2 ${isCompleted ? 'border-green-200 bg-green-50' :
-                                        isCurrent ? 'border-blue-300 bg-blue-50' :
-                                            'border-gray-100 bg-gray-50'
-                                        }`}
-                                >
-                                    {/* 狀態圖標 */}
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isCompleted ? 'bg-green-500 text-white' :
-                                        isCurrent ? 'bg-blue-500 text-white' :
-                                            'bg-gray-200 text-gray-400'
-                                        }`}>
-                                        {isCompleted ? <CheckCircle className="w-5 h-5" /> :
-                                            isCurrent ? <Zap className="w-5 h-5" /> :
-                                                <Lock className="w-4 h-4" />}
-                                    </div>
-
-                                    {/* 節點資訊 */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-gray-900">{node.title}</span>
-                                            {node.isConditional && (
-                                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">檢查點</span>
-                                            )}
-                                        </div>
-                                        {progress && (
-                                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                                                {progress.score !== undefined && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Award className="w-3 h-3 text-yellow-500" />
-                                                        {progress.score}分
-                                                    </span>
-                                                )}
-                                                {progress.timeSpent && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3 text-blue-500" />
-                                                        {formatTimeMMSS(progress.timeSpent)}
-                                                    </span>
-                                                )}
-                                                {progress.retryCount !== undefined && progress.retryCount > 0 && (
-                                                    <span className="flex items-center gap-1">
-                                                        <TrendingUp className="w-3 h-3 text-purple-500" />
-                                                        {progress.retryCount}次重試
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* 右側資訊 */}
-                                    <div className="text-right flex-shrink-0">
-                                        {progress?.pathTaken && (
-                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${progress.pathTaken === 'learned' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                                                }`}>
-                                                {progress.pathTaken === 'learned' ? '✓ 學會' : '↻ 補強'}
-                                            </span>
-                                        )}
-                                        {progress?.completedAt && (
-                                            <div className="text-xs text-gray-400 mt-1">{formatDate(progress.completedAt)}</div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                {/* 查看更多詳情按鈕 */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <button
+                        onClick={() => navigate(`/teacher/student-detail/${lessonId}/${studentId}`)}
+                        className="w-full p-8 flex items-center justify-between hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all group"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Target className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="text-left">
+                                <h2 className="text-xl font-bold text-gray-900 mb-1">查看完整學習分析</h2>
+                                <p className="text-sm text-gray-500">查看任務完成度、概念精熟度、解題效率等詳細數據</p>
+                            </div>
+                        </div>
+                        <ArrowLeft className="w-6 h-6 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-2 transition-all rotate-180" />
+                    </button>
                 </div>
             </div>
         </div>

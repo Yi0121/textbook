@@ -19,14 +19,14 @@ const getNodeNavigationPath = (node: LearningPathNode): string | null => {
     const type = node.type;
 
     // 根據 label 關鍵字匹配
-    if (label.includes('dashboard') || label.includes('儀表板')) return '/dashboard';
-    if (label.includes('lesson planner') || label.includes('課程設計') || label.includes('備課')) return '/lesson-prep';
-    if (label.includes('teaching') || label.includes('教學建議')) return '/teaching-suggestions';
-    if (label.includes('learning') || label.includes('學習建議')) return '/learning-suggestions';
-    if (label.includes('class') || label.includes('上課') || label.includes('教材')) return '/class';
+    if (label.includes('dashboard') || label.includes('儀表板')) return '/teacher/class-analytics';
+    if (label.includes('lesson planner') || label.includes('課程設計') || label.includes('備課')) return '/teacher/lesson-prep';
+    if (label.includes('teaching') || label.includes('教學建議')) return '/teacher/suggestions';
+    if (label.includes('learning') || label.includes('學習建議')) return '/student/suggestions';
+    if (label.includes('class') || label.includes('上課') || label.includes('教材')) return '/teacher/classroom';
 
     // 根據節點類型匹配
-    if (type === 'learning_analytics') return '/dashboard';
+    if (type === 'learning_analytics') return '/teacher/class-analytics';
     if (type === 'ai_grouping') return '/groups';
     if (type === 'collaboration') return '/groups';
     if (type === 'quiz' || type === 'exercise') return '/assignments';
