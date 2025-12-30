@@ -12,26 +12,141 @@ import {
     BookOpen,
     Target,
     User,
-    Search
+    Search,
+    Zap,
+    TrendingUp
 } from 'lucide-react';
+
+// AI 助手 Modal
+function AIAssistantModal({
+    isOpen,
+    onClose,
+    type,
+    studentName
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    type: 'intervention' | 'parent-comm' | null;
+    studentName: string
+}) {
+    if (!isOpen || !type) return null;
+
+    const isIntervention = type === 'intervention';
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                {/* Header */}
+                <div className={`p-6 border-b ${isIntervention ? 'bg-red-50 border-red-100' : 'bg-indigo-50 border-indigo-100'}`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${isIntervention ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                            {isIntervention ? <Zap className="w-6 h-6" /> : <TrendingUp className="w-6 h-6" />}
+                        </div>
+                        <div>
+                            <h3 className={`text-xl font-bold ${isIntervention ? 'text-red-900' : 'text-indigo-900'}`}>
+                                {isIntervention ? 'AI 個別化補救計畫' : '親師溝通助手'}
+                            </h3>
+                            <p className={`text-sm ${isIntervention ? 'text-red-700' : 'text-indigo-700'}`}>
+                                對象：{studentName}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Body */}
+                <div className="p-6">
+                    {isIntervention ? (
+                        <div className="space-y-4">
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <h4 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <Target className="w-4 h-4 text-red-500" />
+                                    診斷結果
+                                </h4>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    AI 分析顯示 {studentName} 在 <span className="font-bold text-red-600">移項法則</span> 的概念理解上有 3 次重複錯誤。建議立即進行針對性補救。
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 className="font-bold text-gray-700 mb-3">推薦補救內容 (AI 生成)</h4>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors cursor-pointer bg-white">
+                                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-xs">影片</div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-gray-900">3分鐘搞懂移項變號</div>
+                                            <div className="text-xs text-gray-500">針對性概念解說</div>
+                                        </div>
+                                        <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors cursor-pointer bg-white">
+                                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-xs">練習</div>
+                                        <div className="flex-1">
+                                            <div className="font-medium text-gray-900">移項法則 - 基礎 5 題</div>
+                                            <div className="text-xs text-gray-500">預計耗時 5 分鐘</div>
+                                        </div>
+                                        <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                                <h4 className="font-bold text-indigo-900 mb-2">AI 撰寫草稿</h4>
+                                <textarea
+                                    className="w-full h-32 p-3 rounded-lg border-indigo-200 bg-white text-sm text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    defaultValue={`親愛的家長您好：\n\n這週我想特別表揚 ${studentName} 在課堂上的表現。雖然他在「移項法則」單元遇到了一些小挑戰，但他展現了非常棒的學習態度，主動完成了 3 次額外練習。\n\n我們已經為他準備了針對性的補救影片，若您在家有空，也可以陪他一起觀看。如有任何問題歡迎隨時聯繫！\n\n導師 敬上`}
+                                />
+                            </div>
+                            <div className="flex gap-2 text-xs text-gray-500">
+                                <span className="bg-gray-100 px-2 py-1 rounded">#學習態度佳</span>
+                                <span className="bg-gray-100 px-2 py-1 rounded">#需要鼓勵</span>
+                                <span className="bg-gray-100 px-2 py-1 rounded">#補救教學</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                        取消
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className={`px-6 py-2 text-white font-bold rounded-lg shadow-lg transition-all transform active:scale-95 ${isIntervention
+                            ? 'bg-red-600 hover:bg-red-700 shadow-red-200'
+                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                            }`}
+                    >
+                        {isIntervention ? '一鍵指派任務' : '發送訊息'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 // ==================== Mock Data ====================
 
-// 1. Task Completion (Donut)
-const TASK_DATA = [
-    { name: 'Completed', value: 2, color: '#86efac' }, // green-300
-    { name: 'Remaining', value: 3, color: '#f3f4f6' }, // gray-100
+// 1. Concept Learning Status (Pie/Donut)
+const CONCEPT_STATUS_DATA = [
+    { name: '已精熟', value: 3, color: '#4ade80' }, // green-400
+    { name: '學習中', value: 4, color: '#60a5fa' }, // blue-400
+    { name: '待補強', value: 2, color: '#f87171' }, // red-400
 ];
 
-// 2. Concept Mastery (Radar)
-const CONCEPT_DATA = [
-    { subject: 'R-5-2-501', A: 80, fullMark: 100 },
-    { subject: 'R-5-2-502', A: 90, fullMark: 100 },
-    { subject: 'R-5-2-803', A: 60, fullMark: 100 },
-    { subject: 'R-5-2-504', A: 70, fullMark: 100 },
-    { subject: 'R-5-2-505', A: 85, fullMark: 100 },
-    { subject: 'R-5-2-806', A: 65, fullMark: 100 },
-    { subject: 'R-5-2-507', A: 75, fullMark: 100 },
+// 2. Math SRL Capability (Radar)
+const SRL_DATA = [
+    { subject: '自我效能', A: 85, fullMark: 100 },
+    { subject: '目標設定', A: 75, fullMark: 100 },
+    { subject: '策略使用', A: 65, fullMark: 100 },
+    { subject: '時間管理', A: 60, fullMark: 100 },
+    { subject: '自我反思', A: 80, fullMark: 100 },
+    { subject: '求助行為', A: 90, fullMark: 100 },
 ];
 
 // 使用種子隨機數生成可重複的熱力圖資料
@@ -45,6 +160,7 @@ export default function StudentAnalyticsPage() {
     const navigate = useNavigate();
 
     const [inputMessage, setInputMessage] = useState('');
+    const [activeModal, setActiveModal] = useState<'intervention' | 'parent-comm' | null>(null);
 
     // 預計算熱力圖資料，避免每次 render 產生不同的值
     const heatmapData = useMemo(() => {
@@ -79,16 +195,17 @@ export default function StudentAnalyticsPage() {
                 {/* Left Column: Data Visaulization (9 cols) */}
                 <div className="col-span-12 lg:col-span-9 flex flex-col gap-6">
 
-                    {/* Row 1: Tasks & Radar */}
+                    {/* Row 1: Concept Status & SRL */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[22rem]">
-                        {/* Task Completion */}
+                        {/* Concept Learning Status */}
+                        {/* Concept Learning Status */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-800 mb-4">任務完成度</h3>
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">測驗與概念學習狀況</h3>
                             <div className="flex-1 relative flex items-center justify-center min-h-0 min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={TASK_DATA}
+                                            data={CONCEPT_STATUS_DATA}
                                             innerRadius={80}
                                             outerRadius={100}
                                             startAngle={90}
@@ -96,37 +213,41 @@ export default function StudentAnalyticsPage() {
                                             dataKey="value"
                                             stroke="none"
                                         >
-                                            {TASK_DATA.map((entry, index) => (
+                                            {CONCEPT_STATUS_DATA.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
                                         </Pie>
                                     </PieChart>
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span className="text-5xl font-bold text-gray-800">2/5</span>
+                                    <span className="text-4xl font-bold text-gray-800">78%</span>
+                                    <span className="text-sm text-gray-500 mt-1">整體掌握度</span>
                                 </div>
                             </div>
-                            <div className="text-center text-gray-500 font-medium">
-                                已完成 2 項任務 (40%)
+                            <div className="flex justify-center gap-4 text-sm font-medium mt-2">
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400"></div>已精熟</div>
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-400"></div>學習中</div>
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-400"></div>待補強</div>
                             </div>
                         </div>
 
-                        {/* Concept Mastery Radar */}
+                        {/* Math SRL Capability Radar */}
+                        {/* Math SRL Capability Radar */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">概念精熟度</h3>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">數學 SRL 能力表現</h3>
                             <div className="flex-1 min-h-0 min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={CONCEPT_DATA}>
+                                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={SRL_DATA}>
                                         <PolarGrid stroke="#e5e7eb" />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 10 }} />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#4b5563', fontSize: 12, fontWeight: 600 }} />
                                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                         <Radar
                                             name="Mike"
                                             dataKey="A"
-                                            stroke="#818cf8"
-                                            strokeWidth={2}
-                                            fill="#818cf8"
-                                            fillOpacity={0.4}
+                                            stroke="#8b5cf6"
+                                            strokeWidth={3}
+                                            fill="#8b5cf6"
+                                            fillOpacity={0.3}
                                         />
                                     </RadarChart>
                                 </ResponsiveContainer>
@@ -138,7 +259,7 @@ export default function StudentAnalyticsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[20rem]">
                         {/* Efficiency Bar Chart */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-800 mb-6">解題效率分析</h3>
+                            <h3 className="text-xl font-bold text-gray-800 mb-6">各單元測驗詳細表現</h3>
                             <div className="flex items-center gap-4 mb-2 text-sm">
                                 <div className="flex items-center gap-1">
                                     <div className="w-3 h-3 bg-teal-400 rounded-sm"></div>
@@ -189,8 +310,9 @@ export default function StudentAnalyticsPage() {
                         </div>
 
                         {/* Network Graph Mock */}
+                        {/* Network Graph Mock */}
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden">
-                            <h3 className="text-xl font-bold text-gray-800 mb-4">小組互動網絡</h3>
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">小組討論學習歷程</h3>
                             {/* CSS-based Network Graph Mock */}
                             <div className="flex-1 relative">
                                 {/* Center User */}
@@ -232,8 +354,9 @@ export default function StudentAnalyticsPage() {
                     </div>
 
                     {/* Row 3: Heatmap */}
+                    {/* Row 3: Heatmap */}
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col min-h-[16rem]">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">學習投入歷程</h3>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">學習行為與投入歷程</h3>
                         <div className="flex-1 flex flex-col">
                             {/* Time Labels */}
                             <div className="flex text-xs text-gray-400 mb-2 pl-24">
@@ -293,7 +416,29 @@ export default function StudentAnalyticsPage() {
                                         建議：請回顧除法性質的先備知識單元，並進行針對性的補救練習。我們為你準備了以下個性化學習路徑。
                                     </div>
 
-                                    {/* Action Buttons */}
+                                    {/* Action Buttons (New AI Features) */}
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <button
+                                            onClick={() => setActiveModal('intervention')}
+                                            className="flex flex-col items-center justify-center gap-2 p-3 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                                <Zap className="w-5 h-5 text-red-500" />
+                                            </div>
+                                            <div className="text-xs font-bold text-red-700">AI 補救</div>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveModal('parent-comm')}
+                                            className="flex flex-col items-center justify-center gap-2 p-3 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-100 hover:border-indigo-200 transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                                <TrendingUp className="w-5 h-5 text-indigo-600" />
+                                            </div>
+                                            <div className="text-xs font-bold text-indigo-700">親師溝通</div>
+                                        </button>
+                                    </div>
+
+                                    {/* Legacy Buttons */}
                                     <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-green-50 rounded-xl border border-gray-200 hover:border-green-200 transition-all text-left group">
                                         <BookOpen className="w-5 h-5 text-green-600 group-hover:scale-110 transition-transform" />
                                         <div className="flex-1">
@@ -335,6 +480,12 @@ export default function StudentAnalyticsPage() {
                 </div>
 
             </div>
+            <AIAssistantModal
+                isOpen={!!activeModal}
+                onClose={() => setActiveModal(null)}
+                type={activeModal}
+                studentName="王小明"
+            />
         </div>
     );
 }

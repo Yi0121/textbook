@@ -60,6 +60,8 @@ export function GraphCanvas({
                     minZoom={0.2}
                     maxZoom={1.5}
                     proOptions={{ hideAttribution: true }}
+                    nodesDraggable={false}
+                    nodesConnectable={false}
                 >
                     <Background color="#e2e8f0" gap={24} size={1} />
                     <Controls

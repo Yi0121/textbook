@@ -12,8 +12,9 @@
 import { useState } from 'react';
 import {
     BarChart3, Users, TrendingUp, CheckCircle, Clock,
-    Sparkles, ChevronDown
+    Sparkles, ChevronDown, BookOpen, ArrowRight
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { MOCK_CLASS_ANALYTICS, MOCK_STUDENTS } from '../mocks/analyticsData';
 import {
     StatCard,
@@ -26,12 +27,13 @@ import {
 } from '../components/features/analytics';
 
 // Tab 類型
-type AnalyticsTab = 'conversations' | 'operations' | 'quizzes';
+type AnalyticsTab = 'conversations' | 'operations' | 'quizzes' | 'lessons';
 
 export default function ClassAnalyticsPage() {
-    const [activeTab, setActiveTab] = useState<AnalyticsTab>('conversations');
+    const [activeTab, setActiveTab] = useState<AnalyticsTab>('lessons');
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [showDropdown, setShowDropdown] = useState(false);
+    const navigate = useNavigate();
 
     const data = MOCK_CLASS_ANALYTICS;
     const isClassView = !selectedStudentId;
@@ -39,6 +41,7 @@ export default function ClassAnalyticsPage() {
 
     // Tab 配置
     const tabs = [
+        { id: 'lessons' as const, label: '📚 課程單元' },
         { id: 'conversations' as const, label: '💬 對話紀錄' },
         { id: 'operations' as const, label: '🖱️ 操作紀錄' },
         { id: 'quizzes' as const, label: '📝 測驗紀錄' },
@@ -245,6 +248,53 @@ export default function ClassAnalyticsPage() {
                         {isClassView ? (
                             // 全班視圖
                             <>
+                                {activeTab === 'lessons' && (
+                                    <div className="space-y-4">
+                                        {[
+                                            { id: 'lesson-apos-001', title: '二元一次方程式 (APOS)', progress: 72, studentCount: 28, lastActive: '10 分鐘前', status: 'active' },
+                                            { id: 'lesson-math-001', title: '四則運算 (基礎)', progress: 100, studentCount: 30, lastActive: '2023-11-15', status: 'completed' },
+                                            { id: 'lesson-geo-001', title: '平面幾何導論', progress: 0, studentCount: 28, lastActive: '草稿', status: 'draft' },
+                                        ].map(lesson => (
+                                            <div
+                                                key={lesson.id}
+                                                onClick={() => navigate(`/teacher/lesson-progress/${lesson.id}`)}
+                                                className="bg-gray-50 hover:bg-white border border-gray-200 hover:border-indigo-300 rounded-xl p-5 cursor-pointer transition-all shadow-sm hover:shadow-md group"
+                                            >
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2.5 rounded-lg ${lesson.status === 'active' ? 'bg-indigo-100 text-indigo-600' : lesson.status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}>
+                                                            <BookOpen className="w-5 h-5" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                                                {lesson.title}
+                                                                {lesson.status === 'active' && <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">進行中</span>}
+                                                                {lesson.status === 'completed' && <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">已結案</span>}
+                                                                {lesson.status === 'draft' && <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full">草稿</span>}
+                                                            </h3>
+                                                            <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                                                                <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {lesson.studentCount} 人</span>
+                                                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {lesson.lastActive}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                                                </div>
+
+                                                {/* Progress Bar */}
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full ${lesson.status === 'completed' ? 'bg-green-500' : 'bg-indigo-500'}`}
+                                                            style={{ width: `${lesson.progress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-gray-700 min-w-[3rem] text-right">{lesson.progress}%</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 {activeTab === 'conversations' && <ConversationsTabClass data={data} />}
                                 {activeTab === 'operations' && <OperationsTabClass data={data} />}
                                 {activeTab === 'quizzes' && <QuizzesTabClass data={data} />}

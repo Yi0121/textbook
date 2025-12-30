@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Bot, X, Sparkles, Send, Loader2, User } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useEditor } from '../../context/EditorContext';
 import { useStudentAIChatContext, type ChatMessage } from '../../context/AIChatContext';
 import TeacherAgentPanel from '../features/TeacherAgentPanel';
@@ -69,21 +70,19 @@ function StudentChatPanel({ onClose: _onClose }: { onClose: () => void }) {
                         className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                     >
                         {/* 頭像 */}
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                            msg.role === 'user'
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user'
                                 ? 'bg-emerald-100 text-emerald-600'
                                 : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
-                        }`}>
+                            }`}>
                             {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
 
                         {/* 訊息內容 */}
                         <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
-                            <div className={`inline-block px-4 py-3 rounded-2xl ${
-                                msg.role === 'user'
+                            <div className={`inline-block px-4 py-3 rounded-2xl ${msg.role === 'user'
                                     ? 'bg-emerald-600 text-white rounded-tr-sm'
                                     : 'bg-slate-100 text-slate-800 rounded-tl-sm'
-                            }`}>
+                                }`}>
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             </div>
                         </div>
@@ -141,6 +140,7 @@ function StudentChatPanel({ onClose: _onClose }: { onClose: () => void }) {
 }
 
 export default function GlobalAIAssistant({ defaultOpen = false }: GlobalAIAssistantProps) {
+    const location = useLocation();
     const { state } = useEditor();
     const userRole = state.userRole;
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -179,8 +179,10 @@ export default function GlobalAIAssistant({ defaultOpen = false }: GlobalAIAssis
         }
     };
 
-    // 根據用戶角色決定顯示內容
-    const isTeacher = userRole === 'teacher';
+    // 根據用戶角色或當前路徑決定顯示內容
+    // 如果在學生詳細頁面 (student-detail) 或學生端 (student/)，強制顯示學生版
+    const isStudentContext = location.pathname.includes('/student-detail') || location.pathname.includes('/student/');
+    const isTeacher = userRole === 'teacher' && !isStudentContext;
     const assistantTitle = isTeacher ? 'AI 教學助手' : 'AI 學習家教';
     const fabColor = isTeacher
         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'

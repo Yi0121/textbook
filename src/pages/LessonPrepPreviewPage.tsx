@@ -282,11 +282,11 @@ function LessonPrepPreviewPageInner() {
 
     const createStageEdges = useCallback((): Edge[] => {
         return [
-            { id: 'stage-A-P', source: 'stage-A', target: 'stage-P', label: '內化', animated: true, style: { strokeWidth: 3, stroke: '#6366f1' } },
-            { id: 'stage-P-O', source: 'stage-P', target: 'stage-O', label: '封裝', animated: true, style: { strokeWidth: 3, stroke: '#22c55e' } },
-            { id: 'stage-O-P', source: 'stage-O', target: 'stage-P', label: '解封裝', animated: true, style: { strokeWidth: 2, stroke: '#f97316', strokeDasharray: '5,5' } },
-            { id: 'stage-P-S', source: 'stage-P', target: 'stage-S', label: '整合', animated: true, style: { strokeWidth: 3, stroke: '#a855f7' } },
-            { id: 'stage-S-A', source: 'stage-S', target: 'stage-A', label: '應用', animated: true, style: { strokeWidth: 2, stroke: '#8b5cf6', strokeDasharray: '8,4' } },
+            { id: 'stage-A-P', source: 'stage-A', target: 'stage-P', label: '內化', animated: false, style: { strokeWidth: 3, stroke: '#6366f1' } },
+            { id: 'stage-P-O', source: 'stage-P', target: 'stage-O', label: '封裝', animated: false, style: { strokeWidth: 3, stroke: '#22c55e' } },
+            { id: 'stage-O-P', source: 'stage-O', target: 'stage-P', label: '解封裝', animated: false, style: { strokeWidth: 2, stroke: '#f97316', strokeDasharray: '5,5' } },
+            { id: 'stage-P-S', source: 'stage-P', target: 'stage-S', label: '整合', animated: false, style: { strokeWidth: 3, stroke: '#a855f7' } },
+            { id: 'stage-S-A', source: 'stage-S', target: 'stage-A', label: '應用', animated: false, style: { strokeWidth: 2, stroke: '#8b5cf6', strokeDasharray: '8,4' } },
         ];
     }, []);
 

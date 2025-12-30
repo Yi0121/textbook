@@ -25,6 +25,7 @@ const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboa
 const TeacherStudentOverviewPage = lazy(() => import('./pages/TeacherStudentOverviewPage'));
 const TeacherClassSetupPage = lazy(() => import('./pages/TeacherClassSetupPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
+import ComingSoonPage from './pages/ComingSoonPage';
 
 // ==================== Suspense Wrapper ====================
 
@@ -122,6 +123,14 @@ export const router = createBrowserRouter([
             {
                 path: '*',
                 element: <Navigate to="/" replace />,
+            },
+            {
+                path: 'assignments',
+                element: <ComingSoonPage title="作業管理" description="發布、批改與檢討作業的功能即將上線。" />,
+            },
+            {
+                path: 'groups',
+                element: <ComingSoonPage title="分組協作" description="小組討論、分組任務與即時協作功能正在建置中。" />,
             },
         ],
     },

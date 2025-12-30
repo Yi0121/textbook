@@ -261,9 +261,9 @@ export default function HomePage() {
                             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">快速開始</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 {quickActions.map((action) => (
-                                    <a
+                                    <div
                                         key={action.path}
-                                        href={action.path}
+                                        onClick={() => navigate(action.path)}
                                         className={`
                       p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700
                       hover:shadow-md ${isTeacher ? 'hover:border-indigo-300' : 'hover:border-purple-300'}
@@ -289,7 +289,7 @@ export default function HomePage() {
                                                 </p>
                                             </div>
                                         </div>
-                                    </a>
+                                    </div>
                                 ))}
                             </div>
                         </div>

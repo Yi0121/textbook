@@ -1,4 +1,18 @@
+
 import type { PedagogyMethod } from '../../../data/pedagogyMethods';
+
+// 簡單的 Markdown 格式化 (支援 **Bold** 和 *Italic*)
+const formatText = (text: string) => {
+    return text.split(/(\*\*.*?\*\*|\*.*?\*)/g).map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={index} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
+        }
+        if (part.startsWith('*') && part.endsWith('*')) {
+            return <span key={index} className="text-gray-500 italic text-xs">{part.slice(1, -1)}</span>;
+        }
+        return part;
+    });
+};
 
 // ==================== Message Components ====================
 
@@ -6,12 +20,12 @@ import type { PedagogyMethod } from '../../../data/pedagogyMethods';
 export function TextMessage({ content, isUser }: { content: string; isUser: boolean }) {
     return (
         <div
-            className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white ml-auto'
-                : 'bg-white border border-gray-200 shadow-sm'
+            className={`max-w-[85%] px-5 py-3.5 rounded-2xl shadow-sm text-[15px] leading-relaxed tracking-wide transition-all ${isUser
+                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white ml-auto rounded-tr-sm shadow-indigo-200'
+                : 'bg-white/90 backdrop-blur-sm border border-gray-100/80 text-gray-700 rounded-tl-sm shadow-gray-100'
                 }`}
         >
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+            <p className="whitespace-pre-wrap">{isUser ? content : formatText(content)}</p>
         </div>
     );
 }
@@ -29,7 +43,7 @@ export function OptionsMessage({
     return (
         <div className="max-w-[85%] space-y-3">
             <div className="bg-white border border-gray-200 shadow-sm px-4 py-3 rounded-2xl">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{formatText(content)}</p>
             </div>
             <div className="flex flex-wrap gap-2">
                 {options.map((opt) => (
@@ -95,7 +109,7 @@ export function SummaryMessage({
     return (
         <div className="max-w-[90%] space-y-3">
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 shadow-sm px-5 py-4 rounded-2xl">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{formatText(content)}</p>
             </div>
             <div className="flex gap-3">
                 {options.map((opt) => (
