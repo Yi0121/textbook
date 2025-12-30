@@ -9,7 +9,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ALGEBRA_APOS_LESSON, getAllActivitiesFromAlgebra, MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
-import { AVAILABLE_AGENTS } from '../types/lessonPlan';
+import { AVAILABLE_AGENTS } from '../types/agents';
 import type { LessonPlan, LessonNode } from '../types/lessonPlan';
 import type { StudentProgress } from '../types/studentProgress';
 import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';

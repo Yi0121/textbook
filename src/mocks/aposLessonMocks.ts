@@ -11,7 +11,8 @@
  */
 
 import type { LessonPlan, APOSStageNode, ActivityNode, ResourceBinding } from '../types/lessonPlan';
-import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
+import { AVAILABLE_AGENTS } from '../types/agents';
+import { AVAILABLE_TOOLS } from '../types/tools';
 
 // ===== 輔助函數 =====
 const createResource = (

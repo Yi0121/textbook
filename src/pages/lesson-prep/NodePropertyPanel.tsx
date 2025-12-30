@@ -1,6 +1,7 @@
 import { Layers, X, Bot, Wrench, Video, FileText, CheckSquare, Plus, Trash2 } from 'lucide-react';
 import type { LessonNode, ActivityNode, ResourceBinding } from '../../types/lessonPlan';
-import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../../types/lessonPlan';
+import { AVAILABLE_AGENTS } from '../../types/agents';
+import { AVAILABLE_TOOLS } from '../../types/tools';
 import ResourcePickerModal from '../../components/ResourcePickerModal';
 import { useState } from 'react';
 

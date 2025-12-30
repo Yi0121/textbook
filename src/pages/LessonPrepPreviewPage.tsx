@@ -19,7 +19,8 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 
 // Types
-import { AVAILABLE_AGENTS, APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
+import { APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
+import { AVAILABLE_AGENTS } from '../types/agents';
 import type { LessonNode as LessonNodeType, ActivityNode, ResourceBinding } from '../types/lessonPlan';
 import { ALGEBRA_APOS_LESSON, findAlgebraActivityById } from '../mocks';
 

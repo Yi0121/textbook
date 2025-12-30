@@ -7,7 +7,8 @@
 
 import { useState } from 'react';
 import { X, Eye, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
-import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../../../types/lessonPlan';
+import { AVAILABLE_AGENTS } from '../../../types/agents';
+import { AVAILABLE_TOOLS } from '../../../types/tools';
 import type { LessonNode } from '../../../types/lessonPlan';
 
 interface NodeEditSidebarProps {
