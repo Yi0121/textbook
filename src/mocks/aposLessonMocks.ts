@@ -1,15 +1,17 @@
 /**
- * 代數式基本運算 - APOS 課程範例
+ * 代數式基本運算 - APOS 課程 Mock 資料
  * 
  * 基於研究論文「體現動態視覺化對中學生學習代數式基本運算的影響」
  * 套用 APOS 理論框架（Action, Process, Object, Schema）
  * 
  * 課程主題：代數式基本運算（加減乘除、合併同類項、乘法公式）
  * 適用對象：國中七年級學生
+ * 
+ * [Refactored] 從 types/algebraAposLesson.ts 移入
  */
 
-import type { LessonPlan, APOSStageNode, ActivityNode, ResourceBinding } from './lessonPlan';
-import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from './lessonPlan';
+import type { LessonPlan, APOSStageNode, ActivityNode, ResourceBinding } from '../types/lessonPlan';
+import { AVAILABLE_AGENTS, AVAILABLE_TOOLS } from '../types/lessonPlan';
 
 // ===== 輔助函數 =====
 const createResource = (
@@ -440,7 +442,10 @@ export const ALGEBRA_APOS_LESSON: LessonPlan = {
     status: 'draft',
 };
 
-// ===== 輔助函數（與 mockAposLesson.ts 相同） =====
+// 別名匯出，保持向後相容
+export const MOCK_APOS_LESSON = ALGEBRA_APOS_LESSON;
+
+// ===== 輔助函數 =====
 export const getAllActivitiesFromAlgebra = (lesson: LessonPlan): ActivityNode[] => {
     if (!lesson.stages) return [];
     return lesson.stages.flatMap(stage => stage.activities);

@@ -8,9 +8,8 @@
 
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ALGEBRA_APOS_LESSON, getAllActivitiesFromAlgebra } from '../types/algebraAposLesson';
-import { AVAILABLE_AGENTS, MOCK_DIFFERENTIATED_LESSON } from '../types/lessonPlan';
-import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
+import { ALGEBRA_APOS_LESSON, getAllActivitiesFromAlgebra, MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
+import { AVAILABLE_AGENTS } from '../types/lessonPlan';
 import type { LessonPlan, LessonNode } from '../types/lessonPlan';
 import type { StudentProgress } from '../types/studentProgress';
 import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';
@@ -28,14 +27,15 @@ const MOCK_APOS_STUDENT_PROGRESS: StudentProgress = {
     overallProgress: 22,
     lastActiveAt: new Date(),
     nodeProgress: [
-        { nodeId: 'action-intro', completed: true, score: 95, timeSpent: 480 },
-        { nodeId: 'action-manipulate', completed: true, score: 88, timeSpent: 720 },
-        { nodeId: 'action-practice', completed: true, score: 82, timeSpent: 600 },
+        { nodeId: 'action-intro', completed: true, score: 95, timeSpent: 300 },
+        { nodeId: 'action-manipulate', completed: true, score: 88, timeSpent: 600 },
+        { nodeId: 'action-practice', completed: true, score: 82, timeSpent: 480 },
         // 檢測點：嘗試過但未通過（需要補救後重考）
-        { nodeId: 'action-checkpoint', completed: false, score: 65, passedCheckpoint: false, pathTaken: 'remedial', timeSpent: 480 },
+        { nodeId: 'action-checkpoint', completed: false, score: 65, passedCheckpoint: false, pathTaken: 'remedial', timeSpent: 420 },
         { nodeId: 'action-remedial', completed: false, timeSpent: 120 }, // 正在補救中
     ],
 };
+
 
 
 // === Dashboard Progress Ring (Local) ===

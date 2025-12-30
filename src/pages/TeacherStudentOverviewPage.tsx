@@ -11,8 +11,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
-import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
+import { MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
+import type { LessonNode } from '../types/lessonPlan';
 import { getNodeProgress } from '../utils/progressHelpers';
 
 

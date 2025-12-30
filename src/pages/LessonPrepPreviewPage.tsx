@@ -19,15 +19,14 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 
 // Types
-import { MOCK_GENERATED_LESSON, AVAILABLE_AGENTS, APOS_STAGES } from '../types/lessonPlan';
+import { AVAILABLE_AGENTS, APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
 import type { LessonNode as LessonNodeType, ActivityNode, ResourceBinding } from '../types/lessonPlan';
-import { ALGEBRA_APOS_LESSON, findAlgebraActivityById } from '../types/algebraAposLesson';
+import { ALGEBRA_APOS_LESSON, findAlgebraActivityById } from '../mocks';
 
 // Components
 import LessonNode from '../components/LessonNode';
 import StageNode from '../components/StageNode';
 import ActivityFlowNode from '../components/ActivityFlowNode';
-
 // New Sub-components
 import { EditorToolbar } from './lesson-prep/EditorToolbar';
 import { ResourceSidebar } from './lesson-prep/ResourceSidebar';
@@ -102,7 +101,16 @@ function LessonPrepPreviewPageInner() {
     const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
 
     // Old Architecture Compatibility
-    const [lesson, setLesson] = useState(MOCK_GENERATED_LESSON);
+    const [lesson, setLesson] = useState<LessonPlan>({
+        id: 'legacy-placeholder',
+        title: 'Legacy View',
+        topic: 'Legacy',
+        objectives: '',
+        difficulty: 'basic',
+        createdAt: new Date(),
+        status: 'draft',
+        nodes: []
+    });
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
     // 注意：lessonId 變化時的資料載入已由 useState 的初始化函數處理

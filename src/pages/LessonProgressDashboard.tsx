@@ -11,8 +11,8 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON, type LessonNode } from '../types/lessonPlan';
-import { MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../types/studentProgress';
+import { MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
+import type { LessonNode } from '../types/lessonPlan';
 
 // 進度分布柱狀圖組件
 function ProgressDistributionChart({ students }: { students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
