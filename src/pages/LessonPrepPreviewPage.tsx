@@ -109,10 +109,10 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
         };
     });
 
-    // 設定 edge 類型為 smoothstep（直角轉彎）
+    // 設定 edge 類型為 default（曲線）
     const layoutedEdges = edges.map(edge => ({
         ...edge,
-        type: 'smoothstep',
+        type: 'default',
     }));
 
     return { nodes: layoutedNodes, edges: layoutedEdges };
@@ -131,7 +131,7 @@ function LessonPrepPreviewPageInner() {
         // 根據 URL ID 決定載入哪個範例資料
         if (lessonId === 'lesson-apos-001' || lessonId === 'lesson-math-001') return ARITHMETIC_APOS_LESSON;
         if (lessonId === 'lesson-apos-002' || lessonId === 'lesson-math-003') return GEOMETRY_APOS_LESSON;
-        if (lessonId === 'lesson-math-002') return ARITHMETIC_APOS_LESSON; // Fallback for diff demo if needed, but wait
+        if (lessonId === 'lesson-math-002') return ARITHMETIC_APOS_LESSON;
 
         return ALGEBRA_APOS_LESSON;
     });
@@ -310,8 +310,11 @@ function LessonPrepPreviewPageInner() {
                 });
             }
         });
+
         return edges;
     }, []);
+
+
 
     const createEdges = useCallback((lessonNodes: LessonNodeType[]): Edge[] => {
         const edges: Edge[] = [];
@@ -343,11 +346,51 @@ function LessonPrepPreviewPageInner() {
 
     const createStageEdges = useCallback((): Edge[] => {
         return [
-            { id: 'stage-A-P', source: 'stage-A', target: 'stage-P', label: '內化', animated: false, style: { strokeWidth: 3, stroke: '#6366f1' } },
-            { id: 'stage-P-O', source: 'stage-P', target: 'stage-O', label: '封裝', animated: false, style: { strokeWidth: 3, stroke: '#22c55e' } },
-            { id: 'stage-O-P', source: 'stage-O', target: 'stage-P', label: '解封裝', animated: false, style: { strokeWidth: 2, stroke: '#f97316', strokeDasharray: '5,5' } },
-            { id: 'stage-P-S', source: 'stage-P', target: 'stage-S', label: '整合', animated: false, style: { strokeWidth: 3, stroke: '#a855f7' } },
-            { id: 'stage-S-A', source: 'stage-S', target: 'stage-A', label: '應用', animated: false, style: { strokeWidth: 2, stroke: '#8b5cf6', strokeDasharray: '8,4' } },
+            {
+                id: 'stage-A-P',
+                source: 'stage-A',
+                target: 'stage-P',
+                label: '內化',
+                animated: false,
+                style: { strokeWidth: 3, stroke: '#6366f1' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#6366f1' }
+            },
+            {
+                id: 'stage-P-O',
+                source: 'stage-P',
+                target: 'stage-O',
+                label: '封裝',
+                animated: false,
+                style: { strokeWidth: 3, stroke: '#22c55e' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#22c55e' }
+            },
+            {
+                id: 'stage-O-P',
+                source: 'stage-O',
+                target: 'stage-P',
+                label: '解封裝',
+                animated: false,
+                style: { strokeWidth: 2, stroke: '#f97316', strokeDasharray: '5,5' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#f97316' }
+            },
+            {
+                id: 'stage-P-S',
+                source: 'stage-P',
+                target: 'stage-S',
+                label: '整合',
+                animated: false,
+                style: { strokeWidth: 3, stroke: '#a855f7' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#a855f7' }
+            },
+            {
+                id: 'stage-S-A',
+                source: 'stage-S',
+                target: 'stage-A',
+                label: '應用',
+                animated: false,
+                style: { strokeWidth: 2, stroke: '#8b5cf6', strokeDasharray: '8,4' },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' }
+            },
         ];
     }, []);
 

@@ -32,21 +32,32 @@ const createResource = (
 });
 
 /**
- * 為活動列表添加 ID 前綴，同時更新 flowControl 中的 nextActivityId 引用
+ * 為活動列表添加 ID 前綴，同時更新 flowControl 中的 nextActivityId/nextActivityIds 引用
  * 這確保了 ID 在整個活動流程中保持一致
  */
 const prefixActivityIds = (activities: ActivityNode[], prefix: string): ActivityNode[] => {
+    const originalIds = new Set(activities.map(a => a.id));
+
+    const prefixIfExists = (id: string | undefined): string | undefined => {
+        if (!id) return undefined;
+        return originalIds.has(id) ? `${prefix}-${id}` : id;
+    };
+
+    const prefixArrayIfExists = (ids: string[] | undefined): string[] | undefined => {
+        if (!ids) return undefined;
+        return ids.map(id => originalIds.has(id) ? `${prefix}-${id}` : id);
+    };
+
     return activities.map(activity => ({
         ...activity,
         id: `${prefix}-${activity.id}`,
+        // defaultNextIds removed
         flowControl: activity.flowControl ? {
             ...activity.flowControl,
             paths: activity.flowControl.paths.map(path => ({
                 ...path,
-                // 只有當目標 ID 存在於當前活動列表中時才添加前綴
-                nextActivityId: activities.some(a => a.id === path.nextActivityId)
-                    ? `${prefix}-${path.nextActivityId}`
-                    : path.nextActivityId, // 跨階段引用保持原樣
+                nextActivityId: prefixIfExists(path.nextActivityId) || '',
+                // nextActivityIds removed
             })),
         } : undefined,
     }));
@@ -529,3 +540,5 @@ export const findAlgebraStageByActivityId = (lesson: LessonPlan, activityId: str
 export const findAlgebraActivityById = (lesson: LessonPlan, activityId: string): ActivityNode | undefined => {
     return getAllActivitiesFromAlgebra(lesson).find(a => a.id === activityId);
 };
+
+
