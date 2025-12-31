@@ -60,8 +60,10 @@ export function GraphCanvas({
                     minZoom={0.2}
                     maxZoom={1.5}
                     proOptions={{ hideAttribution: true }}
-                    nodesDraggable={false}
-                    nodesConnectable={false}
+                    nodesDraggable={true}
+                    nodesConnectable={true}
+                    snapToGrid={true}
+                    snapGrid={[16, 16]}
                 >
                     <Background color="#e2e8f0" gap={24} size={1} />
                     <Controls

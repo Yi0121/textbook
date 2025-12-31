@@ -31,6 +31,27 @@ const createResource = (
     generatedContent: content,
 });
 
+/**
+ * 為活動列表添加 ID 前綴，同時更新 flowControl 中的 nextActivityId 引用
+ * 這確保了 ID 在整個活動流程中保持一致
+ */
+const prefixActivityIds = (activities: ActivityNode[], prefix: string): ActivityNode[] => {
+    return activities.map(activity => ({
+        ...activity,
+        id: `${prefix}-${activity.id}`,
+        flowControl: activity.flowControl ? {
+            ...activity.flowControl,
+            paths: activity.flowControl.paths.map(path => ({
+                ...path,
+                // 只有當目標 ID 存在於當前活動列表中時才添加前綴
+                nextActivityId: activities.some(a => a.id === path.nextActivityId)
+                    ? `${prefix}-${path.nextActivityId}`
+                    : path.nextActivityId, // 跨階段引用保持原樣
+            })),
+        } : undefined,
+    }));
+};
+
 // ===== Action 階段：具體操作代數式 =====
 const actionStage: APOSStageNode = {
     id: 'stage-action',
@@ -456,7 +477,7 @@ export const ARITHMETIC_APOS_LESSON: LessonPlan = {
             id: 'arith-stage-action',
             goal: '透過具體物件操作理解四則運算規則',
             description: '操作虛擬錢幣與商品，體驗混合運算',
-            activities: actionStage.activities.map(a => ({ ...a, id: `arith-${a.id}` }))
+            activities: prefixActivityIds(actionStage.activities, 'arith')
         },
         processStage,
         objectStage,
@@ -479,7 +500,7 @@ export const GEOMETRY_APOS_LESSON: LessonPlan = {
             id: 'geo-stage-action',
             goal: '透過拖拽與翻轉辨識圖形特徵',
             description: '使用動態幾何工具觀察圖形變化',
-            activities: actionStage.activities.map(a => ({ ...a, id: `geo-${a.id}` }))
+            activities: prefixActivityIds(actionStage.activities, 'geo')
         },
         processStage,
         objectStage,

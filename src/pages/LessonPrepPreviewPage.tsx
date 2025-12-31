@@ -44,20 +44,40 @@ import { NodePropertyPanel } from './lesson-prep/NodePropertyPanel';
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
-    const nodeWidth = 200;
-    const nodeHeight = 120;
+    const nodeWidth = 220;
+    const nodeHeight = 140;
 
     dagreGraph.setGraph({
         rankdir: 'LR',
-        nodesep: 40,
-        ranksep: 80,
-        marginx: 30,
-        marginy: 30,
+        nodesep: 60,   // 增加垂直間距
+        ranksep: 120,  // 增加水平間距
+        marginx: 50,
+        marginy: 50,
     });
 
-    nodes.forEach((node) => {
+    // 區分主流程節點和補救節點
+    const mainNodes = nodes.filter(n => {
+        if (n.type === 'activityFlowNode' && n.data.activity) {
+            return (n.data.activity as ActivityNode).type !== 'remedial';
+        }
+        return true;
+    });
+    const remedialNodes = nodes.filter(n => {
+        if (n.type === 'activityFlowNode' && n.data.activity) {
+            return (n.data.activity as ActivityNode).type === 'remedial';
+        }
+        return false;
+    });
+
+    // 先佈局主流程節點
+    mainNodes.forEach((node) => {
         dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
     });
+    // 補救節點也加入圖中（但會手動調整 Y 座標）
+    remedialNodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
     edges.forEach((edge) => {
         dagreGraph.setEdge(edge.source, edge.target);
     });
@@ -67,13 +87,17 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
         let yOffset = 0;
-        if (node.type === 'lessonNode' && node.data.lessonNode) {
-            const lessonNode = node.data.lessonNode as LessonNodeType;
-            if (lessonNode.branchLevel === 'remedial') yOffset = 200;
-            else if (lessonNode.branchLevel === 'advanced') yOffset = -200;
-        } else if (node.type === 'activityFlowNode' && node.data.activity) {
+
+        // 補救節點往下偏移
+        if (node.type === 'activityFlowNode' && node.data.activity) {
             const activity = node.data.activity as ActivityNode;
-            if (activity.type === 'remedial') yOffset = 200;
+            if (activity.type === 'remedial') {
+                yOffset = 180; // 補救節點往下
+            }
+        } else if (node.type === 'lessonNode' && node.data.lessonNode) {
+            const lessonNode = node.data.lessonNode as LessonNodeType;
+            if (lessonNode.branchLevel === 'remedial') yOffset = 180;
+            else if (lessonNode.branchLevel === 'advanced') yOffset = -180;
         }
 
         return {
@@ -85,7 +109,13 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
         };
     });
 
-    return { nodes: layoutedNodes, edges };
+    // 設定 edge 類型為 smoothstep（直角轉彎）
+    const layoutedEdges = edges.map(edge => ({
+        ...edge,
+        type: 'smoothstep',
+    }));
+
+    return { nodes: layoutedNodes, edges: layoutedEdges };
 };
 
 type ViewLevel = 'stage' | 'activity';
@@ -228,12 +258,20 @@ function LessonPrepPreviewPageInner() {
 
     const createActivityFlowEdges = useCallback((activities: ActivityNode[]): Edge[] => {
         const edges: Edge[] = [];
+        // 建立當前階段內所有活動 ID 的 Set，用於過濾跨階段連接
+        const activityIds = new Set(activities.map(a => a.id));
+
         activities.forEach((activity, idx) => {
             if (activity.flowControl && activity.flowControl.paths) {
                 activity.flowControl.paths.forEach((path) => {
+                    // 只建立指向當前階段內節點的 edge
+                    if (!activityIds.has(path.nextActivityId)) {
+                        return; // 跳過跨階段連接
+                    }
+
                     const flowType = activity.flowControl!.type;
                     let edgeStyle, markerColor, animated = true;
-                    // ... (Simplifying for brevity, preserving key logic from original)
+
                     if (flowType === 'checkpoint') {
                         if (path.label.includes('✓')) {
                             edgeStyle = { stroke: '#22c55e', strokeWidth: 3 };
@@ -247,6 +285,7 @@ function LessonPrepPreviewPageInner() {
                         edgeStyle = { stroke: '#6366f1', strokeWidth: 2 };
                         markerColor = '#6366f1';
                     }
+
                     edges.push({
                         id: `e-${activity.id}-${path.id}`,
                         source: activity.id,
@@ -254,11 +293,13 @@ function LessonPrepPreviewPageInner() {
                         sourceHandle: path.id,
                         animated,
                         label: path.label,
+                        labelStyle: { fontSize: 11, fontWeight: 600 },
                         markerEnd: { type: MarkerType.ArrowClosed, color: markerColor },
                         style: edgeStyle,
                     });
                 });
             } else if (idx < activities.length - 1) {
+                // 只有沒有 flowControl 的節點才自動連接到下一個節點
                 edges.push({
                     id: `e-${activity.id}-${activities[idx + 1].id}`,
                     source: activity.id,

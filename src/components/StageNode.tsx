@@ -49,6 +49,7 @@ const StageNode = ({ data, selected }: NodeProps<CustomStageNode>) => {
                     textColor: 'text-green-700',
                 };
             case 'S':
+            default:
                 return {
                     gradient: 'from-purple-400 to-fuchsia-500',
                     border: 'border-purple-300',

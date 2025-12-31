@@ -1,6 +1,6 @@
 /**
  * Lesson Plan Types
- * 
+ *
  * Defines the structure for lesson plans, APOS stages, activities, and resources.
  * Agent and Tool definitions have been moved to types/agents.ts and types/tools.ts.
  */
