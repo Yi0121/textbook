@@ -22,7 +22,13 @@ import dagre from 'dagre';
 import { APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
 import { AVAILABLE_AGENTS } from '../types/agents';
 import type { LessonNode as LessonNodeType, ActivityNode, ResourceBinding } from '../types/lessonPlan';
-import { ALGEBRA_APOS_LESSON, findAlgebraActivityById } from '../mocks';
+import {
+    ALGEBRA_APOS_LESSON,
+    ARITHMETIC_APOS_LESSON,
+    GEOMETRY_APOS_LESSON,
+    MOCK_DIFFERENTIATED_LESSON,
+    findAlgebraActivityById
+} from '../mocks';
 
 // Components
 import LessonNode from '../components/LessonNode';
@@ -92,25 +98,30 @@ function LessonPrepPreviewPageInner() {
     // ===== State =====
     // 根據 URL ID 決定載入哪個範例資料
     const [aposLesson, setAposLesson] = useState(() => {
-        if (lessonId === 'lesson-apos-001') return ALGEBRA_APOS_LESSON;
-        // 可以在這裡加入更多 mock 判斷或預設值
-        return ALGEBRA_APOS_LESSON; // 目前預設為代數 APOS 課程
+        // 根據 URL ID 決定載入哪個範例資料
+        if (lessonId === 'lesson-apos-001' || lessonId === 'lesson-math-001') return ARITHMETIC_APOS_LESSON;
+        if (lessonId === 'lesson-apos-002' || lessonId === 'lesson-math-003') return GEOMETRY_APOS_LESSON;
+        if (lessonId === 'lesson-math-002') return ARITHMETIC_APOS_LESSON; // Fallback for diff demo if needed, but wait
+
+        return ALGEBRA_APOS_LESSON;
     });
 
     const [viewLevel, setViewLevel] = useState<ViewLevel>('stage');
     const [expandedStage, setExpandedStage] = useState<'A' | 'P' | 'O' | 'S' | null>(null);
     const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
 
-    // Old Architecture Compatibility
-    const [lesson, setLesson] = useState<LessonPlan>({
-        id: 'legacy-placeholder',
-        title: 'Legacy View',
-        topic: 'Legacy',
-        objectives: '',
-        difficulty: 'basic',
-        createdAt: new Date(),
-        status: 'draft',
-        nodes: []
+    const [lesson, setLesson] = useState<LessonPlan>(() => {
+        if (lessonId === 'lesson-math-002') return MOCK_DIFFERENTIATED_LESSON;
+        return {
+            id: 'legacy-placeholder',
+            title: 'Legacy View',
+            topic: 'Legacy',
+            objectives: '',
+            difficulty: 'basic',
+            createdAt: new Date(),
+            status: 'draft',
+            nodes: []
+        };
     });
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 

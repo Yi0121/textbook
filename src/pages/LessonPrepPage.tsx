@@ -13,9 +13,9 @@ import ResourceSelector, { type Resource } from '../components/features/lesson-p
 
 // Mock 最近草稿資料
 const RECENT_DRAFTS = [
-    { id: 'd1', title: '四則運算基礎', subject: '數學', grade: '五年級', lastEdited: '10 分鐘前', progress: 80 },
-    { id: 'd2', title: '分數加減法', subject: '數學', grade: '四年級', lastEdited: '昨天', progress: 45 },
-    { id: 'd3', title: '幾何圖形辨識', subject: '數學', grade: '三年級', lastEdited: '3 天前', progress: 20 },
+    { id: 'lesson-math-001', title: '四則運算基礎', subject: '數學', grade: '五年級', lastEdited: '10 分鐘前', progress: 80 },
+    { id: 'lesson-math-002', title: '分數加減法', subject: '數學', grade: '四年級', lastEdited: '昨天', progress: 45 },
+    { id: 'lesson-math-003', title: '幾何圖形辨識', subject: '數學', grade: '三年級', lastEdited: '3 天前', progress: 20 },
 ];
 
 export default function LessonPrepPage() {
@@ -86,7 +86,7 @@ export default function LessonPrepPage() {
 
                             {/* 查看示範課程 */}
                             <button
-                                onClick={() => navigate('/teacher/lesson-prep/preview/lesson-apos-001?demo=differentiated')}
+                                onClick={() => navigate('/teacher/lesson-prep/preview/lesson-apos-001?demo=apos')}
                                 className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all border-2 border-transparent hover:border-purple-300 text-left group"
                             >
                                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -94,7 +94,7 @@ export default function LessonPrepPage() {
                                 </div>
                                 <h2 className="text-xl font-bold text-gray-900 mb-2">查看示範課程</h2>
                                 <p className="text-gray-600 mb-4">
-                                    四則運算 — 展示差異化教學分支路徑
+                                    代數式基本運算 — 展示 APOS 學習路徑與教學設計
                                 </p>
                                 <div className="flex items-center gap-2 text-purple-600 font-medium">
                                     前往查看 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -117,7 +117,7 @@ export default function LessonPrepPage() {
                                 {RECENT_DRAFTS.map((draft) => (
                                     <div
                                         key={draft.id}
-                                        onClick={() => navigate('/teacher/lesson-prep/preview/lesson-math-001')}
+                                        onClick={() => navigate(`/teacher/lesson-prep/preview/${draft.id}`)}
                                         className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 rounded-xl cursor-pointer transition-all group"
                                     >
                                         <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">

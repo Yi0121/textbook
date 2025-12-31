@@ -21,6 +21,8 @@ export { MOCK_STUDENT_LOGS, type StudentLog } from './reviewMocks';
 // APOS Lesson mocks
 export {
   ALGEBRA_APOS_LESSON,
+  ARITHMETIC_APOS_LESSON,
+  GEOMETRY_APOS_LESSON,
   MOCK_APOS_LESSON,
   getAllActivitiesFromAlgebra,
   findAlgebraStageByActivityId,

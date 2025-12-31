@@ -70,7 +70,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         icon: Users,
         items: [
             { path: '/teacher/class-analytics', label: '學習分析', icon: BarChart3 },
-            { path: '/assignments', label: '作業管理', icon: ClipboardList },
+            { path: '/teacher/assignment', label: '作業管理', icon: ClipboardList },
             { path: '/groups', label: '分組協作', icon: Users },
             { path: '/teacher/suggestions', label: '教學建議', icon: Lightbulb },
         ],
@@ -104,6 +104,7 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         icon: ClipboardList,
         items: [
             { path: '/assignments', label: '作業', icon: ClipboardList },
+            { path: '/student/quiz/assign-001', label: '我的任務', icon: ClipboardList },
             { path: '/student/suggestions', label: '學習建議', icon: Lightbulb },
         ],
     },

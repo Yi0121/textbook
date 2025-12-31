@@ -431,7 +431,7 @@ const schemaStage: APOSStageNode = {
     ],
 };
 
-// ===== 完整 APOS 課程 =====
+// ===== 完整 APOS 課程：代數式 =====
 export const ALGEBRA_APOS_LESSON: LessonPlan = {
     id: 'algebra-operations-apos',
     title: '代數式基本運算',
@@ -439,6 +439,52 @@ export const ALGEBRA_APOS_LESSON: LessonPlan = {
     objectives: '理解代數式組成、掌握同類項合併與加減法、應用乘法公式解題',
     difficulty: 'intermediate',
     stages: [actionStage, processStage, objectStage, schemaStage],
+    createdAt: new Date(),
+    status: 'draft',
+};
+
+// ===== 完整 APOS 課程：四則運算 =====
+export const ARITHMETIC_APOS_LESSON: LessonPlan = {
+    id: 'arithmetic-basic-apos',
+    title: '四則運算基礎',
+    topic: '四則運算',
+    objectives: '掌握加減乘除運算順序、理解括號的使用、解決生活中的混合運算問題',
+    difficulty: 'basic',
+    stages: [
+        {
+            ...actionStage,
+            id: 'arith-stage-action',
+            goal: '透過具體物件操作理解四則運算規則',
+            description: '操作虛擬錢幣與商品，體驗混合運算',
+            activities: actionStage.activities.map(a => ({ ...a, id: `arith-${a.id}` }))
+        },
+        processStage,
+        objectStage,
+        schemaStage
+    ],
+    createdAt: new Date(),
+    status: 'draft',
+};
+
+// ===== 完整 APOS 課程：幾何圖形 =====
+export const GEOMETRY_APOS_LESSON: LessonPlan = {
+    id: 'geometry-shapes-apos',
+    title: '幾何圖形辨識',
+    topic: '平面幾何',
+    objectives: '辨識各種三角形與四邊形、理解對稱性質、建立空間幾何感',
+    difficulty: 'basic',
+    stages: [
+        {
+            ...actionStage,
+            id: 'geo-stage-action',
+            goal: '透過拖拽與翻轉辨識圖形特徵',
+            description: '使用動態幾何工具觀察圖形變化',
+            activities: actionStage.activities.map(a => ({ ...a, id: `geo-${a.id}` }))
+        },
+        processStage,
+        objectStage,
+        schemaStage
+    ],
     createdAt: new Date(),
     status: 'draft',
 };

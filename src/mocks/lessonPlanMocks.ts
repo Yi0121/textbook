@@ -14,8 +14,8 @@ import { findAgentById } from '../types/agents';
 
 export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
     id: 'lesson-math-002',
-    title: '代數式基本運算',
-    topic: '代數式基本運算',
+    title: '分數加減法',
+    topic: '分數加減法',
     objectives: '掌握多項式基本概念\\n能熟練運算乘法公式\\n應用於實際問題',
     difficulty: 'intermediate',
     status: 'draft',

@@ -22,9 +22,11 @@ const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage')
 const LessonPrepChatPage = lazy(() => import('./pages/LessonPrepChatPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
 const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboard'));
+const TeacherAssignmentPage = lazy(() => import('./pages/TeacherAssignmentPage'));
 const TeacherStudentOverviewPage = lazy(() => import('./pages/TeacherStudentOverviewPage'));
 const TeacherClassSetupPage = lazy(() => import('./pages/TeacherClassSetupPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
+const StudentQuizPage = lazy(() => import('./pages/StudentQuizPage'));
 import ComingSoonPage from './pages/ComingSoonPage';
 
 // ==================== Suspense Wrapper ====================
@@ -70,6 +72,10 @@ export const router = createBrowserRouter([
                 element: withSuspense(LessonPrepPage),
             },
             {
+                path: 'teacher/assignment',
+                element: withSuspense(TeacherAssignmentPage),
+            },
+            {
                 path: 'teacher/suggestions',
                 element: withSuspense(TeachingSuggestionsPage),
             },
@@ -110,6 +116,10 @@ export const router = createBrowserRouter([
             {
                 path: 'student/path/:lessonId',
                 element: withSuspense(StudentLearningPathPage),
+            },
+            {
+                path: 'student/quiz/:assignmentId',
+                element: withSuspense(StudentQuizPage),
             },
             // ==================== Legacy Redirects & 404 ====================
             {
