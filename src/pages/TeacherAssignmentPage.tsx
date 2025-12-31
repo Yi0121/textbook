@@ -363,12 +363,30 @@ export default function TeacherAssignmentPage() {
                                 <CheckCircle2 className="w-5 h-5 text-green-600" />
                                 數學本體 (Teacher Only)
                             </h3>
-                            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
-                                <img
-                                    src="/images/handwritten_solution.png"
-                                    alt="Handwritten solution"
-                                    className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition-opacity"
-                                />
+                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 space-y-4">
+                                <div>
+                                    <p className="text-gray-500 text-sm mb-1">設三個連續整數為：</p>
+                                    <p className="font-mono text-lg font-bold text-gray-800 tracking-wider">x, x+1, x+2</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-500 text-sm">總和：</span>
+                                        <span className="font-mono text-indigo-600 font-bold">x + (x+1) + (x+2) = 48</span>
+                                    </div>
+                                    <div className="pl-12 font-mono text-gray-600">3x + 3 = 48</div>
+                                    <div className="pl-12 font-mono text-gray-600">3x = 45</div>
+                                    <div className="pl-12 font-mono text-gray-800 font-bold">x = 15</div>
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-200">
+                                    <p className="text-sm text-gray-500 mb-2">故盒子內有：</p>
+                                    <div className="flex gap-2">
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold font-mono">15</span>
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold font-mono">16</span>
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold font-mono">17</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
