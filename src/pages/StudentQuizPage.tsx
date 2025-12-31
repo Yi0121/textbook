@@ -70,6 +70,7 @@ function StageProgress({ currentStage }: { currentStage: Stage }) {
 
 // -------------------- Stage 1: Solve --------------------
 function SolveStage({ onComplete, isGifted }: { onComplete: () => void, isGifted: boolean }) {
+
     const [answer, setAnswer] = useState('');
     const [canvasMode, setCanvasMode] = useState(false);
 
@@ -134,24 +135,30 @@ function SolveStage({ onComplete, isGifted }: { onComplete: () => void, isGifted
                                 <p>畫布功能開發中...</p>
                             </div>
                         ) : (
-                            <textarea
-                                className="w-full h-full min-h-[280px] bg-transparent resize-none focus:outline-none text-lg text-gray-700 p-2"
-                                placeholder={isGifted ? "請寫下你的想法：\n1. 你找到了哪幾個數？\n2. 你是怎麼想到的？\n3. 還有別的可能嗎？" : "在這裡寫下你的算式或想法..."}
-                                value={answer}
-                                onChange={(e) => setAnswer(e.target.value)}
-                            />
+                            <div className="relative w-full h-full min-h-[280px]">
+                                {isGifted ? (
+                                    <div className="w-full h-full bg-white rounded-xl overflow-hidden shadow-inner">
+                                        <img
+                                            src="/images/student_handwriting.jpg"
+                                            alt="Student Calculation"
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                ) : (
+                                    <textarea
+                                        className="w-full h-full bg-transparent resize-none focus:outline-none text-lg text-gray-700 p-2"
+                                        placeholder="在這裡寫下你的算式或想法..."
+                                        value={answer}
+                                        onChange={(e) => setAnswer(e.target.value)}
+                                    />
+                                )}
+                            </div>
                         )}
 
-                        {/* Final Answer Input */}
-                        <div className="absolute bottom-4 right-4 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-3">
-                            <span className="font-bold text-gray-600">答：</span>
-                            {isGifted ? (
-                                <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                    <span className="bg-gray-100 px-2 py-1 rounded">?</span>,
-                                    <span className="bg-gray-100 px-2 py-1 rounded">?</span>,
-                                    <span className="bg-gray-100 px-2 py-1 rounded">?</span>
-                                </div>
-                            ) : (
+                        {/* Final Answer Input - Only for Basic Mode */}
+                        {!isGifted && (
+                            <div className="absolute bottom-4 right-4 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-3">
+                                <span className="font-bold text-gray-600">答：</span>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="number"
@@ -160,8 +167,8 @@ function SolveStage({ onComplete, isGifted }: { onComplete: () => void, isGifted
                                     />
                                     <span className="text-gray-500">顆</span>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Action Bar */}
@@ -427,8 +434,8 @@ export default function StudentQuizPage() {
                     <button
                         onClick={() => setIsGifted(!isGifted)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isGifted
-                                ? 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'
-                                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                            ? 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'
+                            : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
                             }`}
                     >
                         <Sparkles className={`w-3 h-3 ${isGifted ? 'fill-purple-700' : ''}`} />
