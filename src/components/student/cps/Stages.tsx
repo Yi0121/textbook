@@ -43,9 +43,8 @@ export const StageS3 = () => (
                 <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
                     <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded mb-2 inline-block">任務說明</span>
                     <p className="text-sm font-bold text-slate-800">
-                        1. 測量圖卡直徑 (D)。<br />
-                        2. 思考如何利用直線分割方法估算圓周長 (C)。<br />
-                        3. 畫出你的分割構想。
+                        1. 請按住圖中的紅色點進行拖曳<br />
+                        2. 請觀察圓周長與直徑的關係<br />
                     </p>
                 </div>
                 <div className="p-3 bg-white border border-slate-200 rounded-xl">
@@ -93,7 +92,8 @@ export const StageS4 = () => (
                             <th className="px-4 py-3 rounded-tl-lg">分割數</th>
                             <th className="px-4 py-3">測量總長 (圓周)</th>
                             <th className="px-4 py-3">直徑</th>
-                            <th className="px-4 py-3 rounded-tr-lg">圓周 ÷ 直徑 (比值)</th>
+                            <th className="px-4 py-3">圓周 ÷ 直徑 (比值)</th>
+                            <th className="px-4 py-3 rounded-tr-lg">填寫人</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -102,18 +102,36 @@ export const StageS4 = () => (
                             <td className="px-4 py-3">24.5 cm</td>
                             <td className="px-4 py-3">8.0 cm</td>
                             <td className="px-4 py-3 text-red-500 font-bold">3.06</td>
+                            <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-indigo-500 text-[10px] text-white flex items-center justify-center font-bold">A</div>
+                                    <span className="text-xs font-medium text-slate-600">小明</span>
+                                </div>
+                            </td>
                         </tr>
                         <tr className="border-b border-slate-100">
                             <td className="px-4 py-3 font-bold">16 分割</td>
                             <td className="px-4 py-3">25.0 cm</td>
                             <td className="px-4 py-3">8.0 cm</td>
                             <td className="px-4 py-3 text-orange-500 font-bold">3.125</td>
+                            <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-pink-500 text-[10px] text-white flex items-center justify-center font-bold">B</div>
+                                    <span className="text-xs font-medium text-slate-600">小華</span>
+                                </div>
+                            </td>
                         </tr>
                         <tr className="bg-indigo-50/50">
                             <td className="px-4 py-3 font-bold text-indigo-700">32 分割 (預測)</td>
                             <td className="px-4 py-3 font-mono">...</td>
                             <td className="px-4 py-3">8.0 cm</td>
                             <td className="px-4 py-3 font-bold text-green-600">?</td>
+                            <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-300 text-[10px] text-white flex items-center justify-center font-bold">?</div>
+                                    <span className="text-xs font-medium text-slate-400">待填寫</span>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -179,30 +197,43 @@ export const StageS5 = () => (
 
                 {/* Data Table */}
                 <div className="bg-slate-50 rounded-xl p-4 mb-6">
-                    <div className="grid grid-cols-4 gap-4 text-sm mb-2 font-bold text-slate-500 border-b border-slate-200 pb-2">
+                    <div className="grid grid-cols-5 gap-4 text-sm mb-2 font-bold text-slate-500 border-b border-slate-200 pb-2">
                         <div>分割數</div>
                         <div>測量總長 (圓周)</div>
                         <div>直徑</div>
                         <div className="text-indigo-600">圓周 : 直徑 (比值)</div>
+                        <div>填寫人</div>
                     </div>
                     <div className="space-y-2">
-                        <div className="grid grid-cols-4 gap-4 text-sm items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <div className="grid grid-cols-5 gap-4 text-sm items-center bg-white p-3 rounded-lg border border-slate-100">
                             <div className="font-bold text-slate-700">8 分割</div>
                             <div>24.5 cm</div>
                             <div>8.0 cm</div>
                             <div className="text-indigo-600 font-bold">3.06</div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-[10px] text-white flex items-center justify-center font-bold">A</div>
+                                <span className="text-[10px] text-slate-500">小明</span>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-4 gap-4 text-sm items-center bg-white p-3 rounded-lg border border-slate-100">
+                        <div className="grid grid-cols-5 gap-4 text-sm items-center bg-white p-3 rounded-lg border border-slate-100">
                             <div className="font-bold text-slate-700">16 分割</div>
                             <div>25.0 cm</div>
                             <div>8.0 cm</div>
                             <div className="text-orange-500 font-bold">3.125</div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded-full bg-pink-500 text-[10px] text-white flex items-center justify-center font-bold">B</div>
+                                <span className="text-[10px] text-slate-500">小華</span>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-4 gap-4 text-sm items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <div className="grid grid-cols-5 gap-4 text-sm items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
                             <div className="font-bold text-indigo-700">32 分割 (預測)</div>
                             <div className="text-slate-400">...</div>
                             <div>8.0 cm</div>
                             <div className="text-emerald-500 font-bold">?</div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded-full bg-emerald-500 text-[10px] text-white flex items-center justify-center font-bold">C</div>
+                                <span className="text-[10px] text-slate-500">小強</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -210,8 +241,8 @@ export const StageS5 = () => (
                 {/* Discovery Box */}
                 <div className="bg-amber-50 rounded-xl p-6 border border-amber-100">
                     <h4 className="font-bold text-amber-800 mb-2 text-sm flex items-center gap-2">
-                        <Lightbulb size={16} />
-                        小組發現
+                        <Layout size={16} />
+                        上一張圖彙整表
                     </h4>
                     <p className="text-amber-900 font-medium">
                         當分割數越多，我們算出來的比值好像越來越接近<span className="bg-white px-2 py-0.5 rounded mx-1 text-amber-700 shadow-sm">一個固定的數字 (大約 3.1 左右)</span>。
@@ -226,17 +257,37 @@ export const StageS5 = () => (
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">數據精確度 (30%)</label>
-                    <input type="range" className="w-full accent-indigo-600" />
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-bold text-slate-700">能找出圓周長與直徑的關係</label>
+                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">40%</span>
+                    </div>
+                    <div className="relative h-2 w-full bg-slate-100 rounded-lg overflow-hidden">
+                        <div className="absolute top-0 left-0 h-full bg-indigo-600 rounded-lg" style={{ width: '40%' }}></div>
+                        <input type="range" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" defaultValue={40} />
+                        <div className="absolute top-1/2 left-[40%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-sm pointer-events-none"></div>
+                    </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">推論邏輯 (40%)</label>
-                    <input type="range" className="w-full accent-indigo-600" />
-                    <p className="text-xs text-slate-500 mt-1">是否有清楚解釋分割數與精確度的關係？</p>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-bold text-slate-700">小組結論是合理的</label>
+                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">30%</span>
+                    </div>
+                    <div className="relative h-2 w-full bg-slate-100 rounded-lg overflow-hidden">
+                        <div className="absolute top-0 left-0 h-full bg-indigo-600 rounded-lg" style={{ width: '30%' }}></div>
+                        <input type="range" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" defaultValue={30} />
+                        <div className="absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-sm pointer-events-none"></div>
+                    </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">發表表達 (30%)</label>
-                    <input type="range" className="w-full accent-indigo-600" />
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-bold text-slate-700">發表能清楚表達</label>
+                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">30%</span>
+                    </div>
+                    <div className="relative h-2 w-full bg-slate-100 rounded-lg overflow-hidden">
+                        <div className="absolute top-0 left-0 h-full bg-indigo-600 rounded-lg" style={{ width: '30%' }}></div>
+                        <input type="range" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" defaultValue={30} />
+                        <div className="absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-sm pointer-events-none"></div>
+                    </div>
                 </div>
 
                 <div>
@@ -251,55 +302,71 @@ export const StageS5 = () => (
     </div>
 );
 
-// S6: Summary Dashboard
+// S6: Summary Dashboard (Redesigned to match layout)
 export const StageS6 = () => (
-    <div className="flex h-full p-8 gap-8 items-start justify-center bg-slate-50">
-        <div className="w-full max-w-5xl grid grid-cols-3 gap-6">
-            {/* Stats Card */}
-            <div className="col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <BarChart3 size={18} className="text-indigo-600" />
-                    學習成果統計
-                </h3>
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">完成度</span>
-                        <span className="text-lg font-bold text-green-600">100%</span>
+    <div className="flex h-full p-8 bg-slate-50 overflow-y-auto">
+        <div className="w-full max-w-6xl mx-auto space-y-6">
+            {/* Top Row: Core Concept & AI Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Left: Core Concept Mastered */}
+                <div className="col-span-1 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col items-center">
+                    <div className="self-start flex items-center gap-2 mb-8">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <BarChart3 size={18} />
+                        </div>
+                        <h3 className="font-bold text-slate-800">核心概念掌握</h3>
                     </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">互評分數</span>
-                        <span className="text-lg font-bold text-indigo-600">87 分</span>
+
+                    <div className="relative w-48 h-48 flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                            <div className="text-center">
+                                <span className="text-5xl font-serif text-slate-800 block mb-1">π</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">圓周率 3.14159...</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">貢獻度</span>
-                        <span className="text-lg font-bold text-orange-500">A+</span>
+                </div>
+
+                {/* Right: AI Learning Summary */}
+                <div className="col-span-2 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-100">
+                    {/* Brain Watermark */}
+                    <div className="absolute bottom-[-20px] right-[-20px] opacity-10">
+                        <div className="w-64 h-64 bg-white rounded-full flex items-center justify-center">
+                            <Lightbulb size={120} />
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col h-full">
+                        <h3 className="text-xl font-bold mb-6">AI 學習總結</h3>
+                        <p className="text-indigo-50 text-lg leading-relaxed mb-8 flex-1">
+                            「這一堂課你表現很棒！從一開始的分割模型，到小組合作計算出 3.125 的比值，
+                            你已經成功發現了『圓周長與直徑』的固定屬性。這個固定的倍數就是我們常說的 3.14 (圓周率)！」
+                        </p>
+
+                        <div className="flex gap-4">
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex-1">
+                                <p className="text-[10px] text-indigo-200 font-bold uppercase mb-1">規則掌握度</p>
+                                <p className="text-2xl font-bold">92%</p>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex-1">
+                                <p className="text-[10px] text-indigo-200 font-bold uppercase mb-1">小組角色</p>
+                                <p className="text-2xl font-bold">Active</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Conclusion Card */}
-            <div className="col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="font-bold text-slate-800 mb-4">今日結論</h3>
-                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                    <p className="text-indigo-800 font-medium leading-relaxed">
-                        圓周長 = 直徑 × π (約 3.14159...)<br />
-                        透過分割逼近法，我們發現分割數越多，比值越接近 π。
-                    </p>
+            {/* Bottom Row: Reflection Card */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex items-center justify-between">
+                <div>
+                    <h3 className="font-bold text-slate-800 text-xl mb-2">概念延伸挑戰</h3>
+                    <p className="text-slate-500 font-medium">如果圓圈變大兩倍，圓周率會變大嗎？</p>
                 </div>
-            </div>
-
-            {/* Reflection Card */}
-            <div className="col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="font-bold text-slate-800 mb-4">學習反思</h3>
-                <textarea
-                    className="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    placeholder="今天的課程中，我學到了什麼？有什麼是我還想深入了解的？"
-                ></textarea>
-                <div className="mt-4 flex justify-end">
-                    <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">
-                        提交反思
-                    </button>
-                </div>
+                <button className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:translate-x-1">
+                    開始挑戰
+                    <Play size={16} fill="white" />
+                </button>
             </div>
         </div>
     </div>
