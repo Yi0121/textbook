@@ -170,6 +170,6 @@ export function useAgent() {
 // ==================== Re-exports ====================
 // 為向下相容，從獨立檔案 re-export 各模組 Hooks
 
-export { useTeacherAgents } from '../hooks/useTeacherAgents';
-export { useStudentAgents } from '../hooks/useStudentAgents';
-export { useAnalyticsAgents } from '../hooks/useAnalyticsAgents';
+export { useTeacherAgents } from '../hooks/ai/useTeacherAgents';
+export { useStudentAgents } from '../hooks/ai/useStudentAgents';
+export { useAnalyticsAgents } from '../hooks/ai/useAnalyticsAgents';

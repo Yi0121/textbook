@@ -1,7 +1,7 @@
 // components/ui/KeyboardShortcutsHelp.tsx
 import React from 'react';
 import { X, Keyboard } from 'lucide-react';
-import { formatShortcut, type KeyboardShortcut } from '../../hooks/useKeyboardShortcuts';
+import { formatShortcut, type KeyboardShortcut } from '../../hooks/common/useKeyboardShortcuts';
 
 interface KeyboardShortcutsHelpProps {
   isOpen: boolean;

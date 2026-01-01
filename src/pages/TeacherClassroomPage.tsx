@@ -27,12 +27,12 @@ import { useContent } from '../context/ContentContext';
 import { useUI } from '../context/UIContext';
 
 // Custom Hooks
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useAIActions } from '../hooks/useAIActions';
-import { useAppShortcuts } from '../hooks/useAppShortcuts';
-import { useContentImport } from '../hooks/useContentImport';
-import { useWhiteboardControl } from '../hooks/useWhiteboardControl';
-import { useOnboarding } from '../hooks/useOnboarding';
+import { useKeyboardShortcuts } from '../hooks/common/useKeyboardShortcuts';
+import { useAIActions } from '../hooks/ai/useAIActions';
+import { useAppShortcuts } from '../hooks/common/useAppShortcuts';
+import { useContentImport } from '../hooks/common/useContentImport';
+import { useWhiteboardControl } from '../hooks/canvas/useWhiteboardControl';
+import { useOnboarding } from '../hooks/common/useOnboarding';
 
 // Config
 import { NAV_ZONES } from '../config/constants';

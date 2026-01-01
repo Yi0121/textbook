@@ -19,7 +19,7 @@ import {
     GraduationCap,
     Calendar,
 } from 'lucide-react';
-import { useLessonPrepChat, type ChatMessage, PUBLISHERS, GRADES, SEMESTERS, type PublisherId } from '../hooks/useLessonPrepChat';
+import { useLessonPrepChat, type ChatMessage, PUBLISHERS, GRADES, SEMESTERS, type PublisherId } from '../hooks/lesson/useLessonPrepChat';
 import type { PedagogyMethod } from '../data/pedagogyMethods';
 
 // ==================== Message Components ====================
