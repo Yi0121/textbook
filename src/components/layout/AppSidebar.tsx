@@ -27,6 +27,7 @@ import {
     GraduationCap,
     Library,
     Activity,
+    LayoutDashboard,
 } from 'lucide-react';
 import { type UserRole } from '../../config/toolConfig';
 
@@ -60,7 +61,8 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         icon: Library,
         items: [
             { path: '/teacher/lesson-prep', label: '備課', icon: Edit3 },
-            { path: '/teacher/lesson-progress/lesson-apos-001', label: '課程監控', icon: Activity },
+            { path: '/teacher/lesson-progress/lesson-apos-001', label: '課程監控 (代數)', icon: Activity },
+            { path: '/teacher/division-exploration-monitor', label: '課程監控 (除法)', icon: LayoutDashboard },
             { path: '/materials', label: '教材庫', icon: FolderOpen },
         ],
     },

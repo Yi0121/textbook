@@ -274,10 +274,10 @@ const GroupNode = memo(({ data, width, height }: NodeProps<Node<NodeData>>) => {
                     - Border-amber-400 is the single frame
                     - Removed black ring and offsets
                 */}
-                <div className="absolute inset-0 rounded-[24px] border-[4px] border-amber-400 bg-white/80 backdrop-blur-sm shadow-[0_20px_50px_-12px_rgba(245,158,11,0.3)] z-20 flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 rounded-[32px] border-[6px] border-amber-400/50 bg-white shadow-[0_40px_80px_-12px_rgba(245,158,11,0.4)] ring-8 ring-amber-500/10 z-20 flex items-center justify-center overflow-hidden transition-all duration-500 hover:shadow-[0_60px_120px_-12px_rgba(245,158,11,0.6)] hover:scale-[1.005]">
 
                     {/* Background decoration grid - Subtle */}
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
                     <img
                         src="/images/apos-theory-diagram.png"
@@ -304,10 +304,20 @@ const GroupNode = memo(({ data, width, height }: NodeProps<Node<NodeData>>) => {
                 </div>
 
                 {/* Right connection point */}
+                {/* Right connection point */}
                 <Handle
                     type="source"
                     position={Position.Right}
                     className="!w-4 !h-4 !bg-amber-500 !border-[3px] !border-white !rounded-full shadow-lg z-50 translate-x-2 transition-transform hover:scale-125"
+                />
+
+                {/* Bottom connection point for vertical flow */}
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    id="source-bottom"
+                    className="!w-4 !h-4 !bg-amber-500 !border-[3px] !border-white !rounded-full shadow-lg z-50 transition-transform hover:scale-125"
+                    style={{ left: '50%', bottom: -2, transform: 'translate(-50%, 0)' }}
                 />
             </div>
         );
@@ -363,12 +373,12 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // 1. Start & Intro
         {
             id: 'Start', type: 'custom',
-            position: { x: 50, y: 280 },
+            position: { x: 50, y: 450 },
             data: { label: '課程開始', variant: 'start', icon: Bell }
         },
         {
             id: 'Video', type: 'custom',
-            position: { x: 250, y: 260 },
+            position: { x: 250, y: 450 },
             data: { label: '課程自學', subLabel: '影片引入: 生活中的未知數情境', variant: 'media', icon: Video }
         },
 
@@ -377,14 +387,14 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         {
             id: 'APOS_Group', type: 'group',
             position: { x: 500, y: 50 },
-            style: { width: 1100, height: 750 },
+            style: { width: 1400, height: 800 },
             data: { label: 'APOS Mathematical Construction Agent', isAposTheory: true }
         },
 
         // 3. Diagnostic
         {
             id: 'Diagnostic', type: 'custom',
-            position: { x: 1680, y: 250 },
+            position: { x: 1200, y: 1000 },
             data: { label: '學習分析 AI', subLabel: '程度診斷', variant: 'logic', customShape: 'diamond', icon: Zap }
         },
 
@@ -392,43 +402,43 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // 4. Groups
         {
             id: 'Group_Adv', type: 'custom',
-            position: { x: 1900, y: 350 },
+            position: { x: 1550, y: 920 },
             data: { label: '小組討論 (進階)', subLabel: '任務: 設計一道代數應用題', variant: 'group', icon: Users }
         },
         {
             id: 'Group_Basic', type: 'custom',
-            position: { x: 1900, y: 600 },
+            position: { x: 1550, y: 1180 },
             data: { label: '小組討論 (基礎)', subLabel: '任務: 完成同類項配對學習單', variant: 'group', icon: Users }
         },
 
         // 5. Share & Quiz (垂直對齊優化)
         {
             id: 'Share', type: 'custom',
-            position: { x: 2180, y: 465 },
+            position: { x: 1900, y: 1050 },
             data: { label: '成果發表與統整', variant: 'logic', customShape: 'rect', icon: Megaphone }
         },
         {
             id: 'Quiz', type: 'custom',
-            position: { x: 2420, y: 465 },
+            position: { x: 2200, y: 1050 },
             data: { label: '單元診斷測驗', variant: 'assessment', icon: ClipboardCheck }
         },
 
         // 6. Final Result (同步對齊)
         {
             id: 'Result', type: 'custom',
-            position: { x: 2680, y: 475 },
+            position: { x: 2500, y: 1060 },
             data: { label: '學習分析 AI', subLabel: '達標判定', variant: 'logic', customShape: 'diamond', icon: BarChart }
         },
 
         // 7. Remedial & End
         {
             id: 'Remedial', type: 'custom',
-            position: { x: 2580, y: 700 },
+            position: { x: 2400, y: 1300 },
             data: { label: '補救路徑', subLabel: '觀看解題影片 + 類題練習', variant: 'remedial', icon: Pill }
         },
         {
             id: 'End', type: 'custom',
-            position: { x: 2950, y: 500 },
+            position: { x: 2850, y: 1090 },
             data: { label: '單元結束', variant: 'end', icon: Flag }
         },
     ];
@@ -441,6 +451,7 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // APOS to Diagnostic (exit APOS to next phase) - emphasized connection
         {
             ...createEdge('APOS_Group', 'Diagnostic', undefined, 'smoothstep', true, '#f59e0b'),
+            sourceHandle: 'source-bottom',
             style: { stroke: '#f59e0b', strokeWidth: 2.5 }
         },
 
