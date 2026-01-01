@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
-import type { APOSStage } from '../types/lessonPlan';
+import type { APOSStage } from '../../types/lessonPlan';
 
 // StageNode 的資料結構
 type StageNodeData = {

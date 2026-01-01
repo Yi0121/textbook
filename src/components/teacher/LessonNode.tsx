@@ -4,7 +4,7 @@ import {
     Bot,
     PlayCircle
 } from 'lucide-react';
-import type { LessonNode as LessonNodeType } from '../types/lessonPlan';
+import type { LessonNode as LessonNodeType } from '../../types/lessonPlan';
 
 // 定義組件需要的資料結構
 type LessonNodeData = {
@@ -17,7 +17,7 @@ type LessonNodeData = {
 // 這樣可以確保符合 NodeTypes 的預期
 type CustomNode = Node<LessonNodeData, 'lessonNode'>;
 
-import { getNodeStyleConfig } from '../utils/nodeStyles';
+import { getNodeStyleConfig } from '../../utils/nodeStyles';
 
 const LessonNode = ({ data, selected }: NodeProps<CustomNode>) => {
     // 解構資料

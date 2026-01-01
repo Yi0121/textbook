@@ -6,7 +6,7 @@
 import { memo, type ComponentType } from 'react';
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import { Video, FileText, CheckSquare, Wrench, PlayCircle, BookOpen, AlertCircle, RotateCcw, Sparkles, GitBranch, type LucideProps } from 'lucide-react';
-import type { ActivityNode as ActivityNodeType } from '../types/lessonPlan';
+import type { ActivityNode as ActivityNodeType } from '../../types/lessonPlan';
 
 // ActivityFlowNode 的資料結構
 type ActivityFlowNodeData = {
