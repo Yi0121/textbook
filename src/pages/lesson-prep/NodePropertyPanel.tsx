@@ -2,7 +2,7 @@ import { Layers, X, Bot, Wrench, Video, FileText, CheckSquare, Plus, Trash2 } fr
 import type { LessonNode, ActivityNode, ResourceBinding } from '../../types/lessonPlan';
 import { AVAILABLE_AGENTS } from '../../types/agents';
 import { AVAILABLE_TOOLS } from '../../types/tools';
-import ResourcePickerModal from '../../components/ResourcePickerModal';
+import ResourcePickerModal from '../../components/teacher/ResourcePickerModal';
 import { useState } from 'react';
 
 // Props Interface
