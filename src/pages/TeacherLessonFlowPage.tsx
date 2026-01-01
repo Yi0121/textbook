@@ -40,6 +40,7 @@ import { ResourceSidebar } from './lesson-prep/ResourceSidebar';
 import { GraphCanvas } from './lesson-prep/GraphCanvas';
 import { NodePropertyPanel } from './lesson-prep/NodePropertyPanel';
 import AlgebraicFundamentalsGraph from './lesson-prep/AlgebraicFundamentalsGraph';
+import CPSGraph from './lesson-prep/CPSGraph';
 
 // Dagre Layout Utility (Moved inline or extract to utils later)
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -132,7 +133,8 @@ function LessonPrepPreviewPageInner() {
     // 根據 URL ID 決定載入哪個範例資料
     const [aposLesson, setAposLesson] = useState(() => {
         // 根據 URL ID 決定載入哪個範例資料
-        if (lessonId === 'lesson-apos-001' || lessonId === 'lesson-math-001') return ALGEBRA_APOS_LESSON;
+        if (lessonId === 'lesson-apos-001') return ALGEBRA_APOS_LESSON;
+        if (lessonId === 'lesson-math-001') return { ...ALGEBRA_APOS_LESSON, title: '圓周長' };
         if (lessonId === 'lesson-apos-002' || lessonId === 'lesson-math-003') return GEOMETRY_APOS_LESSON;
         if (lessonId === 'lesson-math-002') return ARITHMETIC_APOS_LESSON;
 
@@ -648,6 +650,15 @@ function LessonPrepPreviewPageInner() {
             {isDemoApos ? (
                 <div className="w-full h-full pt-0">
                     <AlgebraicFundamentalsGraph
+                        isSidebarOpen={isSidebarOpen}
+                        onDrop={handleDrop}
+                        onNodeClick={onNodeClick}
+                        triggerDeleteNodeId={triggerDeleteNodeId}
+                    />
+                </div>
+            ) : lessonId === 'lesson-math-001' ? (
+                <div className="w-full h-full pt-0">
+                    <CPSGraph
                         isSidebarOpen={isSidebarOpen}
                         onDrop={handleDrop}
                         onNodeClick={onNodeClick}

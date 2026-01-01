@@ -99,8 +99,8 @@ export default function AppLayout() {
                     </main>
                 </div>
 
-                {/* 全局 AI 助教按鈕 (首頁隱藏) */}
-                {location.pathname !== '/' && <GlobalAIAssistant />}
+                {/* 全局 AI 助教按鈕 (首頁隱藏，CPS 課程頁面隱藏因為已有內建 AI) */}
+                {location.pathname !== '/' && !location.pathname.includes('assign-002') && !location.pathname.includes('cps-view') && <GlobalAIAssistant />}
             </div>
         </AppProviders>
     );

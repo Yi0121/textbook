@@ -13,7 +13,7 @@ import ResourceSelector, { type Resource } from '../components/features/lesson-p
 
 // Mock 最近草稿資料
 const RECENT_DRAFTS = [
-    { id: 'lesson-math-001', title: '四則運算基礎', subject: '數學', grade: '五年級', lastEdited: '10 分鐘前', progress: 80 },
+    { id: 'lesson-math-001', title: '圓周長', subject: '數學', grade: '五年級', lastEdited: '10 分鐘前', progress: 80 },
     { id: 'lesson-math-002', title: '分數加減法', subject: '數學', grade: '四年級', lastEdited: '昨天', progress: 45 },
     { id: 'lesson-math-003', title: '幾何圖形辨識', subject: '數學', grade: '三年級', lastEdited: '3 天前', progress: 20 },
 ];

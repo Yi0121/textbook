@@ -71,7 +71,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         items: [
             { path: '/teacher/class-analytics', label: '學習分析', icon: BarChart3 },
             { path: '/teacher/assignment', label: '作業管理', icon: ClipboardList },
-            { path: '/groups', label: '分組協作', icon: Users },
+            { path: '/teacher/groups', label: '分組協作', icon: Users },
             { path: '/teacher/suggestions', label: '教學建議', icon: Lightbulb },
         ],
     },
@@ -104,7 +104,8 @@ const STUDENT_NAV_GROUPS: NavGroup[] = [
         icon: ClipboardList,
         items: [
             { path: '/assignments', label: '作業', icon: ClipboardList },
-            { path: '/student/quiz/assign-001', label: '我的任務', icon: ClipboardList },
+            { path: '/student/quiz/assign-001', label: '任務：除法探究', icon: ClipboardList },
+            { path: '/student/quiz/assign-002', label: '任務：圓周長 (CPS)', icon: BrainCircuit },
             { path: '/student/suggestions', label: '學習建議', icon: Lightbulb },
         ],
     },

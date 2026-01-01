@@ -1,0 +1,77 @@
+---
+config:
+  layout: fixed
+---
+flowchart LR
+ subgraph S1["備課階段"]
+        T1["教師準備"]
+        A1("備課 AI")
+  end
+ subgraph S2["課前自學"]
+        ST1["學生: 影片/前測"]
+  end
+ subgraph S3["個人解題"]
+        ST2["個人白板/GGB"]
+        AI_Ind("AI 輔助解題")
+  end
+ subgraph S4["組內共學"]
+        G1["分工發表 A1/A2"]
+        G2["討論共識 B/C"]
+        AI_Co("TeamTutor<br>CPS 導學 Agent")
+        AI_Bot("虛擬組員 Agent")
+  end
+ subgraph S5["組間互學"]
+        G3["解說員發表 D1"]
+        G4["評分員互評 D2"]
+        G5["個人自評 D3"]
+        AI_Inter("CPS 導學 Agent")
+        AI_Ana("學習分析 AI")
+  end
+ subgraph S6["總結與課後"]
+        T2["教師導學/反饋"]
+        AI_Final("學習分析統整")
+        ST3["後測/完成"]
+  end
+    A1 -- 生成教案/題目 --> T1
+    T1 -- 發布內容 --> ST1
+    ST1 --> ST2
+    AI_Ind -.-> ST2
+    ST2 --> G1
+    G1 --> G2
+    AI_Co <--> G2
+    AI_Bot -.-> G2
+    G2 --> G3
+    G3 --> G4
+    G4 --> G5
+    AI_Inter <--> G3
+    AI_Ana -.-> G4
+    G5 --> T2
+    AI_Final --> T2
+    T2 --> ST3
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 --> S6
+
+     T1:::Teacher
+     A1:::AI
+     ST1:::Student
+     ST2:::Student
+     AI_Ind:::AI
+     G1:::Student
+     G2:::Student
+     AI_Co:::AI
+     AI_Bot:::AI
+     G3:::Student
+     G4:::Student
+     G5:::Student
+     AI_Inter:::AI
+     AI_Ana:::AI
+     T2:::Teacher
+     AI_Final:::AI
+     ST3:::Student
+    classDef AI fill:#FFF0F5,stroke:#DB7093,stroke-width:2px
+    classDef Student fill:#E0FFFF,stroke:#008B8B,stroke-width:2px
+    classDef Teacher fill:#FFFACD,stroke:#DAA520,stroke-width:2px
+    classDef Tools fill:#F5F5F5,stroke:#808080,stroke-dasharray: 5 5

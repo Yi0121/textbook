@@ -12,21 +12,23 @@ import { PageLoader } from './components/ui/LoadingSpinner';
 // ==================== Lazy Loaded Pages ====================
 
 const HomePage = lazy(() => import('./pages/HomePage'));
-const ClassroomPage = lazy(() => import('./pages/ClassroomPage'));
-const LessonPrepPage = lazy(() => import('./pages/LessonPrepPage'));
+const TeacherClassroomPage = lazy(() => import('./pages/TeacherClassroomPage'));
+const TeacherLessonPrepPage = lazy(() => import('./pages/TeacherLessonPrepPage'));
 const TeachingSuggestionsPage = lazy(() => import('./pages/TeachingSuggestionsPage'));
-const LearningSuggestionsPage = lazy(() => import('./pages/LearningSuggestionsPage'));
-const MyConversationsPage = lazy(() => import('./pages/MyConversationsPage'));
-const ClassAnalyticsPage = lazy(() => import('./pages/ClassAnalyticsPage'));
-const LessonPrepPreviewPage = lazy(() => import('./pages/LessonPrepPreviewPage'));
-const LessonPrepChatPage = lazy(() => import('./pages/LessonPrepChatPage'));
+const StudentSuggestionsPage = lazy(() => import('./pages/StudentSuggestionsPage'));
+const StudentConversationsPage = lazy(() => import('./pages/StudentConversationsPage'));
+const TeacherClassAnalyticsPage = lazy(() => import('./pages/TeacherClassAnalyticsPage'));
+const TeacherLessonFlowPage = lazy(() => import('./pages/TeacherLessonFlowPage'));
+const TeacherLessonChatPage = lazy(() => import('./pages/TeacherLessonChatPage'));
 const StudentLearningPathPage = lazy(() => import('./pages/StudentLearningPathPage'));
-const LessonProgressDashboard = lazy(() => import('./pages/LessonProgressDashboard'));
+const TeacherLessonProgressPage = lazy(() => import('./pages/TeacherLessonProgressPage'));
 const TeacherAssignmentPage = lazy(() => import('./pages/TeacherAssignmentPage'));
 const TeacherStudentOverviewPage = lazy(() => import('./pages/TeacherStudentOverviewPage'));
 const TeacherClassSetupPage = lazy(() => import('./pages/TeacherClassSetupPage'));
 const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 const StudentQuizPage = lazy(() => import('./pages/StudentQuizPage'));
+const TeacherGroupMonitorPage = lazy(() => import('./pages/TeacherGroupMonitorPage'));
+const CPSStudentView = lazy(() => import('./pages/CPSStudentView'));
 import ComingSoonPage from './pages/ComingSoonPage';
 
 // ==================== Suspense Wrapper ====================
@@ -45,14 +47,18 @@ export const router = createBrowserRouter([
     // 全螢幕編輯器（獨立於 AppLayout）
     {
         path: '/teacher/lesson-prep/preview/:lessonId',
-        element: withSuspense(LessonPrepPreviewPage),
+        element: withSuspense(TeacherLessonFlowPage),
     },
     // 對話式備課（獨立於 AppLayout）
     {
         path: '/teacher/lesson-prep/chat',
-        element: withSuspense(LessonPrepChatPage),
+        element: withSuspense(TeacherLessonChatPage),
     },
     // 標準布局頁面
+    {
+        path: '/student/cps-view',
+        element: withSuspense(CPSStudentView),
+    },
     {
         path: '/',
         element: <AppLayout />,
@@ -65,11 +71,11 @@ export const router = createBrowserRouter([
             // ==================== 教師端路由 /teacher/* ====================
             {
                 path: 'teacher/classroom',
-                element: withSuspense(ClassroomPage),
+                element: withSuspense(TeacherClassroomPage),
             },
             {
                 path: 'teacher/lesson-prep',
-                element: withSuspense(LessonPrepPage),
+                element: withSuspense(TeacherLessonPrepPage),
             },
             {
                 path: 'teacher/assignment',
@@ -81,7 +87,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'teacher/class-analytics',
-                element: withSuspense(ClassAnalyticsPage),
+                element: withSuspense(TeacherClassAnalyticsPage),
             },
             {
                 path: 'teacher/class-setup',
@@ -89,7 +95,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'teacher/lesson-progress/:lessonId',
-                element: withSuspense(LessonProgressDashboard),
+                element: withSuspense(TeacherLessonProgressPage),
             },
             {
                 path: 'teacher/student-overview/:lessonId/:studentId',
@@ -99,6 +105,10 @@ export const router = createBrowserRouter([
                 path: 'teacher/student-detail/:lessonId/:studentId',
                 element: withSuspense(StudentAnalyticsPage),
             },
+            {
+                path: 'teacher/groups',
+                element: withSuspense(TeacherGroupMonitorPage),
+            },
 
             // ==================== 學生端路由 /student/* ====================
             {
@@ -107,11 +117,11 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'student/conversations',
-                element: withSuspense(MyConversationsPage),
+                element: withSuspense(StudentConversationsPage),
             },
             {
                 path: 'student/suggestions',
-                element: withSuspense(LearningSuggestionsPage),
+                element: withSuspense(StudentSuggestionsPage),
             },
             {
                 path: 'student/path/:lessonId',
@@ -121,6 +131,7 @@ export const router = createBrowserRouter([
                 path: 'student/quiz/:assignmentId',
                 element: withSuspense(StudentQuizPage),
             },
+
             // ==================== Legacy Redirects & 404 ====================
             {
                 path: 'lesson-prep',
@@ -131,18 +142,21 @@ export const router = createBrowserRouter([
                 element: <Navigate to="/teacher/classroom" replace />,
             },
             {
-                path: '*',
-                element: <Navigate to="/" replace />,
+                path: 'materials',
+                element: <ComingSoonPage title="教材庫" description="教學資源與素材庫即將上線。" />,
+            },
+            {
+                path: 'settings',
+                element: <ComingSoonPage title="設定" description="個人設定與偏好設置即將上線。" />,
             },
             {
                 path: 'assignments',
                 element: <ComingSoonPage title="作業管理" description="發布、批改與檢討作業的功能即將上線。" />,
             },
             {
-                path: 'groups',
-                element: <ComingSoonPage title="分組協作" description="小組討論、分組任務與即時協作功能正在建置中。" />,
+                path: '*',
+                element: <Navigate to="/" replace />,
             },
         ],
     },
 ]);
-

@@ -282,7 +282,7 @@ const GroupNode = memo(({ data, width, height }: NodeProps<Node<NodeData>>) => {
                     <img
                         src="/images/apos-theory-diagram.png"
                         alt="APOS Mathematical Construction Agent"
-                        className="w-full h-full object-contain p-6 mix-blend-multiply opacity-100 relative z-10"
+                        className="w-full h-full object-contain mix-blend-multiply opacity-100 relative z-10 scale-[1.02]"
                     />
                 </div>
 
@@ -363,12 +363,12 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // 1. Start & Intro
         {
             id: 'Start', type: 'custom',
-            position: { x: 100, y: 280 },
+            position: { x: 50, y: 280 },
             data: { label: '課程開始', variant: 'start', icon: Bell }
         },
         {
             id: 'Video', type: 'custom',
-            position: { x: 300, y: 260 },
+            position: { x: 250, y: 260 },
             data: { label: '課程自學', subLabel: '影片引入: 生活中的未知數情境', variant: 'media', icon: Video }
         },
 
@@ -376,15 +376,15 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // 2. APOS Theory Diagram (Static Image - Optimized Size)
         {
             id: 'APOS_Group', type: 'group',
-            position: { x: 600, y: 150 },
-            style: { width: 520, height: 320 },
+            position: { x: 500, y: 50 },
+            style: { width: 1100, height: 750 },
             data: { label: 'APOS Mathematical Construction Agent', isAposTheory: true }
         },
 
         // 3. Diagnostic
         {
             id: 'Diagnostic', type: 'custom',
-            position: { x: 1280, y: 250 },
+            position: { x: 1680, y: 250 },
             data: { label: '學習分析 AI', subLabel: '程度診斷', variant: 'logic', customShape: 'diamond', icon: Zap }
         },
 
@@ -392,43 +392,43 @@ const AlgebraicFundamentalsGraph = ({ onNodeClick, onDrop, triggerDeleteNodeId }
         // 4. Groups
         {
             id: 'Group_Adv', type: 'custom',
-            position: { x: 1200, y: 350 },
+            position: { x: 1900, y: 350 },
             data: { label: '小組討論 (進階)', subLabel: '任務: 設計一道代數應用題', variant: 'group', icon: Users }
         },
         {
             id: 'Group_Basic', type: 'custom',
-            position: { x: 1200, y: 600 },
+            position: { x: 1900, y: 600 },
             data: { label: '小組討論 (基礎)', subLabel: '任務: 完成同類項配對學習單', variant: 'group', icon: Users }
         },
 
         // 5. Share & Quiz (垂直對齊優化)
         {
             id: 'Share', type: 'custom',
-            position: { x: 1500, y: 465 },
+            position: { x: 2180, y: 465 },
             data: { label: '成果發表與統整', variant: 'logic', customShape: 'rect', icon: Megaphone }
         },
         {
             id: 'Quiz', type: 'custom',
-            position: { x: 1780, y: 465 },
+            position: { x: 2420, y: 465 },
             data: { label: '單元診斷測驗', variant: 'assessment', icon: ClipboardCheck }
         },
 
         // 6. Final Result (同步對齊)
         {
             id: 'Result', type: 'custom',
-            position: { x: 2050, y: 475 },
+            position: { x: 2680, y: 475 },
             data: { label: '學習分析 AI', subLabel: '達標判定', variant: 'logic', customShape: 'diamond', icon: BarChart }
         },
 
         // 7. Remedial & End
         {
             id: 'Remedial', type: 'custom',
-            position: { x: 1950, y: 700 },
+            position: { x: 2580, y: 700 },
             data: { label: '補救路徑', subLabel: '觀看解題影片 + 類題練習', variant: 'remedial', icon: Pill }
         },
         {
             id: 'End', type: 'custom',
-            position: { x: 2300, y: 500 },
+            position: { x: 2950, y: 500 },
             data: { label: '單元結束', variant: 'end', icon: Flag }
         },
     ];

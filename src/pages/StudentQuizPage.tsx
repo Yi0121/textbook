@@ -406,7 +406,10 @@ function ExploreStage({ onComplete, isGifted }: { onComplete: () => void, isGift
 }
 
 // -------------------- Main Page --------------------
-export default function StudentQuizPage() {
+import { useParams } from 'react-router-dom';
+import CPSStudentView from './CPSStudentView';
+
+function VariableDivisionQuiz() {
     const [currentStage, setCurrentStage] = useState<Stage>('solve');
     const [isGifted, setIsGifted] = useState(false);
 
@@ -464,4 +467,16 @@ export default function StudentQuizPage() {
             </div>
         </div>
     );
+}
+
+export default function StudentQuizPage() {
+    const { assignmentId } = useParams();
+
+    // 針對 'assign-002' 顯示 CPS 圓周長課程
+    if (assignmentId === 'assign-002') {
+        return <CPSStudentView />;
+    }
+
+    // 預設顯示原有的「除法變變變」任務 (assign-001)
+    return <VariableDivisionQuiz />;
 }
