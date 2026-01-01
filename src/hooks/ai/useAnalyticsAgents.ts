@@ -12,7 +12,7 @@
  * - Dashboard: 儀表板
  */
 
-import { useAgent } from '../context/AgentContext';
+import { useAgent } from '../../context/AgentContext';
 
 /**
  * 分析模組專用 Hook

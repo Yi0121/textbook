@@ -1,9 +1,9 @@
 // hooks/useAIActions.ts
 // 提取 AI 相關業務邏輯，減輕 App.tsx 的職責
 
-import { useEditor } from '../context/EditorContext';
-import { useContent } from '../context/ContentContext';
-import { useUI } from '../context/UIContext';
+import { useEditor } from '../../context/EditorContext';
+import { useContent } from '../../context/ContentContext';
+import { useUI } from '../../context/UIContext';
 
 interface UseAIActionsOptions {
   viewport: { x: number; y: number; scale: number };

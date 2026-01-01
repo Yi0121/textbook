@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { useStudentAgents } from '../context/AgentContext';
+import { useStudentAgents } from '../../context/AgentContext';
 
 // ==================== Types ====================
 

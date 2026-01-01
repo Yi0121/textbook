@@ -9,11 +9,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useTeacherAgents } from '../context/AgentContext';
-import { useLearningPath } from '../context/LearningPathContext';
-import { analyzeStudentAndGeneratePath } from '../services/ai/learningPathService';
-import type { PedagogyMethod } from '../data/pedagogyMethods';
-import type { StudentLearningRecord } from '../types';
+import { useTeacherAgents } from '../../context/AgentContext';
+import { useLearningPath } from '../../context/LearningPathContext';
+import { analyzeStudentAndGeneratePath } from '../../services/ai/learningPathService';
+import type { PedagogyMethod } from '../../data/pedagogyMethods';
+import type { StudentLearningRecord } from '../../types';
 
 // ==================== Types ====================
 

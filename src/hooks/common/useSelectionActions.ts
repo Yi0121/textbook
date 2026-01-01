@@ -1,8 +1,8 @@
 // hooks/useSelectionActions.ts
 // 統一管理選取狀態的操作，減少 App.tsx 的重複邏輯
 
-import { useEditor } from '../context/EditorContext';
-import type { SelectionBox } from '../types';
+import { useEditor } from '../../context/EditorContext';
+import type { SelectionBox } from '../../types';
 
 export function useSelectionActions() {
   const { state, dispatch } = useEditor();

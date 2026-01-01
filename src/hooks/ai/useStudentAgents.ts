@@ -10,7 +10,7 @@
  * - SRL: 自主學習調節
  */
 
-import { useAgent } from '../context/AgentContext';
+import { useAgent } from '../../context/AgentContext';
 
 /**
  * 學生模組專用 Hook

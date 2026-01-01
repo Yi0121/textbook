@@ -7,7 +7,7 @@
  * - Grouping: 學生分組
  */
 
-import { useAgent } from '../context/AgentContext';
+import { useAgent } from '../../context/AgentContext';
 
 /**
  * 教師模組專用 Hook

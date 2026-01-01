@@ -1,10 +1,10 @@
 // hooks/useContentImport.ts
 import { useCallback } from 'react';
-import { useContent, type TextbookContent } from '../context/ContentContext';
-import { useEditor } from '../context/EditorContext';
-import { fetchAIImportedContent } from '../services/ai/mockLLMService';
-import { convertToFabricPages } from '../utils/epubParser';
-import type { Viewport, TiptapContent } from '../types';
+import { useContent, type TextbookContent } from '../../context/ContentContext';
+import { useEditor } from '../../context/EditorContext';
+import { fetchAIImportedContent } from '../../services/ai/mockLLMService';
+import { convertToFabricPages } from '../../utils/epubParser';
+import type { Viewport, TiptapContent } from '../../types';
 
 interface UseContentImportProps {
     setViewport: React.Dispatch<React.SetStateAction<Viewport>>;

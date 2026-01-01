@@ -8,9 +8,9 @@
  */
 
 import { useCallback, useRef, useEffect } from 'react';
-import { useLearningPath } from '../context/LearningPathContext';
-import { savePath, loadPath, loadAllPaths } from '../utils/learningPathStorage';
-import type { LearningPathNode, LearningPathEdge } from '../types';
+import { useLearningPath } from '../../context/LearningPathContext';
+import { savePath, loadPath, loadAllPaths } from '../../utils/learningPathStorage';
+import type { LearningPathNode, LearningPathEdge } from '../../types';
 
 // 歷史記錄項目
 interface HistoryEntry {

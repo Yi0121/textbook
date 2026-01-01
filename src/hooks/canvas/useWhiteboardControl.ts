@@ -1,6 +1,6 @@
 // hooks/useWhiteboardControl.ts
 import { useCallback } from 'react';
-import { useCollaboration, useWhiteboardActions } from '../context/CollaborationContext';
+import { useCollaboration, useWhiteboardActions } from '../../context/CollaborationContext';
 
 /**
  * 處理白板開關控制
