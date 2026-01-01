@@ -417,24 +417,18 @@ export default function StudentAnalyticsPage() {
                                     </div>
 
                                     {/* Action Buttons (New AI Features) */}
-                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <div className="grid grid-cols-1 gap-3 mb-4">
                                         <button
                                             onClick={() => setActiveModal('intervention')}
-                                            className="flex flex-col items-center justify-center gap-2 p-3 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all group"
+                                            className="flex flex-row items-center justify-start gap-4 p-4 bg-red-50 hover:bg-red-100 rounded-xl border border-red-100 hover:border-red-200 transition-all group w-full"
                                         >
-                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                                <Zap className="w-5 h-5 text-red-500" />
+                                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                                <Zap className="w-6 h-6 text-red-500" />
                                             </div>
-                                            <div className="text-xs font-bold text-red-700">AI 補救</div>
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveModal('parent-comm')}
-                                            className="flex flex-col items-center justify-center gap-2 p-3 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-100 hover:border-indigo-200 transition-all group"
-                                        >
-                                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                                <TrendingUp className="w-5 h-5 text-indigo-600" />
+                                            <div className="text-left">
+                                                <div className="text-sm font-bold text-red-700">AI 補救計畫</div>
+                                                <div className="text-xs text-red-500 mt-0.5">針對弱點生成練習</div>
                                             </div>
-                                            <div className="text-xs font-bold text-indigo-700">親師溝通</div>
                                         </button>
                                     </div>
 

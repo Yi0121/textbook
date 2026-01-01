@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     applyNodeChanges, applyEdgeChanges, useReactFlow, ReactFlowProvider,
     type Node, type Edge, type OnNodesChange, type OnEdgesChange, type Connection,
@@ -39,6 +39,7 @@ import { EditorToolbar } from './lesson-prep/EditorToolbar';
 import { ResourceSidebar } from './lesson-prep/ResourceSidebar';
 import { GraphCanvas } from './lesson-prep/GraphCanvas';
 import { NodePropertyPanel } from './lesson-prep/NodePropertyPanel';
+import AlgebraicFundamentalsGraph from './lesson-prep/AlgebraicFundamentalsGraph';
 
 // Dagre Layout Utility (Moved inline or extract to utils later)
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -123,13 +124,15 @@ type ViewLevel = 'stage' | 'activity';
 function LessonPrepPreviewPageInner() {
     const navigate = useNavigate();
     const { lessonId } = useParams<{ lessonId: string }>();
+    const [searchParams] = useSearchParams();
+    const isDemoApos = searchParams.get('demo') === 'apos';
     const { fitView } = useReactFlow();
 
     // ===== State =====
     // 根據 URL ID 決定載入哪個範例資料
     const [aposLesson, setAposLesson] = useState(() => {
         // 根據 URL ID 決定載入哪個範例資料
-        if (lessonId === 'lesson-apos-001' || lessonId === 'lesson-math-001') return ARITHMETIC_APOS_LESSON;
+        if (lessonId === 'lesson-apos-001' || lessonId === 'lesson-math-001') return ALGEBRA_APOS_LESSON;
         if (lessonId === 'lesson-apos-002' || lessonId === 'lesson-math-003') return GEOMETRY_APOS_LESSON;
         if (lessonId === 'lesson-math-002') return ARITHMETIC_APOS_LESSON;
 
@@ -139,6 +142,9 @@ function LessonPrepPreviewPageInner() {
     const [viewLevel, setViewLevel] = useState<ViewLevel>('stage');
     const [expandedStage, setExpandedStage] = useState<'A' | 'P' | 'O' | 'S' | null>(null);
     const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+
+    // Demo Delete Trigger
+    const [triggerDeleteNodeId, setTriggerDeleteNodeId] = useState<string | null>(null);
 
     const [lesson, setLesson] = useState<LessonPlan>(() => {
         if (lessonId === 'lesson-math-002') return MOCK_DIFFERENTIATED_LESSON;
@@ -154,6 +160,8 @@ function LessonPrepPreviewPageInner() {
         };
     });
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+    // For Demo APOS Graph: Store the selected node object directly since it's not in the main lesson state
+    const [demoSelectedNode, setDemoSelectedNode] = useState<LessonNodeType | null>(null);
 
     // 注意：lessonId 變化時的資料載入已由 useState 的初始化函數處理
     // 若未來需要支援動態切換，可透過 key prop 重新 mount 組件或使用 useEffect + fetch
@@ -174,8 +182,9 @@ function LessonPrepPreviewPageInner() {
     }, [aposLesson, selectedActivityId]);
 
     const selectedNode = useMemo(() => {
+        if (isDemoApos && demoSelectedNode) return demoSelectedNode;
         return lessonNodes.find(n => n.id === selectedNodeId) || null;
-    }, [lessonNodes, selectedNodeId]);
+    }, [lessonNodes, selectedNodeId, isDemoApos, demoSelectedNode]);
 
     const nodeTypes = useMemo(() => ({
         lessonNode: LessonNode,
@@ -487,10 +496,23 @@ function LessonPrepPreviewPageInner() {
             setSelectedActivityId(node.id);
             setSelectedNodeId(null);
         } else {
+            if (isDemoApos) {
+                // Construct a fake LessonNode for the property panel
+                const fakeNode: LessonNodeType = {
+                    id: node.id,
+                    title: node.data.label as string,
+                    nodeType: (node.data.variant === 'media' ? 'resource' : 'custom') as any, // Simple mapping
+                    // Add other required fields with defaults
+                    agent: AVAILABLE_AGENTS[0],
+                    order: 0,
+                    selectedTools: []
+                };
+                setDemoSelectedNode(fakeNode);
+            }
             setSelectedNodeId(node.id);
             setSelectedActivityId(null);
         }
-    }, []);
+    }, [isDemoApos]);
 
     const handleDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -563,6 +585,15 @@ function LessonPrepPreviewPageInner() {
     };
 
     const handleDeleteNode = (nodeId: string) => {
+        if (isDemoApos) {
+            setTriggerDeleteNodeId(nodeId);
+            setSelectedNodeId(null);
+            setDemoSelectedNode(null);
+            // Reset trigger after a moment to allow re-triggering for other nodes
+            setTimeout(() => setTriggerDeleteNodeId(null), 100);
+            return;
+        }
+
         setLesson(prev => ({
             ...prev,
             nodes: (prev.nodes ?? []).filter(n => n.id !== nodeId)
@@ -614,23 +645,38 @@ function LessonPrepPreviewPageInner() {
                 setSearchQuery={setSearchQuery}
             />
 
-            <GraphCanvas
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onNodeClick={onNodeClick}
-                onDrop={handleDrop}
-                nodeTypes={nodeTypes}
-            />
+            {isDemoApos ? (
+                <div className="w-full h-full pt-0">
+                    <AlgebraicFundamentalsGraph
+                        isSidebarOpen={isSidebarOpen}
+                        onDrop={handleDrop}
+                        onNodeClick={onNodeClick}
+                        triggerDeleteNodeId={triggerDeleteNodeId}
+                    />
+                </div>
+            ) : (
+                <GraphCanvas
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onNodeClick={onNodeClick}
+                    onDrop={handleDrop}
+                    nodeTypes={nodeTypes}
+                />
+            )}
 
             <NodePropertyPanel
                 selectedNode={selectedNode}
                 selectedActivity={selectedActivity || null}
                 selectedActivityId={selectedActivityId}
                 lessonNodes={lessonNodes}
-                onClose={() => { setSelectedNodeId(null); setSelectedActivityId(null); }}
+                onClose={() => {
+                    setSelectedNodeId(null);
+                    setSelectedActivityId(null);
+                    setDemoSelectedNode(null);
+                }}
                 onUpdateNode={handleUpdateNode}
                 onDeleteNode={handleDeleteNode}
                 onAddResourceToActivity={handleAddResourceToActivity}

@@ -158,10 +158,10 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
                                         currentTool={currentTool}
                                         onTextSelected={(data: any) => setSelectedText(data.text)}
                                         fileMeta={{
-                                            title: contentState.epubMetadata?.title || "一元二次方程式",
-                                            version: isEditMode ? "v2.5 (草稿)" : "v2.4 (已發布)",
+                                            title: contentState.epubMetadata?.title || "4. 面積",
+                                            version: isEditMode ? "v1.0 (草稿)" : "v1.0 (已發布)",
                                             lastModified: new Date().toLocaleDateString('zh-TW'),
-                                            tags: userRole === 'teacher' ? ["教師版", "私人"] : ["學生版"]
+                                            tags: userRole === 'teacher' ? ["教師版", "國小數學"] : ["學生版"]
                                         }}
                                         clearSelection={() => { }}
                                     />

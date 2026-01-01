@@ -30,18 +30,25 @@ export function EditorToolbar({
             className={`absolute top-4 right-4 z-20 flex items-center justify-between pointer-events-none transition-all duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-24'}`}
             style={{ left: isSidebarOpen ? '320px' : '80px' }}
         >
-            <div className="flex items-center gap-4 pointer-events-auto">
-                {/* Main Title Card */}
-                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-white/50 px-6 py-3 rounded-2xl flex items-center gap-4">
-                    <button onClick={onNavigateBack} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <div className="flex items-center pointer-events-auto">
+                {/* Unified Title Card - seamless design */}
+                <div className="bg-white/90 backdrop-blur-md shadow-sm border border-gray-200 pl-2 pr-6 py-2 rounded-2xl flex items-center gap-2">
+                    <button
+                        onClick={onNavigateBack}
+                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors group text-gray-500 hover:text-gray-900"
+                        title="Back"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
+
                     <div>
                         <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-indigo-600" />
                             {title}
                         </h1>
-                        <p className="text-xs text-gray-500 font-medium">Draft • {viewLevel === 'stage' ? 'APOS Stages' : `${expandedStage} Stage Activities`}</p>
+                        <p className="text-xs text-gray-500 font-medium tracking-wide">
+                            {viewLevel === 'stage' ? 'Draft • APOS Stages' : `Draft • ${expandedStage} Stage Activities`}
+                        </p>
                     </div>
                 </div>
 

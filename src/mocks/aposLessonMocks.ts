@@ -43,11 +43,6 @@ const prefixActivityIds = (activities: ActivityNode[], prefix: string): Activity
         return originalIds.has(id) ? `${prefix}-${id}` : id;
     };
 
-    const prefixArrayIfExists = (ids: string[] | undefined): string[] | undefined => {
-        if (!ids) return undefined;
-        return ids.map(id => originalIds.has(id) ? `${prefix}-${id}` : id);
-    };
-
     return activities.map(activity => ({
         ...activity,
         id: `${prefix}-${activity.id}`,
@@ -466,7 +461,7 @@ const schemaStage: APOSStageNode = {
 // ===== 完整 APOS 課程：代數式 =====
 export const ALGEBRA_APOS_LESSON: LessonPlan = {
     id: 'algebra-operations-apos',
-    title: '代數式基本運算',
+    title: '基礎代數式',
     topic: '代數式運算',
     objectives: '理解代數式組成、掌握同類項合併與加減法、應用乘法公式解題',
     difficulty: 'intermediate',

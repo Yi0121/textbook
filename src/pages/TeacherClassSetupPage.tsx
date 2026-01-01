@@ -23,11 +23,11 @@ const UNITS = [
     },
     {
         id: 'u2',
-        title: '八年級：一元二次方程式',
-        description: '學習一元二次方程式的解法與應用',
+        title: '四年級：面積',
+        description: '長方形土地與道路面積計算',
         duration: '60 分鐘',
         status: 'in-progress',
-        topics: ['因式分解法', '配方法', '公式解'],
+        topics: ['長方形面積', '平行四邊形', '複合圖形'],
     },
     {
         id: 'u3',

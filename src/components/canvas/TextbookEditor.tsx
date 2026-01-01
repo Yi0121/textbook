@@ -41,10 +41,7 @@ interface TextbookEditorProps {
 
 // 預設內容
 const DEFAULT_CONTENT = `
-  <h1>CH3. 一元二次方程式</h1>
-  <p>一元二次方程式是代數中的基礎課題。在本章節中，我們將深入探討如何解一元二次方程式。</p>
-  <h2>3.1 一元二次方程式的公式解</h2>
-  <p><strong>公式解</strong> 是解一元二次方程式最通用的方法。對於 ax² + bx + c = 0，其解為<span style="background-color: #fef9c3; color: #854d0e; padding: 0 4px; border-radius: 2px;">x = (-b ± √(b²-4ac)) / 2a</span>，其中判別式 <strong>D = b² - 4ac</strong> 決定解的性質。</p>
+  <img src="/images/math_problem_full.jpg" style="width: 100%; border-radius: 0px;" />
 `;
 
 const TextbookEditor: React.FC<TextbookEditorProps> = ({
@@ -55,10 +52,10 @@ const TextbookEditor: React.FC<TextbookEditorProps> = ({
   initialContent,
   // 🔥 設定預設檔案資訊，確保沒傳入時也有顯示
   fileMeta = {
-    title: "Ch3. 一元二次方程式",
-    version: "V2.4 (113學年度)",
+    title: "4. 面積",
+    version: "V1.0 (113學年度)",
     lastModified: "2024-12-10",
-    tags: ["教師版", "高一數學"]
+    tags: ["教師版", "國小數學"]
   }
 }) => {
 
@@ -226,43 +223,14 @@ const TextbookEditor: React.FC<TextbookEditorProps> = ({
             : 'w-[800px] min-h-[1100px] shadow-sm ring-1 ring-black/5 rounded-sm px-12 py-12'   // 閱讀模式：平面、安靜
           }
             `}>
-          {/* 🌟🌟🌟 檔案刊頭 (File Header) 🌟🌟🌟 */}
-          <div className="w-full border-b-2 border-slate-100 mb-8 pb-6 select-none">
-            <div className="flex justify-between items-start">
-              <div>
-                {/* 標籤區 */}
-                <div className="flex gap-2 mb-3">
-                  {fileMeta.tags.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold tracking-wider rounded uppercase">
-                      {tag}
-                    </span>
-                  ))}
-                  {/* 狀態燈號 */}
-                  <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider rounded uppercase flex items-center gap-1.5 transition-colors
-                                    ${isEditable ? 'bg-indigo-50 text-indigo-600' : 'bg-transparent text-slate-400'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isEditable ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300'}`} />
-                    {isEditable ? 'EDITING' : 'READ ONLY'}
-                  </span>
-                </div>
+          {/* Header removed as requested */}
+          <div className="mb-4" />
 
-                {/* 大標題 */}
-                <h1 className="text-3xl font-serif text-slate-900 font-medium tracking-tight">
-                  {fileMeta.title}
-                </h1>
-              </div>
-
-              {/* 版本資訊 (右側) */}
-              <div className="text-right">
-                <div className="text-sm font-mono text-slate-500 font-medium">
-                  {fileMeta.version}
-                </div>
-                <div className="text-xs text-slate-400 mt-1">
-                  Last edited: {fileMeta.lastModified}
-                </div>
-              </div>
-            </div>
+          {/* Custom Unit Header - Rendered outside Tiptap to guarantee styles */}
+          <div className="mb-8 pb-4 border-b-4 border-red-200 flex items-end gap-4 select-none">
+            <span className="text-7xl font-black text-pink-600 leading-[0.8]">4</span>
+            <h1 className="text-4xl font-bold text-gray-800 m-0 leading-none">面積</h1>
           </div>
-          {/* 🌟🌟🌟 刊頭結束 🌟🌟🌟 */}
 
           {/* 編輯器核心 */}
           <EditorContent editor={editor} />
