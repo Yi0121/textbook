@@ -32,7 +32,7 @@ import {
     OptionsMessage,
     PedagogySelectMessage,
     SummaryMessage,
-} from '../components/features/chat/ChatMessages';
+} from '../components/common/chat/ChatMessages';
 import { useTeacherAIChatContext, useStudentAIChatContext, type ChatMessage } from '../context/AIChatContext';
 import type { PedagogyMethod } from '../data/pedagogyMethods';
 

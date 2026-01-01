@@ -10,7 +10,7 @@ import { Bot, X, Sparkles, Send, Loader2, User } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useEditor } from '../../context/EditorContext';
 import { useStudentAIChatContext, type ChatMessage } from '../../context/AIChatContext';
-import TeacherAgentPanel from '../features/TeacherAgentPanel';
+import TeacherAgentPanel from '../teacher/TeacherAgentPanel';
 
 interface GlobalAIAssistantProps {
     /** 是否預設展開 */
@@ -71,8 +71,8 @@ function StudentChatPanel({ onClose: _onClose }: { onClose: () => void }) {
                     >
                         {/* 頭像 */}
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user'
-                                ? 'bg-emerald-100 text-emerald-600'
-                                : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
                             }`}>
                             {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
@@ -80,8 +80,8 @@ function StudentChatPanel({ onClose: _onClose }: { onClose: () => void }) {
                         {/* 訊息內容 */}
                         <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
                             <div className={`inline-block px-4 py-3 rounded-2xl ${msg.role === 'user'
-                                    ? 'bg-emerald-600 text-white rounded-tr-sm'
-                                    : 'bg-slate-100 text-slate-800 rounded-tl-sm'
+                                ? 'bg-emerald-600 text-white rounded-tr-sm'
+                                : 'bg-slate-100 text-slate-800 rounded-tl-sm'
                                 }`}>
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             </div>

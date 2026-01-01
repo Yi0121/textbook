@@ -31,9 +31,9 @@ import {
 } from '../mocks';
 
 // Components
-import LessonNode from '../components/LessonNode';
-import StageNode from '../components/StageNode';
-import ActivityFlowNode from '../components/ActivityFlowNode';
+import LessonNode from '../components/teacher/LessonNode';
+import StageNode from '../components/teacher/StageNode';
+import ActivityFlowNode from '../components/teacher/ActivityFlowNode';
 // New Sub-components
 import { EditorToolbar } from './lesson-prep/EditorToolbar';
 import { ResourceSidebar } from './lesson-prep/ResourceSidebar';

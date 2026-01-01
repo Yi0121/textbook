@@ -24,7 +24,7 @@ import {
     ConversationsTabStudent,
     OperationsTabStudent,
     QuizzesTabStudent,
-} from '../components/features/analytics';
+} from '../components/teacher/analytics';
 
 // Tab 類型
 type AnalyticsTab = 'conversations' | 'operations' | 'quizzes' | 'lessons';

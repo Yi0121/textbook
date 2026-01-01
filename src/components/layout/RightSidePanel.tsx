@@ -19,7 +19,7 @@ import {
   MaterialLibraryPanel,
   ReviewPanel
 } from '../panels';
-import TeacherAgentPanel from '../features/TeacherAgentPanel';
+import TeacherAgentPanel from '../teacher/TeacherAgentPanel';
 
 interface RightSidePanelProps {
   isOpen: boolean;

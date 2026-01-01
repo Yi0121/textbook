@@ -29,7 +29,7 @@ import {
     OptionsMessage,
     PedagogySelectMessage,
     SummaryMessage,
-} from '../components/features/chat/ChatMessages';
+} from '../components/common/chat/ChatMessages';
 
 /** 渲染單條訊息 */
 function MessageBubble({

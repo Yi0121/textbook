@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Sparkles, ArrowRight, ChevronLeft, Rocket, Library, Signal, Lightbulb, X, Clock, Edit } from 'lucide-react';
-import ResourceSelector, { type Resource } from '../components/features/lesson-prep/ResourceSelector';
+import ResourceSelector, { type Resource } from '../components/teacher/lesson-prep/ResourceSelector';
 
 // Mock 最近草稿資料
 const RECENT_DRAFTS = [

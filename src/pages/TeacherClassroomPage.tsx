@@ -6,12 +6,12 @@ import { LayoutDashboard, Sparkles, Mic, X, MessageSquarePlus } from 'lucide-rea
 import FixedToolbar from '../components/tools/Toolbar';
 import RightSidePanel from '../components/layout/RightSidePanel';
 import Modal from '../components/ui/Modal';
-import ClassroomCanvas from '../components/features/classroom/ClassroomCanvas';
+import ClassroomCanvas from '../components/teacher/classroom/ClassroomCanvas';
 
 // Features
-import DashboardContent from '../components/features/Dashboard';
-import ClassroomWidgets from '../components/features/classroom/ClassroomWidgets';
-import LuckyDraw from '../components/features/classroom/LuckyDraw';
+import DashboardContent from '../components/teacher/dashboard/Dashboard';
+import ClassroomWidgets from '../components/teacher/classroom/ClassroomWidgets';
+import LuckyDraw from '../components/teacher/classroom/LuckyDraw';
 import FullScreenTimer from '../components/ui/FullScreenTimer';
 import NavigationOverlay from '../components/ui/NavigationOverlay';
 import KeyboardShortcutsHelp from '../components/ui/KeyboardShortcutsHelp';
