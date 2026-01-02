@@ -12,8 +12,8 @@ export {
 // Collaboration components
 export { Whiteboard } from './collaboration';
 
-// Common components
-export { AIAssistantModal } from './common/AIAssistantModal';
+// Common components (includes AI Assistant, Canvas, Chat)
+export * from './common';
 
 // Feature components
 export {
