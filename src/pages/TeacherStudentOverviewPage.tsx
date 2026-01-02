@@ -14,6 +14,7 @@ import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Targ
 import { MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
 import type { LessonNode } from '../types/lessonPlan';
 import { getNodeProgress } from '../utils/progressHelpers';
+import { AIAssistantModal } from '../components/common/AIAssistantModal';
 
 
 // 闘關式學習路徑組件（教師視角）
@@ -168,97 +169,7 @@ function AchievementBadges({ student, lesson }: {
     );
 }
 
-// AI 助手 Modal - 簡化版 (僅保留補救計畫)
-function AIAssistantModal({
-    isOpen,
-    onClose,
-    studentName
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    studentName: string
-}) {
-    if (!isOpen) return null;
 
-    // Default to intervention mode since parent-comm is removed
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-                {/* Header */}
-                <div className="p-6 border-b bg-red-50 border-red-100">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-red-100 text-red-600">
-                            <Zap className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-red-900">
-                                AI 個別化補救計畫
-                            </h3>
-                            <p className="text-sm text-red-700">
-                                對象：{studentName}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Body */}
-                <div className="p-6">
-                    <div className="space-y-4">
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <h4 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                                <Target className="w-4 h-4 text-red-500" />
-                                診斷結果
-                            </h4>
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                                AI 分析顯示 {studentName} 在 <span className="font-bold text-red-600">移項法則</span> 的概念理解上有 3 次重複錯誤。建議立即進行針對性補救。
-                            </p>
-                        </div>
-
-                        <div>
-                            <h4 className="font-bold text-gray-700 mb-3">推薦補救內容 (AI 生成)</h4>
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors cursor-pointer bg-white">
-                                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-xs">影片</div>
-                                    <div className="flex-1">
-                                        <div className="font-medium text-gray-900">3分鐘搞懂移項變號</div>
-                                        <div className="text-xs text-gray-500">針對性概念解說</div>
-                                    </div>
-                                    <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                                </div>
-                                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors cursor-pointer bg-white">
-                                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-xs">練習</div>
-                                    <div className="flex-1">
-                                        <div className="font-medium text-gray-900">移項法則 - 基礎 5 題</div>
-                                        <div className="text-xs text-gray-500">預計耗時 5 分鐘</div>
-                                    </div>
-                                    <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors"
-                    >
-                        取消
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 text-white font-bold rounded-lg shadow-lg transition-all transform active:scale-95 bg-red-600 hover:bg-red-700 shadow-red-200"
-                    >
-                        一鍵指派任務
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function TeacherStudentOverviewPage() {
     const { lessonId, studentId } = useParams<{ lessonId: string; studentId: string }>();
@@ -352,6 +263,7 @@ export default function TeacherStudentOverviewPage() {
                 <AIAssistantModal
                     isOpen={isInterventionModalOpen}
                     onClose={() => setIsInterventionModalOpen(false)}
+                    type="intervention"
                     studentName={student.studentName}
                 />
 
