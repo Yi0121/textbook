@@ -173,7 +173,7 @@ const TeacherDivisionExplorationAdvanced = () => {
                         <div className="w-[60%] h-full bg-[#f8fafc] rounded-3xl overflow-hidden relative border border-slate-100 flex items-center justify-center p-0">
                             {/* p-0 to maximize image size */}
                             <img
-                                src="/images/2.png"
+                                src="/images/資優生LPA.png"
                                 alt="原始解題紀錄"
                                 className="w-full h-full object-contain mix-blend-multiply hover:scale-105 transition-transform duration-500"
                             />
@@ -197,7 +197,7 @@ const TeacherDivisionExplorationAdvanced = () => {
                         <div className="w-[60%] h-full bg-[#f8fafc] rounded-3xl overflow-hidden relative border border-slate-100 flex items-center justify-center p-0">
                             {/* p-0 to maximize image size */}
                             <img
-                                src="/images/4.jpg"
+                                src="/images/資優生解題序列.jpg"
                                 alt="概念運用分析"
                                 className="w-full h-full object-contain mix-blend-multiply hover:scale-105 transition-transform duration-500"
                             />

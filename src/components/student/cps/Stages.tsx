@@ -63,10 +63,12 @@ export const StageS3 = () => (
                 <span className="text-xs text-slate-500 font-bold">個人畫布</span>
             </div>
             <div className="flex-1 bg-slate-50 relative flex items-center justify-center overflow-hidden">
-                <img
-                    src="/images/cps-ggb-rolling.png"
-                    alt="GGB Preview"
-                    className="w-full h-full object-contain"
+                <iframe
+                    src="https://www.geogebra.org/m/vqbRVVky"
+                    width="100%"
+                    height="100%"
+                    className="border-0"
+                    allowFullScreen
                 />
                 <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-lg border border-slate-200 shadow-sm text-xs font-bold text-slate-500">
                     GGB Interactive Area
