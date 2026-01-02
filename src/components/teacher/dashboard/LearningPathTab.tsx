@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BookOpen, GitBranch } from 'lucide-react';
-import { WorkflowEditor } from '../learning-path/WorkflowEditor';
+import { WorkflowEditor } from '../../student/learning-path/WorkflowEditor';
 import { useLearningPath } from '../../../context/LearningPathContext';
 
 // 全班共用的路徑 ID

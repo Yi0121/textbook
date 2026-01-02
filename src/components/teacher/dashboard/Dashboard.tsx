@@ -1,10 +1,10 @@
 // components/features/Dashboard.tsx
 import { useState, useEffect } from 'react';
 import { Sparkles, BarChart3, ClipboardCheck, Users } from 'lucide-react';
-import { OverviewTab } from './dashboard/OverviewTab';
-import { HomeworkTab } from './dashboard/HomeworkTab';
-import { CollaborationTab } from './dashboard/CollaborationTab';
-import { AIQuizTab } from './dashboard/AIQuizTab';
+import { OverviewTab } from './OverviewTab';
+import { HomeworkTab } from './HomeworkTab';
+import { CollaborationTab } from './CollaborationTab';
+import { AIQuizTab } from './AIQuizTab';
 
 type TabId = 'overview' | 'homework' | 'collaboration' | 'ai-quiz';
 

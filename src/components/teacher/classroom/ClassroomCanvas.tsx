@@ -3,21 +3,21 @@ import React, { useRef, useEffect } from 'react';
 import { useEditor } from '../../../context/EditorContext';
 import { useContent, useCurrentChapterContent } from '../../../context/ContentContext';
 
-import { useSelectionActions } from '../../../hooks/useSelectionActions';
-import { useCanvasInteraction } from '../../../hooks/useCanvasInteraction';
-import { useAIActions } from '../../../hooks/useAIActions';
-import { useViewportZoom } from '../../../hooks/useViewportZoom';
+import { useSelectionActions } from '../../../hooks/common/useSelectionActions';
+import { useCanvasInteraction } from '../../../hooks/canvas/useCanvasInteraction';
+import { useAIActions } from '../../../hooks/ai/useAIActions';
+import { useViewportZoom } from '../../../hooks/canvas/useViewportZoom';
 
 
-import TextbookEditor from '../../canvas/TextbookEditor';
-import DrawingLayer from '../../canvas/DrawingLayer';
-import DraggableMindMap from '../../canvas/DraggableMindMap';
-import AIMemoCard from '../../canvas/AIMemoCard';
-import DraggableText from '../../canvas/DraggableText';
-import FabricPageEditor from '../../canvas/FabricPageEditor';
-import PageContainer from '../../canvas/PageContainer';
+import TextbookEditor from '../../common/canvas/TextbookEditor';
+import DrawingLayer from '../../common/canvas/DrawingLayer';
+import DraggableMindMap from '../../common/canvas/DraggableMindMap';
+import AIMemoCard from '../../common/canvas/AIMemoCard';
+import DraggableText from '../../common/canvas/DraggableText';
+import FabricPageEditor from '../../common/canvas/FabricPageEditor';
+import PageContainer from '../../common/canvas/PageContainer';
 import SkeletonCanvas from '../../ui/SkeletonCanvas';
-import SelectionFloatingMenu from '../../canvas/SelectionFloatingMenu';
+import SelectionFloatingMenu from '../../common/canvas/SelectionFloatingMenu';
 
 const MemoizedTextbook = React.memo(TextbookEditor);
 
@@ -182,20 +182,20 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
                                     <div className={`absolute inset-0 z-10 ${(['pen', 'highlighter', 'eraser', 'laser'].includes(currentTool) || isEditMode) ? 'pointer-events-none' : ''}`}>
                                         {editorState.mindMaps.map(map => (
                                             <DraggableMindMap key={map.id} data={map} scale={viewport.scale}
-                                                onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
-                                                onDelete={(id) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
+                                                onUpdate={(id: number, dx: number, dy: number) => editorDispatch({ type: 'UPDATE_MIND_MAP', payload: { id, dx, dy } })}
+                                                onDelete={(id: number) => editorDispatch({ type: 'DELETE_MIND_MAP', payload: id })}
                                             />
                                         ))}
                                         {editorState.aiMemos.map(memo => (
                                             <AIMemoCard key={memo.id} data={memo} scale={viewport.scale}
-                                                onUpdate={(id, dx, dy) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
+                                                onUpdate={(id: number, dx: number, dy: number) => editorDispatch({ type: 'UPDATE_AI_MEMO', payload: { id, dx, dy } })}
                                                 onDelete={() => editorDispatch({ type: 'DELETE_AI_MEMO', payload: memo.id })}
                                             />
                                         ))}
                                         {editorState.textObjects.map(text => (
                                             <DraggableText key={text.id} data={text} scale={viewport.scale}
-                                                onUpdate={(id, d) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
-                                                onDelete={(id) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
+                                                onUpdate={(id: number, d: any) => editorDispatch({ type: 'UPDATE_TEXT_OBJECT', payload: { id, data: d } })}
+                                                onDelete={(id: number) => editorDispatch({ type: 'DELETE_TEXT_OBJECT', payload: id })}
                                             />
                                         ))}
                                     </div>
