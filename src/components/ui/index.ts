@@ -11,6 +11,11 @@ export { default as EmptyState } from './EmptyState';
 export { default as ErrorState } from './ErrorState';
 export { default as Skeleton, CardSkeleton, ListItemSkeleton, StatCardSkeleton, TableSkeleton } from './Skeleton';
 
+// ==================== 進度與載入 ====================
+export { default as CircularProgress } from './CircularProgress';
+export { default as LoadingSpinner, PageLoader } from './LoadingSpinner';
+export { default as StepProgress } from './StepProgress';
+
 // ==================== 互動回饋元件 ====================
 export { ToastProvider, useToast } from './Toast';
 
@@ -24,3 +29,7 @@ export { default as NavigationOverlay } from './NavigationOverlay';
 export { default as SkeletonCanvas } from './SkeletonCanvas';
 export { default as ThemeToggle } from './ThemeToggle';
 export { default as WelcomeTour } from './WelcomeTour';
+
+// ==================== 學習路徑相關 ====================
+export { default as LearningPathCards } from './LearningPathCards';
+export { default as ModeIndicator } from './ModeIndicator';
