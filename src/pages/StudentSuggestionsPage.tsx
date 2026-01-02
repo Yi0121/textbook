@@ -6,17 +6,11 @@
 
 import { useState } from 'react';
 import { Lightbulb, Sparkles, BookOpen, Target, TrendingUp, CheckCircle, ChevronRight, RefreshCw } from 'lucide-react';
+import type { StudentSuggestion } from '../types';
 
-interface Suggestion {
-    id: string;
-    category: string;
-    title: string;
-    description: string;
-    type: 'improve' | 'strength' | 'goal';
-    icon: React.ElementType;
-}
 
-const MOCK_SUGGESTIONS: Suggestion[] = [
+
+const MOCK_SUGGESTIONS: StudentSuggestion[] = [
     {
         id: '1',
         category: '待加強',
@@ -53,14 +47,14 @@ const MOCK_SUGGESTIONS: Suggestion[] = [
 
 export default function LearningSuggestionsPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [suggestions] = useState<Suggestion[]>(MOCK_SUGGESTIONS);
+    const [suggestions] = useState<StudentSuggestion[]>(MOCK_SUGGESTIONS);
 
     const handleRefresh = () => {
         setIsRefreshing(true);
         setTimeout(() => setIsRefreshing(false), 1500);
     };
 
-    const getTypeColor = (type: Suggestion['type']) => {
+    const getTypeColor = (type: StudentSuggestion['type']) => {
         switch (type) {
             case 'improve':
                 return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
@@ -71,7 +65,7 @@ export default function LearningSuggestionsPage() {
         }
     };
 
-    const getTypeLabel = (type: Suggestion['type']) => {
+    const getTypeLabel = (type: StudentSuggestion['type']) => {
         switch (type) {
             case 'improve':
                 return '待加強';

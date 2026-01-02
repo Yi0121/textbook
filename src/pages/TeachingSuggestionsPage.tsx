@@ -6,20 +6,11 @@
 
 import { useState } from 'react';
 import { Lightbulb, Sparkles, BookOpen, Users, Target, Clock, ChevronRight, RefreshCw } from 'lucide-react';
+import type { TeacherSuggestion } from '../types';
 
-interface Suggestion {
-    id: string;
-    timeScope: 'unit' | 'next-lesson' | 'today' | 'week';
-    category: string;
-    title: string;
-    description: string;
-    priority: 'high' | 'medium' | 'low';
-    icon: React.ElementType;
-    relatedUnit?: string;
-    targetDate?: string;
-}
 
-const MOCK_SUGGESTIONS: Suggestion[] = [
+
+const MOCK_SUGGESTIONS: TeacherSuggestion[] = [
     // 今天的建議
     {
         id: 'today-1',
@@ -189,8 +180,8 @@ const MOCK_SUGGESTIONS: Suggestion[] = [
 
 export default function TeachingSuggestionsPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [suggestions] = useState<Suggestion[]>(MOCK_SUGGESTIONS);
-    const [selectedTimeScope, setSelectedTimeScope] = useState<Suggestion['timeScope']>('today');
+    const [suggestions] = useState<TeacherSuggestion[]>(MOCK_SUGGESTIONS);
+    const [selectedTimeScope, setSelectedTimeScope] = useState<TeacherSuggestion['timeScope']>('today');
     const [selectedUnit, setSelectedUnit] = useState('四則運算');
 
     const handleRefresh = () => {
@@ -198,7 +189,7 @@ export default function TeachingSuggestionsPage() {
         setTimeout(() => setIsRefreshing(false), 1500);
     };
 
-    const getPriorityColor = (priority: Suggestion['priority']) => {
+    const getPriorityColor = (priority: TeacherSuggestion['priority']) => {
         switch (priority) {
             case 'high':
                 return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
@@ -209,7 +200,7 @@ export default function TeachingSuggestionsPage() {
         }
     };
 
-    const getPriorityLabel = (priority: Suggestion['priority']) => {
+    const getPriorityLabel = (priority: TeacherSuggestion['priority']) => {
         switch (priority) {
             case 'high':
                 return '高優先';
@@ -339,8 +330,8 @@ export default function TeachingSuggestionsPage() {
                                                     key={unit}
                                                     onClick={() => setSelectedUnit(unit)}
                                                     className={`px-3 py-1 text-xs rounded-full border transition-colors ${selectedUnit === unit
-                                                            ? 'bg-indigo-600 text-white border-indigo-600'
-                                                            : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                                        : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
                                                         }`}
                                                 >
                                                     {unit}

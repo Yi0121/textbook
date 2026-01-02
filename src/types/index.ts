@@ -20,3 +20,6 @@ export * from './learning-path';
 
 // Student progress
 export * from './studentProgress';
+
+// Suggestion types
+export * from './suggestion';
