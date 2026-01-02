@@ -41,7 +41,7 @@ export const SmartSidebar = ({ stage }: SmartSidebarProps) => {
                     <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-sm text-slate-700">
                         {stage === 'S3' ? (
                             <div>
-                                <p>你在測量圖卡圓周長時，如果分割得越細，量出來的總長度會有什麼變化？</p>
+                                <p>請用你自己的話描述這個問題，並說出你認為相關的數學概念是什麼？</p>
                                 <button className="mt-2 flex items-center gap-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-2 py-1 rounded transition-colors">
                                     <Lightbulb size={12} />
                                     給我提示
