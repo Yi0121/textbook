@@ -29,8 +29,7 @@ const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
 const StudentQuizPage = lazy(() => import('./pages/StudentQuizPage'));
 const TeacherGroupMonitorPage = lazy(() => import('./pages/TeacherGroupMonitorPage'));
 const CPSStudentView = lazy(() => import('./pages/CPSStudentView'));
-const TeacherDivisionExplorationMonitor = lazy(() => import('./pages/TeacherDivisionExplorationMonitor.tsx'));
-const TeacherDivisionExplorationAdvanced = lazy(() => import('./pages/TeacherDivisionExplorationAdvanced'));
+const TeacherDivisionExplorationPage = lazy(() => import('./pages/TeacherDivisionExplorationPage'));
 import ComingSoonPage from './pages/ComingSoonPage';
 
 // ==================== Suspense Wrapper ====================
@@ -112,12 +111,8 @@ export const router = createBrowserRouter([
                 element: withSuspense(TeacherGroupMonitorPage),
             },
             {
-                path: 'teacher/division-exploration-monitor',
-                element: withSuspense(TeacherDivisionExplorationMonitor),
-            },
-            {
-                path: 'teacher/division-exploration-advanced',
-                element: withSuspense(TeacherDivisionExplorationAdvanced),
+                path: 'teacher/division-exploration',
+                element: withSuspense(TeacherDivisionExplorationPage),
             },
 
             // ==================== 學生端路由 /student/* ====================
