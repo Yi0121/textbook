@@ -3,7 +3,7 @@ import {
   Sparkles, FileQuestion, Share2, X, ChevronRight,
   ScrollText, GraduationCap, FileCheck
 } from 'lucide-react';
-import { type UserRole } from '../../config/toolConfig';
+import { type UserRole } from '../../../config/toolConfig';
 
 // 按鈕組件 (共用)
 const MenuButton = ({ icon, label, subLabel, onClick, colorClass }: any) => (

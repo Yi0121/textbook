@@ -7,7 +7,7 @@ export {
   DrawingLayer,
   SelectionFloatingMenu,
   TextbookEditor,
-} from './canvas';
+} from './common/canvas';
 
 // Collaboration components
 export { Whiteboard } from './collaboration';

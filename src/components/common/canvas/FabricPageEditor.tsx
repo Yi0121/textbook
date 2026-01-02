@@ -1,7 +1,7 @@
 // components/canvas/FabricPageEditor.tsx
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Canvas, IText, Image as FabricImage, Rect, PencilBrush } from 'fabric';
-import type { FabricPage } from '../../types';
+import type { FabricPage } from '../../../types';
 
 interface FabricPageEditorProps {
   page: FabricPage;
@@ -203,9 +203,8 @@ const FabricPageEditor: React.FC<FabricPageEditorProps> = ({
 
   return (
     <div
-      className={`relative transition-all duration-200 ${
-        isSelected ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
-      }`}
+      className={`relative transition-all duration-200 ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
+        }`}
       style={{
         width: page.width,
         height: page.height,

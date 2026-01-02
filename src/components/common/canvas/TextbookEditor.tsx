@@ -24,10 +24,10 @@ import TableRow from '@tiptap/extension-table-row'
 import { Bold, Italic, Sparkles, Highlighter } from 'lucide-react';
 
 // 分拆的工具欄組件
-import EditorToolbar from '../tools/EditorToolbar';
+import EditorToolbar from '../../tools/EditorToolbar';
 
 // Types
-import type { TiptapContent, FileMeta } from '../../types';
+import type { TiptapContent, FileMeta } from '../../../types';
 
 // 定義 Props，包含新增的檔案資訊 (fileMeta)
 interface TextbookEditorProps {

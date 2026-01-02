@@ -1,7 +1,7 @@
 // components/canvas/PageContainer.tsx
 import React, { useRef, useState, useEffect } from 'react';
 import { GripHorizontal, Trash2, FileText } from 'lucide-react';
-import type { FabricPage } from '../../types';
+import type { FabricPage } from '../../../types';
 
 interface PageContainerProps {
   page: FabricPage;
@@ -100,9 +100,8 @@ const PageContainer: React.FC<PageContainerProps> = ({
 
   return (
     <div
-      className={`absolute pointer-events-auto transition-shadow duration-200 ${
-        isDragging ? 'z-50' : 'z-10'
-      }`}
+      className={`absolute pointer-events-auto transition-shadow duration-200 ${isDragging ? 'z-50' : 'z-10'
+        }`}
       style={{
         left: page.x,
         top: page.y,
@@ -112,11 +111,10 @@ const PageContainer: React.FC<PageContainerProps> = ({
     >
       {/* 標題列 */}
       <div
-        className={`flex items-center justify-between px-3 py-2 rounded-t-lg transition-colors ${
-          isSelected
+        className={`flex items-center justify-between px-3 py-2 rounded-t-lg transition-colors ${isSelected
             ? 'bg-indigo-600 text-white'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
       >
         <div className="flex items-center gap-2">
@@ -133,11 +131,10 @@ const PageContainer: React.FC<PageContainerProps> = ({
           </span>
           <button
             onClick={handleDelete}
-            className={`p-1 rounded transition-colors ${
-              isSelected
+            className={`p-1 rounded transition-colors ${isSelected
                 ? 'hover:bg-indigo-700 text-white/80 hover:text-white'
                 : 'hover:bg-red-100 text-gray-400 hover:text-red-600'
-            }`}
+              }`}
             title="刪除頁面"
           >
             <Trash2 className="w-4 h-4" />
@@ -147,11 +144,10 @@ const PageContainer: React.FC<PageContainerProps> = ({
 
       {/* 頁面內容 */}
       <div
-        className={`rounded-b-lg overflow-hidden transition-all duration-200 ${
-          isSelected
+        className={`rounded-b-lg overflow-hidden transition-all duration-200 ${isSelected
             ? 'ring-2 ring-indigo-500'
             : 'ring-1 ring-gray-200 hover:ring-gray-300'
-        } ${isDragging ? 'opacity-90 shadow-2xl' : 'shadow-lg'}`}
+          } ${isDragging ? 'opacity-90 shadow-2xl' : 'shadow-lg'}`}
       >
         {children}
       </div>

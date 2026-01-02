@@ -1,5 +1,5 @@
 import React, { useMemo, forwardRef } from 'react';
-import type { Stroke, SelectionBox, Point, LaserPoint } from '../../types';
+import type { Stroke, SelectionBox, Point, LaserPoint } from '../../../types';
 
 // --- 1. 幾何演算法：將點陣列轉換為平滑曲線 ---
 const getSmoothPath = (points: Point[]) => {
