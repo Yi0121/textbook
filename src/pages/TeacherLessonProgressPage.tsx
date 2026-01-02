@@ -46,8 +46,8 @@ function ProgressDistributionChart({ students }: { students: typeof MOCK_DIFFERE
     );
 }
 
-// 圓餅圖組件
-function PieChart({ data }: { data: { label: string; value: number; color: string }[] }) {
+// 簡易圓餅圖組件 (避免與 recharts PieChart 命名衝突)
+function SimplePieChart({ data }: { data: { label: string; value: number; color: string }[] }) {
     const { segments, total } = useMemo(() => {
         const totalValue = data.reduce((sum, d) => sum + d.value, 0);
         // 使用 reduce 計算累積百分比，避免變數重新賦值
@@ -294,7 +294,7 @@ export default function LessonProgressDashboard() {
                             {(() => {
                                 const stats = getConditionalStats(conditionalNode.id);
                                 return (
-                                    <PieChart data={[
+                                    <SimplePieChart data={[
                                         { label: '通過（學會）', value: stats.learnedCount, color: '#22c55e' },
                                         { label: '補強路徑', value: stats.remedialCount, color: '#f97316' },
                                         { label: '尚未完成', value: stats.pendingCount, color: '#9ca3af' },

@@ -60,7 +60,7 @@ const MOCK_GROUPS = [
     },
 ];
 
-export default function GroupCollaborationPage() {
+export default function TeacherGroupMonitorPage() {
     const [currentTime, setCurrentTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
