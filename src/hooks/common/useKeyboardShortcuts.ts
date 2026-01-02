@@ -1,6 +1,6 @@
 // hooks/useKeyboardShortcuts.ts
 import { useEffect, useCallback } from 'react';
-import { type UserRole } from '../config/toolConfig';
+import { type UserRole } from '../../config/toolConfig';
 
 export interface KeyboardShortcut {
   key: string;

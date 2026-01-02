@@ -2,7 +2,7 @@
 // 集中管理 App 層級的鍵盤快捷鍵定義
 
 import { useMemo } from 'react';
-import type { UserRole } from '../config/toolConfig';
+import type { UserRole } from '../../config/toolConfig';
 
 interface ShortcutConfig {
   key: string;

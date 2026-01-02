@@ -1,6 +1,6 @@
 // hooks/useViewportZoom.ts
 import { useEffect, useCallback, type RefObject } from 'react';
-import type { Viewport } from '../types';
+import type { Viewport } from '../../types';
 
 interface UseViewportZoomProps {
     containerRef: RefObject<HTMLDivElement | null>;
@@ -26,7 +26,7 @@ export function useViewportZoom({
     const handleWheel = useCallback((e: WheelEvent) => {
         if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            setViewport(prev => {
+            setViewport((prev: Viewport) => {
                 const delta = -e.deltaY * sensitivity;
                 const newScale = Math.min(Math.max(minScale, prev.scale + delta), maxScale);
                 return { ...prev, scale: newScale };

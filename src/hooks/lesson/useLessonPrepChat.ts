@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { PEDAGOGY_METHODS, type PedagogyMethod } from '../data/pedagogyMethods';
+import { PEDAGOGY_METHODS, type PedagogyMethod } from '../../data/pedagogyMethods';
 
 // ==================== Types ====================
 
@@ -295,7 +295,7 @@ export function useLessonPrepChat() {
         if (parsed.sessions) newPrepData.sessions = parsed.sessions;
         if (parsed.objectives) newPrepData.objectives = parsed.objectives;
         if (parsed.pedagogyId) {
-            newPrepData.pedagogy = PEDAGOGY_METHODS.find(p => p.id === parsed.pedagogyId);
+            newPrepData.pedagogy = PEDAGOGY_METHODS.find((p: PedagogyMethod) => p.id === parsed.pedagogyId);
         }
         setPrepData(newPrepData);
 
@@ -471,7 +471,7 @@ export function useLessonPrepChat() {
 
     // 處理教學法選擇
     const handlePedagogyConfirm = (input: string) => {
-        const method = PEDAGOGY_METHODS.find(p =>
+        const method = PEDAGOGY_METHODS.find((p: PedagogyMethod) =>
             p.name.includes(input) || p.id.includes(input.toLowerCase())
         );
         if (method) {
@@ -488,7 +488,7 @@ export function useLessonPrepChat() {
     };
 
     const handlePedagogySelect = (id: string) => {
-        const method = PEDAGOGY_METHODS.find(p => p.id === id);
+        const method = PEDAGOGY_METHODS.find((p: PedagogyMethod) => p.id === id);
         if (method) {
             setPrepData(prev => ({ ...prev, pedagogy: method }));
             addMessage({
