@@ -9,3 +9,6 @@ export * from './api';
 
 // Adapters
 export * from './adapters';
+
+// Repositories
+export * from './repositories';
