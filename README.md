@@ -113,57 +113,38 @@ src/
 │   ├── common/          # 共用元件 (AIAssistantModal, canvas, chat)
 │   ├── collaboration/   # 協作 (Whiteboard)
 │   ├── features/        # 功能模組
-│   │   ├── learning-path/  # 學習路徑編輯器
-│   │   ├── lesson-prep/    # 備課工具
+│   │   ├── lesson-prep/    # 課程編輯器 (7 組件)
+│   │   ├── quiz/           # 測驗系統 (6 組件)
 │   │   └── dashboard/      # 儀表板
 │   ├── layout/          # 佈局 (AppLayout, Navigation)
 │   ├── panels/          # 側邊面板
-│   ├── student/         # 學生視角元件 (27 files)
-│   ├── teacher/         # 教師視角元件 (28 files)
+│   ├── student/         # 學生視角元件
+│   ├── teacher/         # 教師視角元件
 │   ├── tools/           # 工具列
 │   ├── ui/              # 通用 UI (Modal, Button, Progress, ...)
 │   └── index.ts         # Barrel Export
 │
 ├── context/             # React Context (6 個)
-│   ├── AgentContext     # Agent 系統存取
-│   ├── EditorContext    # 編輯器狀態
-│   ├── ContentContext   # EPUB 內容
-│   ├── UIContext        # UI 狀態
-│   ├── CollaborationContext  # 協作狀態
-│   └── LearningPathContext   # 學習路徑狀態
 │
 ├── hooks/               # 自訂 Hooks (14 個)
-│   ├── useAIActions         # AI 功能操作
-│   ├── useTeacherAIChat     # 教師 AI 對話
-│   ├── useStudentAIChat     # 學生 AI 對話
-│   ├── useLearningPathActions  # 學習路徑操作
-│   └── index.ts             # Barrel Export
+│   └── index.ts         # Barrel Export
 │
 ├── pages/               # 頁面元件 (20 個)
+│   ├── assignment/          # 作業頁面子組件
+│   │   ├── Cards.tsx, BasicTabContent, AdvancedTabContent
+│   │   └── index.ts
 │   ├── division-exploration/  # 除法探究子頁面
-│   │   ├── OverviewTab.tsx    # 學習總覽分頁
-│   │   ├── AdvancedTab.tsx    # AI 深度分析分頁
-│   │   ├── types.ts           # 共用型別
-│   │   └── index.ts           # Barrel Export
-│   ├── lesson-prep/           # 課程編輯器子組件
-│   │   ├── EditorToolbar.tsx
-│   │   ├── ResourceSidebar.tsx
-│   │   ├── GraphCanvas.tsx
-│   │   └── ...
-│   └── ...                    # 其他頁面
+│   │   ├── OverviewTab, AdvancedTab, types.ts
+│   │   └── index.ts
+│   └── ...
 │
 ├── services/            # 服務層 (AI, API, Adapters)
-│   ├── api/             # API Client
-│   ├── adapters/        # Provider Adapters
 │   └── index.ts         # Barrel Export
 │
 ├── stores/              # Zustand Stores
 ├── types/               # TypeScript 型別定義
 ├── utils/               # 工具函式
-│   ├── progressHelpers.ts   # 進度計算
-│   ├── aposConverter.ts     # APOS 轉換
-│   ├── layout.ts            # Dagre 佈局
-│   └── index.ts             # Barrel Export
+│   └── index.ts         # Barrel Export
 └── mocks/               # Mock 資料
 ```
 
