@@ -5,6 +5,7 @@
  * - Tool 註冊與查找
  * - 請求執行
  * - 錯誤處理
+ * - Mock/MCP 動態切換
  */
 
 import type {
@@ -15,6 +16,9 @@ import type {
     AgentRequest,
     AgentResponse,
 } from './types';
+import { env } from '../config/env';
+import { getDefaultMcpClient, createMcpTool } from './mcp';
+import type { McpClient, McpToolDefinition } from './mcp';
 
 /**
  * Agent 抽象基礎類別
@@ -28,6 +32,7 @@ export abstract class BaseAgent implements IAgent {
     protected abstract defineTools(): AgentTool[];
 
     private _tools: AgentTool[] | null = null;
+    private _mcpClient: McpClient | null = null;
 
     /**
      * 取得 Agent 的所有 Tools (lazy initialization)
@@ -111,4 +116,50 @@ export abstract class BaseAgent implements IAgent {
             },
         };
     }
+
+    /**
+     * 建立 Tool（自動切換 Mock/MCP）
+     * 
+     * 根據環境變數 VITE_USE_MCP 決定使用 Mock 或 MCP 實作
+     * 
+     * @param name Tool 名稱
+     * @param description Tool 描述
+     * @param mockFn Mock 實作（當 MCP 未啟用時使用）
+     */
+    protected createTool<TInput = unknown, TOutput = unknown>(
+        name: string,
+        description: string,
+        mockFn: (input: TInput) => TOutput | Promise<TOutput>
+    ): AgentTool {
+        // 如果未啟用 MCP，使用 Mock
+        if (!env.useMcp) {
+            return this.createMockTool(name, description, mockFn);
+        }
+
+        // 使用 MCP
+        try {
+            const client = this.getMcpClient();
+            const toolDef: McpToolDefinition = {
+                name,
+                description,
+                inputSchema: { type: 'object' },
+            };
+            return createMcpTool(client, toolDef);
+        } catch (error) {
+            // MCP 初始化失敗，fallback 到 Mock
+            console.warn(`[${this.id}] MCP not available, falling back to mock for tool "${name}":`, error);
+            return this.createMockTool(name, description, mockFn);
+        }
+    }
+
+    /**
+     * 取得 MCP Client（懶載入）
+     */
+    protected getMcpClient(): McpClient {
+        if (!this._mcpClient) {
+            this._mcpClient = getDefaultMcpClient();
+        }
+        return this._mcpClient;
+    }
 }
+

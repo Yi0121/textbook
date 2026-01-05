@@ -21,3 +21,6 @@ export * from './student';
 
 // 分析模組 Agents
 export * from './analytics';
+
+// MCP 模組
+export * from './mcp';
