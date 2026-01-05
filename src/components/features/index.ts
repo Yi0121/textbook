@@ -10,3 +10,6 @@ export { OverviewTab, HomeworkTab, CollaborationTab, AIQuizTab } from '../teache
 
 // Lesson Prep Feature
 export * from './lesson-prep';
+
+// Quiz Feature
+export * from './quiz';
