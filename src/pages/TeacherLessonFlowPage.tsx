@@ -36,13 +36,15 @@ import { getLayoutedElements } from '../utils';
 import LessonNode from '../components/teacher/LessonNode';
 import StageNode from '../components/teacher/StageNode';
 import ActivityFlowNode from '../components/teacher/ActivityFlowNode';
-// New Sub-components
-import { EditorToolbar } from './lesson-prep/EditorToolbar';
-import { ResourceSidebar } from './lesson-prep/ResourceSidebar';
-import { GraphCanvas } from './lesson-prep/GraphCanvas';
-import { NodePropertyPanel } from './lesson-prep/NodePropertyPanel';
-import AlgebraicFundamentalsGraph from './lesson-prep/AlgebraicFundamentalsGraph';
-import CPSGraph from './lesson-prep/CPSGraph';
+// Lesson Prep Feature Module
+import {
+    EditorToolbar,
+    ResourceSidebar,
+    GraphCanvas,
+    NodePropertyPanel,
+    AlgebraicFundamentalsGraph,
+    CPSGraph
+} from '../components/features/lesson-prep';
 
 type ViewLevel = 'stage' | 'activity';
 
