@@ -15,7 +15,7 @@ import {
     Search,
     Zap
 } from 'lucide-react';
-import { AIAssistantModal } from '../components/common/AIAssistantModal';
+import { AIAssistantModal } from '../components/common';
 
 
 // ==================== Mock Data ====================
