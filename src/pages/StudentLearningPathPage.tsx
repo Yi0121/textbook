@@ -8,13 +8,13 @@
 
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ALGEBRA_APOS_LESSON, getAllActivitiesFromAlgebra, MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
-import { AVAILABLE_AGENTS } from '../types/agents';
-import type { LessonPlan, LessonNode } from '../types/lessonPlan';
+import { ALGEBRA_APOS_LESSON, MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
+import type { LessonNode } from '../types/lessonPlan';
 import type { StudentProgress } from '../types/studentProgress';
-import { getNodeProgress, getNodeStatus } from '../utils/progressHelpers';
+import { getNodeProgress, getNodeStatus, convertAposToLessonNodes } from '../utils';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
 import CircularProgress from '../components/ui/CircularProgress';
+import DashboardProgressRing from '../components/ui/DashboardProgressRing';
 import StudentPathCanvas from '../components/student/StudentPathCanvas';
 import { BookOpen, Award, Play, CheckCircle, X, RotateCw, Zap } from 'lucide-react';
 
@@ -34,107 +34,6 @@ const MOCK_APOS_STUDENT_PROGRESS: StudentProgress = {
         { nodeId: 'action-checkpoint', completed: false, score: 65, passedCheckpoint: false, pathTaken: 'remedial', timeSpent: 420 },
         { nodeId: 'action-remedial', completed: false, timeSpent: 120 }, // 正在補救中
     ],
-};
-
-
-
-// === Dashboard Progress Ring (Local) ===
-const DashboardProgressRing = ({ percentage, size = 60 }: { percentage: number; size?: number }) => {
-    const strokeWidth = 5;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (percentage / 100) * circumference;
-
-    return (
-        <div className="relative" style={{ width: size, height: size }}>
-            <svg width={size} height={size} className="transform -rotate-90">
-                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-purple-100" />
-                <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="url(#progressGradient)" strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} className="transition-all duration-1000 ease-out" />
-                <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#a855f7" />
-                        <stop offset="100%" stopColor="#d8b4fe" />
-                    </linearGradient>
-                </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-slate-700">{percentage}%</span>
-            </div>
-        </div>
-    );
-};
-
-// Helper to convert APOS ActivityNode to LessonNode for the Grid
-const convertAposToLessonNodes = (aposLesson: LessonPlan): LessonNode[] => {
-    if (!aposLesson.stages) return [];
-
-    let globalOrder = 1;
-    const allActivities = getAllActivitiesFromAlgebra(aposLesson);
-
-    return allActivities.map(act => {
-        // Map Conditions
-        const conditions: LessonNode['conditions'] = {};
-        let isConditional = false;
-
-        if (act.flowControl) {
-            isConditional = true;
-            conditions.branchType =
-                act.flowControl.type === 'differentiation' ? 'differentiated' :
-                    act.flowControl.type === 'checkpoint' ? 'remedial' : undefined;
-
-            act.flowControl.paths.forEach(p => {
-                const label = p.label.toLowerCase();
-                // Heuristic mapping based on label or ID
-                if (label.includes('補救') || p.id.includes('remedial') || p.id.includes('fail')) {
-                    conditions.notLearnedPath = p.nextActivityId;
-                } else if (label.includes('進階') || p.id.includes('advanced')) {
-                    conditions.advancedPath = p.nextActivityId;
-                } else {
-                    conditions.learnedPath = p.nextActivityId;
-                }
-            });
-
-            if (act.flowControl.criteria) {
-                conditions.assessmentCriteria = act.flowControl.criteria;
-            }
-        }
-
-        // Determine Branch Level
-        let branchLevel: LessonNode['branchLevel'] = 'standard';
-        let multiBranchOptions: LessonNode['multiBranchOptions'] = undefined;
-
-        if (act.type === 'remedial') branchLevel = 'remedial';
-        if (act.id.includes('advanced')) branchLevel = 'advanced';
-
-        // Handle multi-choice specific logic
-        if (act.flowControl?.type === 'multi-choice' && act.flowControl.paths) {
-            multiBranchOptions = act.flowControl.paths.map(p => ({
-                id: p.id,
-                label: p.label,
-                nextNodeId: p.nextActivityId
-            }));
-        }
-
-        // Find stage
-        const stageNode = aposLesson.stages?.find(s => s.activities.some(a => a.id === act.id));
-
-        return {
-            id: act.id,
-            title: act.title,
-            order: globalOrder++, // Simple sequential order
-            nodeType: act.resources?.[0]?.resourceType || 'worksheet',
-            agent: act.resources?.[0]?.agent || AVAILABLE_AGENTS[0],
-            selectedTools: [],
-            stage: stageNode?.stage,
-            isConditional,
-            conditions,
-            branchLevel,
-            multiBranchOptions,
-            generatedContent: {
-                materials: [act.description || ''],
-            }
-        };
-    });
 };
 
 export default function StudentLearningPathPage() {

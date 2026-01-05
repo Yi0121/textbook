@@ -33,3 +33,4 @@ export { default as WelcomeTour } from './WelcomeTour';
 // ==================== 學習路徑相關 ====================
 export { default as LearningPathCards } from './LearningPathCards';
 export { default as ModeIndicator } from './ModeIndicator';
+export { default as DashboardProgressRing } from './DashboardProgressRing';

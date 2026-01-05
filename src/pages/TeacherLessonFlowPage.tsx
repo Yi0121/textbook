@@ -16,7 +16,6 @@ import {
     MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import dagre from 'dagre';
 
 // Types
 import { APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
@@ -30,6 +29,9 @@ import {
     findAlgebraActivityById
 } from '../mocks';
 
+// Utils
+import { getLayoutedElements } from '../utils';
+
 // Components
 import LessonNode from '../components/teacher/LessonNode';
 import StageNode from '../components/teacher/StageNode';
@@ -41,84 +43,6 @@ import { GraphCanvas } from './lesson-prep/GraphCanvas';
 import { NodePropertyPanel } from './lesson-prep/NodePropertyPanel';
 import AlgebraicFundamentalsGraph from './lesson-prep/AlgebraicFundamentalsGraph';
 import CPSGraph from './lesson-prep/CPSGraph';
-
-// Dagre Layout Utility (Moved inline or extract to utils later)
-const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-    const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setDefaultEdgeLabel(() => ({}));
-    const nodeWidth = 220;
-    const nodeHeight = 140;
-
-    dagreGraph.setGraph({
-        rankdir: 'LR',
-        nodesep: 60,   // 增加垂直間距
-        ranksep: 120,  // 增加水平間距
-        marginx: 50,
-        marginy: 50,
-    });
-
-    // 區分主流程節點和補救節點
-    const mainNodes = nodes.filter(n => {
-        if (n.type === 'activityFlowNode' && n.data.activity) {
-            return (n.data.activity as ActivityNode).type !== 'remedial';
-        }
-        return true;
-    });
-    const remedialNodes = nodes.filter(n => {
-        if (n.type === 'activityFlowNode' && n.data.activity) {
-            return (n.data.activity as ActivityNode).type === 'remedial';
-        }
-        return false;
-    });
-
-    // 先佈局主流程節點
-    mainNodes.forEach((node) => {
-        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-    });
-    // 補救節點也加入圖中（但會手動調整 Y 座標）
-    remedialNodes.forEach((node) => {
-        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-    });
-
-    edges.forEach((edge) => {
-        dagreGraph.setEdge(edge.source, edge.target);
-    });
-
-    dagre.layout(dagreGraph);
-
-    const layoutedNodes = nodes.map((node) => {
-        const nodeWithPosition = dagreGraph.node(node.id);
-        let yOffset = 0;
-
-        // 補救節點往下偏移
-        if (node.type === 'activityFlowNode' && node.data.activity) {
-            const activity = node.data.activity as ActivityNode;
-            if (activity.type === 'remedial') {
-                yOffset = 180; // 補救節點往下
-            }
-        } else if (node.type === 'lessonNode' && node.data.lessonNode) {
-            const lessonNode = node.data.lessonNode as LessonNodeType;
-            if (lessonNode.branchLevel === 'remedial') yOffset = 180;
-            else if (lessonNode.branchLevel === 'advanced') yOffset = -180;
-        }
-
-        return {
-            ...node,
-            position: {
-                x: nodeWithPosition.x - nodeWidth / 2,
-                y: nodeWithPosition.y - nodeHeight / 2 + yOffset,
-            },
-        };
-    });
-
-    // 設定 edge 類型為 default（曲線）
-    const layoutedEdges = edges.map(edge => ({
-        ...edge,
-        type: 'default',
-    }));
-
-    return { nodes: layoutedNodes, edges: layoutedEdges };
-};
 
 type ViewLevel = 'stage' | 'activity';
 
