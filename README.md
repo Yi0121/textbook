@@ -109,8 +109,8 @@ src/
 │   ├── student/         # 學生模組 (鷹架、提示、互動)
 │   └── analytics/       # 分析模組 (進度、報告)
 │
-├── components/           # React 元件 (~95 files)
-│   ├── canvas/          # 畫布 (TextbookEditor, DrawingLayer)
+├── components/           # React 元件 (使用 Barrel Export)
+│   ├── common/          # 共用元件 (AIAssistantModal, canvas, chat)
 │   ├── collaboration/   # 協作 (Whiteboard)
 │   ├── features/        # 功能模組
 │   │   ├── learning-path/  # 學習路徑編輯器
@@ -118,8 +118,11 @@ src/
 │   │   └── dashboard/      # 儀表板
 │   ├── layout/          # 佈局 (AppLayout, Navigation)
 │   ├── panels/          # 側邊面板
+│   ├── student/         # 學生視角元件 (27 files)
+│   ├── teacher/         # 教師視角元件 (28 files)
 │   ├── tools/           # 工具列
-│   └── ui/              # 通用 UI (Modal, Button, ...)
+│   ├── ui/              # 通用 UI (Modal, Button, Progress, ...)
+│   └── index.ts         # Barrel Export
 │
 ├── context/             # React Context (6 個)
 │   ├── AgentContext     # Agent 系統存取
@@ -134,13 +137,33 @@ src/
 │   ├── useTeacherAIChat     # 教師 AI 對話
 │   ├── useStudentAIChat     # 學生 AI 對話
 │   ├── useLearningPathActions  # 學習路徑操作
-│   └── ...
+│   └── index.ts             # Barrel Export
 │
-├── pages/               # 頁面元件 (16 個)
+├── pages/               # 頁面元件 (20 個)
+│   ├── division-exploration/  # 除法探究子頁面
+│   │   ├── OverviewTab.tsx    # 學習總覽分頁
+│   │   ├── AdvancedTab.tsx    # AI 深度分析分頁
+│   │   ├── types.ts           # 共用型別
+│   │   └── index.ts           # Barrel Export
+│   ├── lesson-prep/           # 課程編輯器子組件
+│   │   ├── EditorToolbar.tsx
+│   │   ├── ResourceSidebar.tsx
+│   │   ├── GraphCanvas.tsx
+│   │   └── ...
+│   └── ...                    # 其他頁面
+│
 ├── services/            # 服務層 (AI, API, Adapters)
+│   ├── api/             # API Client
+│   ├── adapters/        # Provider Adapters
+│   └── index.ts         # Barrel Export
+│
 ├── stores/              # Zustand Stores
 ├── types/               # TypeScript 型別定義
 ├── utils/               # 工具函式
+│   ├── progressHelpers.ts   # 進度計算
+│   ├── aposConverter.ts     # APOS 轉換
+│   ├── layout.ts            # Dagre 佈局
+│   └── index.ts             # Barrel Export
 └── mocks/               # Mock 資料
 ```
 
