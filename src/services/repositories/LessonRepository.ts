@@ -5,7 +5,12 @@
  */
 
 import type { LessonPlan } from '../../types';
-import { MOCK_DIFFERENTIATED_LESSON, ALGEBRA_APOS_LESSON } from '../../mocks';
+import {
+    MOCK_DIFFERENTIATED_LESSON,
+    ALGEBRA_APOS_LESSON,
+    ARITHMETIC_APOS_LESSON,
+    GEOMETRY_APOS_LESSON,
+} from '../../mocks';
 import { getCurrentDataSource } from './types';
 
 // ==================== Repository Interface ====================
@@ -19,7 +24,10 @@ export interface ILessonRepository {
 
 const MOCK_LESSONS: Record<string, LessonPlan> = {
     'differentiated-lesson': MOCK_DIFFERENTIATED_LESSON,
+    'lesson-math-002': MOCK_DIFFERENTIATED_LESSON, // alias
     'algebra-apos': ALGEBRA_APOS_LESSON,
+    'arithmetic-apos': ARITHMETIC_APOS_LESSON,
+    'geometry-apos': GEOMETRY_APOS_LESSON,
 };
 
 // ==================== Mock Implementation ====================

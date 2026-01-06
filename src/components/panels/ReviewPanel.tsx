@@ -1,16 +1,26 @@
 // components/panels/ReviewPanel.tsx
 import React from 'react';
-import { ShieldAlert } from 'lucide-react';
-import { MOCK_STUDENT_LOGS } from '../../mocks';
+import { ShieldAlert, Loader2 } from 'lucide-react';
+import { useStudentLogs } from '../../hooks';
 
 const ReviewPanel: React.FC = () => {
+  const { data: logs = [], isLoading } = useStudentLogs();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-in slide-in-from-right duration-300">
       <div className="p-3 bg-yellow-50 border-b border-yellow-100 flex items-center gap-2 text-xs text-yellow-800 mb-2">
         <ShieldAlert className="w-4 h-4" /> 檢測到潛在違規提問
       </div>
       <div className="divide-y divide-gray-100">
-        {MOCK_STUDENT_LOGS.map((log) => (
+        {logs.map((log) => (
           <div
             key={log.id}
             className={`p-4 hover:bg-gray-50 ${log.status === 'flagged' ? 'bg-red-50/30' : ''}`}

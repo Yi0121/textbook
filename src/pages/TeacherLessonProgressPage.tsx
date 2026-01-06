@@ -10,12 +10,13 @@
 
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
+import { BookOpen, Users, TrendingUp, CheckCircle, AlertTriangle, ArrowRight, Clock, Award, Target, Loader2 } from 'lucide-react';
 import type { LessonNode } from '../types/lessonPlan';
+import type { StudentProgress } from '../types/studentProgress';
+import { useLesson, useStudentProgressByLesson } from '../hooks';
 
 // 進度分布柱狀圖組件
-function ProgressDistributionChart({ students }: { students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
+function ProgressDistributionChart({ students }: { students: StudentProgress[] }) {
     const ranges = [
         { min: 0, max: 25, label: '0-25%', color: 'bg-red-400' },
         { min: 25, max: 50, label: '25-50%', color: 'bg-orange-400' },
@@ -103,7 +104,7 @@ function SimplePieChart({ data }: { data: { label: string; value: number; color:
 }
 
 // 節點進度視覺化組件
-function NodeProgressVisual({ nodes, students }: { nodes: LessonNode[]; students: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS }) {
+function NodeProgressVisual({ nodes, students }: { nodes: LessonNode[]; students: StudentProgress[] }) {
     const getCompletionRate = (nodeId: string) => {
         const completed = students.filter(s =>
             s.nodeProgress.find(np => np.nodeId === nodeId && np.completed)
@@ -160,10 +161,22 @@ function NodeProgressVisual({ nodes, students }: { nodes: LessonNode[]; students
 
 export default function LessonProgressDashboard() {
     const navigate = useNavigate();
-    const lesson = MOCK_DIFFERENTIATED_LESSON;
-    const students = MOCK_DIFFERENTIATED_STUDENT_PROGRESS;
 
-    if (!lesson) return <div>Loading...</div>;
+    // 使用 TanStack Query hooks 取得資料
+    const { data: lesson, isLoading: lessonLoading } = useLesson('lesson-math-002');
+    const { data: students = [], isLoading: studentsLoading } = useStudentProgressByLesson('lesson-math-002');
+
+    const isLoading = lessonLoading || studentsLoading;
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
+    if (!lesson) return <div className="p-6 text-center text-gray-500">課程資料未找到</div>;
 
     // 主流程節點 (排除補救分支和平行選項)
     const mainPathNodes = (lesson.nodes || []).filter(n =>
@@ -189,7 +202,7 @@ export default function LessonProgressDashboard() {
     const conditionalNode = (lesson.nodes || []).find(n => n.id === 'step4-test');
 
     // 計算學生平均進度 (基於 mainPathNodes)
-    const calculateStudentProgress = (student: typeof students[0]) => {
+    const calculateStudentProgress = (student: StudentProgress) => {
         const relevantProgress = student.nodeProgress.filter(np =>
             mainPathNodeIds.includes(np.nodeId)
         );

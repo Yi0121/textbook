@@ -12,10 +12,10 @@
 import { useState } from 'react';
 import {
     BarChart3, Users, TrendingUp, CheckCircle, Clock,
-    Sparkles, ChevronDown, BookOpen, ArrowRight
+    Sparkles, ChevronDown, BookOpen, ArrowRight, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { MOCK_CLASS_ANALYTICS, MOCK_STUDENTS } from '../mocks/analyticsData';
+import { useClassAnalytics, useAllStudentsAnalytics } from '../hooks';
 import {
     StatCard,
     ConversationsTabClass,
@@ -35,9 +35,27 @@ export default function ClassAnalyticsPage() {
     const [showDropdown, setShowDropdown] = useState(false);
     const navigate = useNavigate();
 
-    const data = MOCK_CLASS_ANALYTICS;
+    // 使用 TanStack Query hooks 取得資料
+    const { data: classData, isLoading: classLoading } = useClassAnalytics();
+    const { data: students = [], isLoading: studentsLoading } = useAllStudentsAnalytics();
+
+    const isLoading = classLoading || studentsLoading;
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
+    if (!classData) {
+        return <div className="p-6 text-center text-gray-500">資料載入失敗</div>;
+    }
+
+    const data = classData;
     const isClassView = !selectedStudentId;
-    const selectedStudent = selectedStudentId ? MOCK_STUDENTS.find(s => s.id === selectedStudentId) : null;
+    const selectedStudent = selectedStudentId ? students.find(s => s.id === selectedStudentId) : null;
 
     // Tab 配置
     const tabs = [
@@ -88,7 +106,7 @@ export default function ClassAnalyticsPage() {
 
                             {showDropdown && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 max-h-96 overflow-y-auto">
-                                    {MOCK_STUDENTS.map(student => (
+                                    {students.map(student => (
                                         <button
                                             key={student.id}
                                             onClick={() => {

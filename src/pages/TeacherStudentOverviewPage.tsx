@@ -10,11 +10,12 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen } from 'lucide-react';
-import { MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
-import type { LessonNode } from '../types/lessonPlan';
+import { ArrowLeft, Clock, Award, CheckCircle, Lock, TrendingUp, Zap, Star, Target, BookOpen, Loader2 } from 'lucide-react';
+import type { LessonNode, LessonPlan } from '../types/lessonPlan';
+import type { StudentProgress, NodeProgress } from '../types/studentProgress';
 import { getNodeProgress } from '../utils';
 import { AIAssistantModal } from '../components/common';
+import { useLesson, useStudentProgressByLesson } from '../hooks';
 
 
 // 闘關式學習路徑組件（教師視角）
@@ -24,7 +25,7 @@ function QuestPathView({
     currentNodeId
 }: {
     nodes: LessonNode[];
-    studentProgress: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0]['nodeProgress'];
+    studentProgress: NodeProgress[];
     currentNodeId: string;
 }) {
     const getProgress = (nodeId: string) => getNodeProgress(studentProgress, nodeId);
@@ -104,8 +105,8 @@ function QuestPathView({
 
 // 成就徽章組件
 function AchievementBadges({ student, lesson }: {
-    student: typeof MOCK_DIFFERENTIATED_STUDENT_PROGRESS[0];
-    lesson: typeof MOCK_DIFFERENTIATED_LESSON;
+    student: StudentProgress;
+    lesson: LessonPlan;
 }) {
     const completedCount = student.nodeProgress.filter(np => np.completed).length;
     const avgScore = student.nodeProgress.filter(np => np.score !== undefined).length > 0
@@ -178,10 +179,22 @@ export default function TeacherStudentOverviewPage() {
     // Modal State
     const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
 
-    const lesson = MOCK_DIFFERENTIATED_LESSON;
-    const student = MOCK_DIFFERENTIATED_STUDENT_PROGRESS.find(s => s.studentId === studentId);
+    // 使用 TanStack Query hooks 取得資料
+    const { data: lesson, isLoading: lessonLoading } = useLesson(lessonId || 'lesson-math-002');
+    const { data: progressList, isLoading: progressLoading } = useStudentProgressByLesson(lessonId || 'lesson-math-002');
 
-    if (!student) {
+    const isLoading = lessonLoading || progressLoading;
+    const student = progressList?.find(s => s.studentId === studentId);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
+    if (!student || !lesson) {
         return <div className="p-6 text-center text-gray-500">學生資料未找到</div>;
     }
 

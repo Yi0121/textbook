@@ -8,7 +8,7 @@
  * Refactored: Decomposed into sub-components in src/pages/lesson-prep/
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
     applyNodeChanges, applyEdgeChanges, useReactFlow, ReactFlowProvider,
@@ -21,11 +21,15 @@ import '@xyflow/react/dist/style.css';
 import { APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
 import { AVAILABLE_AGENTS } from '../types/agents';
 import type { LessonNode as LessonNodeType, ActivityNode, ResourceBinding } from '../types/lessonPlan';
+
+// Hooks (Repository + 本地編輯模式)
+import { useLessonEditor } from '../hooks';
+
+// Mocks (APOS 編輯器專用 - 未來可遷移)
 import {
     ALGEBRA_APOS_LESSON,
     ARITHMETIC_APOS_LESSON,
     GEOMETRY_APOS_LESSON,
-    MOCK_DIFFERENTIATED_LESSON,
     findAlgebraActivityById
 } from '../mocks';
 
@@ -74,25 +78,45 @@ function LessonPrepPreviewPageInner() {
     // Demo Delete Trigger
     const [triggerDeleteNodeId, setTriggerDeleteNodeId] = useState<string | null>(null);
 
-    const [lesson, setLesson] = useState<LessonPlan>(() => {
-        if (lessonId === 'lesson-math-002') return MOCK_DIFFERENTIATED_LESSON;
-        return {
-            id: 'legacy-placeholder',
-            title: 'Legacy View',
-            topic: 'Legacy',
-            objectives: '',
-            difficulty: 'basic',
-            createdAt: new Date(),
-            status: 'draft',
-            nodes: []
-        };
-    });
+    // 使用 useLessonEditor hook (Repository 初始化 + 本地編輯模式)
+    const { state: lessonEditorState, actions: lessonEditorActions } = useLessonEditor(lessonId || 'lesson-math-002');
+
+    // 穩定化 fallback lesson 避免無限迴圈
+    const fallbackLesson = useMemo<LessonPlan>(() => ({
+        id: 'legacy-placeholder',
+        title: 'Legacy View',
+        topic: 'Legacy',
+        objectives: '',
+        difficulty: 'basic',
+        createdAt: new Date(),
+        status: 'draft',
+        nodes: []
+    }), []);
+
+    // 從 editor state 取得 lesson，fallback 到穩定化的預設值
+    const lesson: LessonPlan = lessonEditorState.lesson ?? fallbackLesson;
+
+    // 使用 ref 追蹤最新 lesson 以避免 callback 依賴問題
+    const lessonRef = useRef(lesson);
+    lessonRef.current = lesson;
+
+    // 包裝 setLesson 以相容原有邏輯 (使用 useCallback 穩定化，不依賴 lesson)
+    const setLesson = useCallback((updater: LessonPlan | ((prev: LessonPlan) => LessonPlan)) => {
+        if (typeof updater === 'function') {
+            const currentLesson = lessonRef.current;
+            const newLesson = updater(currentLesson);
+            lessonEditorActions.setLesson(newLesson);
+        } else {
+            lessonEditorActions.setLesson(updater);
+        }
+    }, [lessonEditorActions]);
+
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     // For Demo APOS Graph: Store the selected node object directly since it's not in the main lesson state
     const [demoSelectedNode, setDemoSelectedNode] = useState<LessonNodeType | null>(null);
 
-    // 注意：lessonId 變化時的資料載入已由 useState 的初始化函數處理
-    // 若未來需要支援動態切換，可透過 key prop 重新 mount 組件或使用 useEffect + fetch
+    // 注意：lessonId 變化時的資料載入由 useLessonEditor 處理
+
 
     // UI State
     const [activeTab, setActiveTab] = useState<string>('agents'); // Cast to string for sidebar
