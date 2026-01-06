@@ -9,7 +9,6 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ALGEBRA_APOS_LESSON, MOCK_DIFFERENTIATED_LESSON, MOCK_DIFFERENTIATED_STUDENT_PROGRESS } from '../mocks';
-import type { LessonNode } from '../types/lessonPlan';
 import type { StudentProgress } from '../types/studentProgress';
 import { getNodeProgress, getNodeStatus, convertAposToLessonNodes } from '../utils';
 import StepProgress, { type Step } from '../components/ui/StepProgress';
