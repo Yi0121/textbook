@@ -10,6 +10,7 @@
 
 import { BaseAgent } from '../BaseAgent';
 import type { AgentId, AgentCategory, AgentTool } from '../types';
+import type { StudentLearningPath, LearningPathNode, LearningPathEdge } from '../../types';
 import { savePath, loadPath, loadAllPaths } from '../../utils/learningPathStorage';
 
 // ==================== Tool Input Types ====================
@@ -44,9 +45,10 @@ interface LoadPathInput {
 
 interface SavePathInput {
     studentId: string;
+    studentName?: string;
     path: {
-        nodes: Array<unknown>;
-        edges: Array<unknown>;
+        nodes: LearningPathNode[];
+        edges: LearningPathEdge[];
         viewport?: { x: number; y: number; zoom: number };
     };
 }
@@ -54,8 +56,8 @@ interface SavePathInput {
 // ==================== Agent Implementation ====================
 
 export class DataStewardAgent extends BaseAgent {
-    readonly id: AgentId = 'data-steward';
-    readonly name = '資料管家 Agent';
+    readonly id: AgentId = 'data-cleaning';
+    readonly name = '資料清理 Agent';
     readonly category: AgentCategory = 'analytics';
 
     protected defineTools(): AgentTool[] {
@@ -127,20 +129,24 @@ export class DataStewardAgent extends BaseAgent {
                 name: 'save_learning_path',
                 description: '儲存學生的學習路徑',
                 execute: async (input: SavePathInput) => {
-                    // savePath 需要完整的 StudentLearningPath 物件
-                    const pathToSave = {
+                    const nodes = input.path.nodes || [];
+                    const pathToSave: StudentLearningPath = {
                         id: `path-${input.studentId}`,
                         studentId: input.studentId,
-                        studentName: input.studentId, // 簡化處理
-                        nodes: input.path.nodes || [],
+                        studentName: input.studentName || input.studentId,
+                        nodes,
                         edges: input.path.edges || [],
                         viewport: input.path.viewport || { x: 0, y: 0, zoom: 1 },
                         createdAt: Date.now(),
                         createdBy: 'agent',
                         lastModified: Date.now(),
-                        progress: { completedNodes: 0, totalNodes: 0, percentage: 0 },
+                        progress: {
+                            completedNodes: 0,
+                            totalNodes: nodes.length,
+                            percentage: 0,
+                        },
                     };
-                    savePath(pathToSave as any);
+                    savePath(pathToSave);
                     return {
                         saved: true,
                         studentId: input.studentId,

@@ -45,8 +45,8 @@ interface ExportReportInput {
 // ==================== Agent Implementation ====================
 
 export class DashboardAgent extends BaseAgent {
-    readonly id: AgentId = 'dashboard';
-    readonly name = '儀表板 Agent';
+    readonly id: AgentId = 'viz';
+    readonly name = '視覺化 Agent';
     readonly category: AgentCategory = 'analytics';
 
     protected defineTools(): AgentTool[] {
