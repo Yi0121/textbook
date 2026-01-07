@@ -2,7 +2,7 @@
  * convertAposToLessonNodes - 將 APOS 活動節點轉換為課程節點
  */
 import type { LessonPlan, LessonNode } from '../types/lessonPlan';
-import { AVAILABLE_AGENTS } from '../types/agents';
+import { AVAILABLE_AGENTS } from '../agents/types';
 import { getAllActivitiesFromAlgebra } from '../mocks';
 
 export function convertAposToLessonNodes(aposLesson: LessonPlan): LessonNode[] {

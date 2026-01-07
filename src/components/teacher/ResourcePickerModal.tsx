@@ -6,9 +6,9 @@
 import { useState, useMemo, useId } from 'react';
 import { X, Video, FileText, CheckSquare, Wrench, Bot, Sparkles, Search, ExternalLink } from 'lucide-react';
 import type { ResourceBinding } from '../../types/lessonPlan';
-import type { Agent } from '../../types/agents';
+import type { UIAgent as Agent } from '../../agents/types';
 import type { Tool } from '../../types/tools';
-import { AVAILABLE_AGENTS } from '../../types/agents';
+import { AVAILABLE_AGENTS } from '../../agents/types';
 import { AVAILABLE_TOOLS } from '../../types/tools';
 
 interface ResourcePickerModalProps {

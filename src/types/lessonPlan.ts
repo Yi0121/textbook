@@ -5,7 +5,7 @@
  * Agent and Tool definitions have been moved to types/agents.ts and types/tools.ts.
  */
 
-import type { Agent } from './agents';
+import type { UIAgent as Agent } from '../agents/types';
 import type { Tool } from './tools';
 
 // ==================== 新架構：三層教學設計系統 ====================

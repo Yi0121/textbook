@@ -8,7 +8,7 @@
 
 import type { LessonPlan } from '../types/lessonPlan';
 import { AVAILABLE_TOOLS } from '../types/tools';
-import { findAgentById } from '../types/agents';
+import { findAgentById } from '../agents/types';
 
 // ==================== 差異化教學範例 ====================
 

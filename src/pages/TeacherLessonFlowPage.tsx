@@ -19,7 +19,7 @@ import '@xyflow/react/dist/style.css';
 
 // Types
 import { APOS_STAGES, type LessonPlan } from '../types/lessonPlan';
-import { AVAILABLE_AGENTS } from '../types/agents';
+import { AVAILABLE_AGENTS } from '../agents/types';
 import type { LessonNode as LessonNodeType, ActivityNode, ResourceBinding } from '../types/lessonPlan';
 
 // Hooks (Repository + 本地編輯模式)

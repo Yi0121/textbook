@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Search, ChevronLeft, ChevronDown } from 'lucide-react';
-import { AVAILABLE_AGENTS } from '../../../types/agents';
+import { AVAILABLE_AGENTS } from '../../../agents/types';
 
 // 可拖曳資源卡片組件
 function DraggableResource({ id, title, desc, source, color, resourceType }: {

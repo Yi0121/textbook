@@ -1,6 +1,6 @@
 import { Layers, Bot, Search, ChevronLeft, Video, FileText, CheckSquare, Wrench } from 'lucide-react';
 import { DraggableResource } from './DraggableResource';
-import { AVAILABLE_AGENTS } from '../../../types/agents';
+import { AVAILABLE_AGENTS } from '../../../agents/types';
 
 interface ResourceSidebarProps {
     activeTab: string;
