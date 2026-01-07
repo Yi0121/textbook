@@ -20,26 +20,26 @@ describe('Orchestrator', () => {
     describe('Agent Registration', () => {
         it('should register an agent', () => {
             testOrchestrator.register(lessonPlannerAgent);
-            expect(testOrchestrator.hasAgent('lesson-planner')).toBe(true);
+            expect(testOrchestrator.hasAgent('curriculum-design')).toBe(true);
         });
 
         it('should register multiple agents', () => {
             testOrchestrator.registerAll(teacherAgents);
-            expect(testOrchestrator.listAgentIds()).toHaveLength(3);
+            expect(testOrchestrator.listAgentIds()).toHaveLength(4);
         });
 
         it('should list registered agents', () => {
             testOrchestrator.registerAll(teacherAgents);
             const agents = testOrchestrator.listAgents();
-            expect(agents.map(a => a.id)).toContain('lesson-planner');
+            expect(agents.map(a => a.id)).toContain('curriculum-design');
             expect(agents.map(a => a.id)).toContain('content-generator');
-            expect(agents.map(a => a.id)).toContain('grouping');
+            expect(agents.map(a => a.id)).toContain('collaborative-grouping');
         });
 
         it('should unregister an agent', () => {
             testOrchestrator.register(lessonPlannerAgent);
-            expect(testOrchestrator.unregister('lesson-planner')).toBe(true);
-            expect(testOrchestrator.hasAgent('lesson-planner')).toBe(false);
+            expect(testOrchestrator.unregister('curriculum-design')).toBe(true);
+            expect(testOrchestrator.hasAgent('curriculum-design')).toBe(false);
         });
     });
 
@@ -54,9 +54,9 @@ describe('Orchestrator', () => {
                 payload: { title: '測試教案' },
             };
 
-            const response = await testOrchestrator.route('lesson-planner', request);
+            const response = await testOrchestrator.route('curriculum-design', request);
             expect(response.success).toBe(true);
-            expect(response.handledBy).toBe('lesson-planner');
+            expect(response.handledBy).toBe('curriculum-design');
         });
 
         it('should return error for unknown agent', async () => {
@@ -76,7 +76,7 @@ describe('Orchestrator', () => {
                 payload: {},
             };
 
-            const response = await testOrchestrator.route('lesson-planner', request);
+            const response = await testOrchestrator.route('curriculum-design', request);
             expect(response.success).toBe(false);
             expect(response.error).toContain('not found');
         });
@@ -102,7 +102,7 @@ describe('Orchestrator', () => {
 
 describe('LessonPlannerAgent', () => {
     it('should have correct id and category', () => {
-        expect(lessonPlannerAgent.id).toBe('lesson-planner');
+        expect(lessonPlannerAgent.id).toBe('curriculum-design');
         expect(lessonPlannerAgent.category).toBe('teacher');
     });
 
@@ -157,7 +157,7 @@ describe('ContentGeneratorAgent', () => {
 
 describe('GroupingAgent', () => {
     it('should have correct id and category', () => {
-        expect(groupingAgent.id).toBe('grouping');
+        expect(groupingAgent.id).toBe('collaborative-grouping');
         expect(groupingAgent.category).toBe('teacher');
     });
 
