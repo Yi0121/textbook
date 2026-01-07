@@ -33,8 +33,8 @@ interface SuggestCPSActionInput {
 // ==================== Agent Implementation ====================
 
 export class RealtimeHintAgent extends BaseAgent {
-    readonly id: AgentId = 'realtime-hint';
-    readonly name = '即時建議 Agent';
+    readonly id: AgentId = 'multi-strategy-advisor';
+    readonly name = '多重解題策略即時建議 Agent';
     readonly category: AgentCategory = 'student';
 
     protected defineTools(): AgentTool[] {

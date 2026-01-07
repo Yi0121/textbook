@@ -48,8 +48,8 @@ interface MonitorEngagementInput {
 // ==================== Agent Implementation ====================
 
 export class LearningObserverAgent extends BaseAgent {
-    readonly id: AgentId = 'learning-observer';
-    readonly name = '學習觀察 Agent';
+    readonly id: AgentId = 'learning-behavior-observer';
+    readonly name = '學習行為觀測 Agent';
     readonly category: AgentCategory = 'student';
 
     protected defineTools(): AgentTool[] {

@@ -38,8 +38,8 @@ interface SuggestLearningStrategyInput {
 // ==================== Agent Implementation ====================
 
 export class SRLAgent extends BaseAgent {
-    readonly id: AgentId = 'srl';
-    readonly name = '數學自主學習 Agent';
+    readonly id: AgentId = 'math-srl';
+    readonly name = '數學 SRL Agent';
     readonly category: AgentCategory = 'student';
 
     protected defineTools(): AgentTool[] {

@@ -45,8 +45,8 @@ interface SuggestCollaborationInput {
 // ==================== Agent Implementation ====================
 
 export class PeerFacilitatorAgent extends BaseAgent {
-    readonly id: AgentId = 'peer-facilitator';
-    readonly name = 'AI 陪伴/引導 Agent';
+    readonly id: AgentId = 'virtual-collaborative-facilitator';
+    readonly name = '虛擬協作引導 Agent';
     readonly category: AgentCategory = 'student';
 
     protected defineTools(): AgentTool[] {

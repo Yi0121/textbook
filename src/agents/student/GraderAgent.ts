@@ -54,8 +54,8 @@ interface DecideNextPathInput {
 // ==================== Agent Implementation ====================
 
 export class GraderAgent extends BaseAgent {
-    readonly id: AgentId = 'grader';
-    readonly name = '評分 Agent';
+    readonly id: AgentId = 'automated-assessment';
+    readonly name = '自動評分 Agent';
     readonly category: AgentCategory = 'student';
 
     protected defineTools(): AgentTool[] {
