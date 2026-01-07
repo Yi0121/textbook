@@ -54,8 +54,8 @@ interface GroupAnalytics {
 // ==================== Agent Implementation ====================
 
 export class GroupingAgent extends BaseAgent {
-    readonly id: AgentId = 'grouping';
-    readonly name = '分組管理 Agent';
+    readonly id: AgentId = 'collaborative-grouping';
+    readonly name = '協作分組 Agent';
     readonly category: AgentCategory = 'teacher';
 
     protected defineTools(): AgentTool[] {

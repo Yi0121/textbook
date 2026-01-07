@@ -51,8 +51,8 @@ interface ScheduleContentInput extends ToolInput {
 // ==================== Agent Implementation ====================
 
 export class LessonPlannerAgent extends BaseAgent {
-    readonly id: AgentId = 'lesson-planner';
-    readonly name = '教案規劃 Agent';
+    readonly id: AgentId = 'curriculum-design';
+    readonly name = '課程設計 Agent'; // Curriculum Design Agent
     readonly category: AgentCategory = 'teacher';
 
     protected defineTools(): AgentTool[] {
