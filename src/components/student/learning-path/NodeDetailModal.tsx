@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Save, Trash2, CheckCircle, AlertCircle, BookOpen, PenTool, Youtube, Users, Sparkles, ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
 import Modal from '../../ui/Modal';
 import { type LearningPathNode, type LearningNodeType } from '../../../types';
-import ResourceSelector, { type Resource } from '../../teacher/lesson-prep/ResourceSelector';
+import ResourceSelector, { type Resource } from '../../features/lesson-prep/ResourceSelector';
 
 interface NodeDetailModalProps {
     isOpen: boolean;
