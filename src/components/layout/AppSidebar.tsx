@@ -72,6 +72,7 @@ const TEACHER_NAV_GROUPS: NavGroup[] = [
         icon: Users,
         items: [
             { path: '/teacher/class-analytics', label: '學習分析', icon: BarChart3 },
+            { path: '/analytics', label: '筆跡分析', icon: Activity },
             { path: '/teacher/assignment', label: '作業管理', icon: ClipboardList },
             { path: '/teacher/groups', label: '分組協作', icon: Users },
             { path: '/teacher/suggestions', label: '教學建議', icon: Lightbulb },

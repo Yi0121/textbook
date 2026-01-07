@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useEditor } from '../context/EditorContext';
 import CanvasReplay from '../components/canvas/CanvasReplay';
-import { Clock, PenTool, Hash, Activity } from 'lucide-react';
+import { calculateBasicMetrics, calculatePressureMetrics } from '../utils/analytics/handwritingMetrics';
+import { Clock, PenTool, Hash, Activity, Gauge } from 'lucide-react';
 
 export default function AnalyticsDashboard() {
     const { state: editorState } = useEditor();
@@ -9,42 +10,9 @@ export default function AnalyticsDashboard() {
 
     // Calculate Metrics
     const metrics = useMemo(() => {
-        if (!strokes.length) return { duration: 0, length: 0, count: 0, avgSpeed: 0 };
-
-        let totalLength = 0;
-        let minTime = Infinity;
-        let maxTime = -Infinity;
-
-        strokes.forEach(s => {
-            // Count
-
-            // Time
-            if (s.rawPoints && s.rawPoints.length) {
-                const start = s.rawPoints[0].timestamp || 0;
-                const end = s.rawPoints[s.rawPoints.length - 1].timestamp || 0;
-                if (start < minTime) minTime = start;
-                if (end > maxTime) maxTime = end;
-
-                // Length
-                for (let i = 0; i < s.rawPoints.length - 1; i++) {
-                    const p1 = s.rawPoints[i];
-                    const p2 = s.rawPoints[i + 1];
-                    const dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-                    totalLength += dist;
-                }
-            } else {
-                // Estimate for legacy? (skip for now)
-            }
-        });
-
-        const duration = (maxTime - minTime) / 1000; // seconds
-
-        return {
-            duration: duration > 0 ? duration : 0,
-            length: Math.round(totalLength),
-            count: strokes.length,
-            avgSpeed: duration > 0 ? Math.round(totalLength / duration) : 0
-        };
+        const basic = calculateBasicMetrics(strokes);
+        const pressure = calculatePressureMetrics(strokes);
+        return { ...basic, ...pressure };
     }, [strokes]);
 
     return (
@@ -52,7 +20,7 @@ export default function AnalyticsDashboard() {
             <h1 className="text-3xl font-bold text-gray-800 mb-8">筆跡數據分析儀表板</h1>
 
             {/* Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <MetricCard
                     icon={<Clock className="w-6 h-6 text-blue-500" />}
                     title="總耗時"
@@ -76,6 +44,12 @@ export default function AnalyticsDashboard() {
                     title="平均速度"
                     value={`${metrics.avgSpeed} px/s`}
                     desc="總長度 / 總耗時"
+                />
+                <MetricCard
+                    icon={<Gauge className="w-6 h-6 text-red-500" />}
+                    title="平均壓力"
+                    value={metrics.avgPressure}
+                    desc="0.0 (輕) - 1.0 (重)"
                 />
             </div>
 
