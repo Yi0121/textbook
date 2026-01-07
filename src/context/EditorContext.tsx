@@ -119,8 +119,33 @@ interface EditorContextValue {
 
 const EditorContext = createContext<EditorContextValue | undefined>(undefined);
 
+const STORAGE_KEY = 'canvas_editor_state_v1';
+
 export function EditorProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(editorReducer, initialEditorState);
+  // Load initial state from storage
+  const savedState = localStorage.getItem(STORAGE_KEY);
+  const initialState = savedState ? JSON.parse(savedState) : initialEditorState;
+
+  // Ensure deep merge or validation if needed, for now simplistic override of critical fields
+  // If schema changed, fallback
+  const finalInitialState = savedState ? {
+    ...initialEditorState,
+    strokes: initialState.strokes || [],
+    //viewport: initialState.viewport || initialEditorState.viewport, // Optional: might want to reset viewport
+  } : initialEditorState;
+
+  const [state, dispatch] = useReducer(editorReducer, finalInitialState);
+
+  // Persist state changes
+  // Debounce could be added for performance, but for now direct effect
+  React.useEffect(() => {
+    const stateToSave = {
+      strokes: state.strokes,
+      // You can add other persistable fields here
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+  }, [state.strokes]);
+
   return (
     <EditorContext.Provider value={{ state, dispatch }}>
       {children}

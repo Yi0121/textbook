@@ -95,10 +95,10 @@ export default function ClassroomCanvas({ userRole }: ClassroomCanvasProps) {
             <div
                 ref={containerRef}
                 className="flex-1 relative overflow-hidden bg-slate-100 dark:bg-gray-800 touch-none transition-colors"
-                onMouseDown={interaction.handleMouseDown}
-                onMouseMove={interaction.handleMouseMove}
-                onMouseUp={interaction.handleMouseUp}
-                onMouseLeave={interaction.handleMouseUp}
+                onPointerDown={interaction.handlePointerDown}
+                onPointerMove={interaction.handlePointerMove}
+                onPointerUp={interaction.handlePointerUp}
+                onPointerLeave={interaction.handlePointerUp}
                 style={{
                     cursor: interaction.isPanning.current || interaction.isSpacePressed.current
                         ? 'grabbing'

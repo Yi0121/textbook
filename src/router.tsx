@@ -30,6 +30,7 @@ const StudentQuizPage = lazy(() => import('./pages/StudentQuizPage'));
 const TeacherGroupMonitorPage = lazy(() => import('./pages/TeacherGroupMonitorPage'));
 const CPSStudentView = lazy(() => import('./pages/CPSStudentView'));
 const TeacherDivisionExplorationPage = lazy(() => import('./pages/TeacherDivisionExplorationPage'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 import ComingSoonPage from './pages/ComingSoonPage';
 
 // ==================== Suspense Wrapper ====================
@@ -113,6 +114,10 @@ export const router = createBrowserRouter([
             {
                 path: 'teacher/division-exploration',
                 element: withSuspense(TeacherDivisionExplorationPage),
+            },
+            {
+                path: 'analytics',
+                element: withSuspense(AnalyticsDashboard),
             },
 
             // ==================== 學生端路由 /student/* ====================

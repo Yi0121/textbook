@@ -5,7 +5,8 @@
 export interface Point {
   x: number;
   y: number;
-  timestamp?: number;
+  timestamp: number;
+  pressure?: number;
 }
 
 export interface LaserPoint {
@@ -33,13 +34,14 @@ export type DrawingTool = 'cursor' | 'pen' | 'highlighter' | 'eraser' | 'text' |
 
 export interface Stroke {
   id: string;
-  path: string;
+  path: string; // SVG path command (d attribute)
   color: string;
   size: number;
   tool: DrawingTool | string;
-  rawPoints?: Point[];
+  rawPoints?: Point[]; // Full high-fidelity data
   author?: string;
   timestamp?: number;
+  isSimulated?: boolean; // For preventing simulated strokes from being recorded again
 }
 
 // ==================== 心智圖類型 ====================
