@@ -121,7 +121,7 @@ export class TechnicalSupportAgent extends BaseAgent {
         return allObjects;
     }
 
-    private mockSolveAlgebra(expression: string, variable?: string): string {
+    private mockSolveAlgebra(expression: string, _variable?: string): string {
         // 簡化模擬：根據輸入返回假解
         if (expression.includes('x^2')) {
             return 'x = 2 或 x = -3';
@@ -173,7 +173,7 @@ export class TechnicalSupportAgent extends BaseAgent {
         return hints[tool]?.[operation] || hints[tool]?.default || ['請參考工具說明文件'];
     }
 
-    private getTutorialLink(tool: string, operation: string): string {
+    private getTutorialLink(tool: string, _operation: string): string {
         const links: Record<string, string> = {
             geogebra: 'https://www.geogebra.org/manual',
             wolfram: 'https://www.wolframalpha.com/examples',

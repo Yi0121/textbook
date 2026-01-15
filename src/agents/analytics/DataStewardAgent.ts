@@ -143,7 +143,6 @@ export class DataStewardAgent extends BaseAgent {
                         progress: {
                             completedNodes: 0,
                             totalNodes: nodes.length,
-                            percentage: 0,
                         },
                     };
                     savePath(pathToSave);

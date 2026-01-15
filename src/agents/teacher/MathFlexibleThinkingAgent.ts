@@ -250,7 +250,7 @@ export class MathFlexibleThinkingAgent extends BaseAgent {
         return misconceptions[problemType] || [];
     }
 
-    private suggestAlternatives(currentSolution: string, level?: string): object[] {
+    private suggestAlternatives(_currentSolution: string, level?: string): object[] {
         return [
             {
                 approach: '替代方法 1',
@@ -267,7 +267,7 @@ export class MathFlexibleThinkingAgent extends BaseAgent {
         ];
     }
 
-    private createComparisonTable(currentSolution: string): object {
+    private createComparisonTable(_currentSolution: string): object {
         return {
             headers: ['方法', '步驟數', '難度', '適用情境'],
             rows: [
@@ -278,7 +278,7 @@ export class MathFlexibleThinkingAgent extends BaseAgent {
         };
     }
 
-    private identifyLearningOpportunities(currentSolution: string): string[] {
+    private identifyLearningOpportunities(_currentSolution: string): string[] {
         return [
             '探索更簡潔的解法',
             '建立不同方法間的連結',
@@ -296,19 +296,19 @@ export class MathFlexibleThinkingAgent extends BaseAgent {
         return Math.min((unique / solutions.length) * 100, 100);
     }
 
-    private assessAdaptability(solutions: object[]): number {
+    private assessAdaptability(_solutions: object[]): number {
         return Math.floor(Math.random() * 30) + 60;
     }
 
-    private assessCreativity(solutions: object[]): number {
+    private assessCreativity(_solutions: object[]): number {
         return Math.floor(Math.random() * 30) + 55;
     }
 
-    private assessEfficiency(solutions: object[]): number {
+    private assessEfficiency(_solutions: object[]): number {
         return Math.floor(Math.random() * 30) + 65;
     }
 
-    private identifyPatterns(solutions: { approach: string }[]): string[] {
+    private identifyPatterns(_solutions: { approach: string }[]): string[] {
         return [
             '偏好代數方法',
             '較少使用圖形思考',
@@ -316,7 +316,7 @@ export class MathFlexibleThinkingAgent extends BaseAgent {
         ];
     }
 
-    private generateRecommendations(solutions: object[]): string[] {
+    private generateRecommendations(_solutions: object[]): string[] {
         return [
             '嘗試使用圖形法解決代數問題',
             '練習從不同角度分析同一問題',

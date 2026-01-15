@@ -20,6 +20,8 @@ export type AgentId =
     | 'content-generator'
     | 'math-flexible-thinking'
     | 'collaborative-grouping'
+    | 'lesson-planner'        // Hook 使用的簡稱
+    | 'grouping'              // Hook 使用的簡稱
     // B. 學生學習模組
     | 'apos-construction'
     | 'technical-support'
@@ -29,12 +31,19 @@ export type AgentId =
     | 'virtual-collaborative-facilitator'
     | 'multi-strategy-advisor'
     | 'math-srl'
+    | 'grader'                // 評分系統 (Hook簡稱)
+    | 'learning-observer'     // 學習觀察 (Hook簡稱)
+    | 'peer-facilitator'      // 同儕協作 (Hook簡稱)
+    | 'realtime-hint'         // 即時提示 (Hook簡稱)
+    | 'srl'                   // 自主學習調節 (Hook簡稱)
     // C. 系統分析模組
     | 'data-cleaning'
     | 'sna-analyst'
     | 'ena-analyst'
     | 'synthesis'
     | 'viz'
+    | 'data-steward'          // 資料管理 (Hook簡稱)
+    | 'dashboard'             // 儀表板 (Hook簡稱)
     // 總控
     | 'orchestrator'
     // Legacy / Others (Subject to removal)

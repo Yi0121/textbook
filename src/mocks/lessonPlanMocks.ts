@@ -8,7 +8,18 @@
 
 import type { LessonPlan } from '../types/lessonPlan';
 import { AVAILABLE_TOOLS } from '../types/tools';
-import { findAgentById } from '../agents/types';
+import { findAgentById, AVAILABLE_AGENTS, type UIAgent } from '../agents/types';
+
+/**
+ * Helper function to get an agent by ID with a fallback to 'content-generator'.
+ * This ensures we always return a valid UIAgent (never undefined).
+ */
+const getAgentOrDefault = (id: string): UIAgent => {
+    const agent = findAgentById(id);
+    if (agent) return agent;
+    // Fallback to content-generator (guaranteed to exist in AVAILABLE_AGENTS)
+    return AVAILABLE_AGENTS.find(a => a.id === 'content-generator')!;
+};
 
 // ==================== 差異化教學範例 ====================
 
@@ -27,7 +38,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '1. 代數式基礎回顧',
             order: 1,
             nodeType: 'material',
-            agent: findAgentById('content-generator'),
+            agent: getAgentOrDefault('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
                 materials: ['代數式名詞定義：係數、次數、常數項'],
@@ -50,7 +61,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 2,
             nodeType: 'video',
             branchLevel: 'standard',
-            agent: findAgentById('content-generator'),
+            agent: getAgentOrDefault('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
                 materials: ['同類項合併教學動畫 (5分鐘)'],
@@ -64,7 +75,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 2,
             nodeType: 'external',
             branchLevel: 'standard',
-            agent: findAgentById('technical-support'),
+            agent: getAgentOrDefault('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
                 materials: ['分類遊戲：將 xs 和 ys 分類'],
@@ -78,7 +89,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 2,
             nodeType: 'material',
             branchLevel: 'standard',
-            agent: findAgentById('content-generator'),
+            agent: getAgentOrDefault('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[0]],
             generatedContent: {
                 materials: ['圖解代數運算規則'],
@@ -92,7 +103,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '3. 基礎運算練習',
             order: 3,
             nodeType: 'worksheet',
-            agent: findAgentById('grader'),
+            agent: getAgentOrDefault('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 5,
@@ -106,7 +117,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '4. 能力檢測',
             order: 4,
             nodeType: 'worksheet',
-            agent: findAgentById('grader'),
+            agent: getAgentOrDefault('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 10,
@@ -128,7 +139,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 5,
             nodeType: 'material',
             branchLevel: 'remedial',
-            agent: findAgentById('conjecture'),
+            agent: getAgentOrDefault('conjecture'),
             selectedTools: [AVAILABLE_TOOLS[6]],
             generatedContent: {
                 materials: ['AI 個別化去括號引導'],
@@ -142,7 +153,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 6,
             nodeType: 'worksheet',
             branchLevel: 'remedial',
-            agent: findAgentById('grader'),
+            agent: getAgentOrDefault('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 5,
@@ -163,7 +174,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '5. 多元解法探索',
             order: 7,
             nodeType: 'material',
-            agent: findAgentById('multi-solution'),
+            agent: getAgentOrDefault('multi-solution'),
             selectedTools: [AVAILABLE_TOOLS[3]],
             generatedContent: {
                 materials: ['乘法公式的幾何意義'],
@@ -176,7 +187,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '6. 實際問題應用',
             order: 8,
             nodeType: 'video',
-            agent: findAgentById('content-generator'),
+            agent: getAgentOrDefault('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
                 materials: ['生活情境題：土地面積計算'],
@@ -189,7 +200,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '7. 總結性評量',
             order: 9,
             nodeType: 'worksheet',
-            agent: findAgentById('grader'),
+            agent: getAgentOrDefault('grader'),
             selectedTools: [AVAILABLE_TOOLS[8]],
             generatedContent: {
                 exercises: 15,
@@ -211,7 +222,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             order: 10,
             nodeType: 'external',
             branchLevel: 'remedial',
-            agent: findAgentById('technical-support'),
+            agent: getAgentOrDefault('technical-support'),
             selectedTools: [AVAILABLE_TOOLS[1]],
             generatedContent: {
                 materials: ['圖解面積公式'],
@@ -225,7 +236,7 @@ export const MOCK_DIFFERENTIATED_LESSON: LessonPlan = {
             title: '✓ 學習路徑完成',
             order: 11,
             nodeType: 'material',
-            agent: findAgentById('content-generator'),
+            agent: getAgentOrDefault('content-generator'),
             selectedTools: [AVAILABLE_TOOLS[2]],
             generatedContent: {
                 materials: ['個人化學習成果報告'],

@@ -151,7 +151,7 @@ export class CPSAgent extends BaseAgent {
         return idx < sequence.length - 1 ? sequence[idx + 1] : 'exploring';
     }
 
-    private assignRoles(members: string[], type: string): Record<string, string> {
+    private assignRoles(members: string[], _type: string): Record<string, string> {
         const roles = ['協調者', '記錄者', '檢查者', '報告者'];
         const result: Record<string, string> = {};
         members.forEach((member, idx) => {
@@ -193,7 +193,7 @@ export class CPSAgent extends BaseAgent {
         return Math.min(behaviors.length * 10, 100);
     }
 
-    private assessDimensions(behaviors: string[]): Record<string, number> {
+    private assessDimensions(_behaviors: string[]): Record<string, number> {
         return {
             '建立共識': Math.floor(Math.random() * 20) + 60,
             '溝通協調': Math.floor(Math.random() * 20) + 65,
@@ -203,15 +203,15 @@ export class CPSAgent extends BaseAgent {
         };
     }
 
-    private identifyStrengths(behaviors: string[]): string[] {
+    private identifyStrengths(_behaviors: string[]): string[] {
         return ['積極參與討論', '願意傾聽他人意見', '能適時提供協助'];
     }
 
-    private identifyAreasForImprovement(behaviors: string[]): string[] {
+    private identifyAreasForImprovement(_behaviors: string[]): string[] {
         return ['可以更主動分享想法', '注意時間管理', '嘗試擔任不同角色'];
     }
 
-    private getSkillRecommendations(behaviors: string[]): string[] {
+    private getSkillRecommendations(_behaviors: string[]): string[] {
         return [
             '多練習輪流發言',
             '嘗試使用「我覺得...因為...」的句型',
